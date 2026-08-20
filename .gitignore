@@ -3,6 +3,7 @@ web/node_modules/
 web/dist/
 *.canvas.tsx
 !global-platform-fintech-atlas.canvas.tsx
+!mexico-ev-portfolio-model.canvas.tsx
 *.canvas.data.json
 !global-platform-fintech-atlas.canvas.data.json
 *.canvas.status.json
