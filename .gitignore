@@ -1,6 +1,10 @@
 node_modules/
 web/node_modules/
 web/dist/
+.gh-pages-latest/
+tmp_ic_extract/
+tmp_nbfc/
+package-lock.json
 *.canvas.tsx
 !global-platform-fintech-atlas.canvas.tsx
 *.canvas.data.json

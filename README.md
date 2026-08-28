@@ -2,14 +2,17 @@
 
 ## 网页版（推荐，免装 Cursor）
 
-**https://zhen-2mao-tech.github.io/crm-ecosystem-atlas/**
+**https://www.chuanx.xyz/market-research/**
+
+备用地址：https://capitalchuan.github.io/market-research/
 
 - 默认以**访客**进入，无需登录即可浏览与筛选
 - 公司邮箱登录后可做经办认领
 
-源码仓库（含 Canvas 与 Web 工程）：https://github.com/alliancechuan/market-research
+源码与部署仓库：https://github.com/capitalchuan/market-research
 
-公开站点仓库：https://github.com/zhen-2mao-tech/crm-ecosystem-atlas
+- `main`：源码（含 Canvas 与 `web/` 工程）
+- `gh-pages`：GitHub Pages / Vercel 静态构建产物
 
 ## 本地开发
 
@@ -17,6 +20,13 @@
 cd web
 npm install
 npm run dev
+```
+
+## 部署到 gh-pages
+
+```bash
+cd web
+npm run deploy
 ```
 
 ## Cursor Canvas 版
