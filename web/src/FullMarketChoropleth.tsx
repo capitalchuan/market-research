@@ -343,11 +343,14 @@ export function FullMarketChoropleth({
   const width = mapFrameWidth(height, aspect);
   const bottomLegend = fill || legendPlacement === "bottom";
   const place: MapLegendPlacement = bottomLegend ? "bottom" : "side";
+  /** 大屏嵌入：指标栏在地图上方自然排版，避免 absolute 叠层 + overflow 裁切 */
+  const headerFlow = !fill && bottomLegend;
   const { guest, maskUsd } = useGuestMask();
 
   const [imfFilter, setImfFilter] = useCanvasState<string>("screenImfFilter2", "all");
   const [wbFilter, setWbFilter] = useCanvasState<string>("screenWbFilter2", "all");
   const [focus, setFocus] = useState<string | null>(null);
+  const mapTopPad = focus ? 12 : fill || !bottomLegend ? MAP_TOP_CHROME + 4 : 12;
   const [hover, setHover] = useState<HoverInfo | null>(null);
   /** 横向旋转角（经度，度）；拖动地图左右转动 */
   const [yaw, setYaw] = useState(0);
@@ -544,7 +547,7 @@ export function FullMarketChoropleth({
       const rightPad = bottomLegend ? Math.round(width * focusRightFrac) : 28;
       proj.fitExtent(
         [
-          [28, 64],
+          [28, mapTopPad],
           [Math.max(width - rightPad, width * focusMapMinFrac), height - 36],
         ],
         focusFeature,
@@ -552,7 +555,7 @@ export function FullMarketChoropleth({
     } else if (regionFeature) {
       proj.fitExtent(
         [
-          [28, 68],
+          [28, mapTopPad + 4],
           [width - 28, height - 28],
         ],
         regionFeature,
@@ -561,7 +564,7 @@ export function FullMarketChoropleth({
       proj.rotate([yaw, 0, 0]);
       proj.fitExtent(
         [
-          [12, MAP_TOP_CHROME + 4],
+          [12, mapTopPad],
           [width - 12, height - 12],
         ],
         { type: "Sphere" },
@@ -569,7 +572,7 @@ export function FullMarketChoropleth({
     }
     const path = geoPath(proj);
     return { pathGen: path, outline: path({ type: "Sphere" }) ?? "", projection: proj };
-  }, [focusFeature, regionFeature, width, height, bottomLegend, yaw, focusRightFrac, focusMapMinFrac]);
+  }, [focusFeature, regionFeature, width, height, bottomLegend, yaw, focusRightFrac, focusMapMinFrac, mapTopPad]);
 
   const graticulePath = useMemo(() => pathGen(geoGraticule10()) ?? "", [pathGen]);
 
@@ -639,6 +642,77 @@ export function FullMarketChoropleth({
     return out;
   }, [marketWithEco, ecoMap, countries, pathGen, projection, imfFilter, wbFilter, width, height]);
 
+  const mapMetricsInner = (
+    <div style={{ minWidth: 0, flex: 1 }}>
+      {both || marketWithEco ? (
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "6px 32px",
+            alignItems: "flex-end",
+          }}
+        >
+          <MapMetricBlock
+            label={`全市场 · 在贷${filterActive ? " · 筛选后" : ""}`}
+            value={formatUsdTn(filteredSumBn)}
+          />
+          {both ? (
+            <MapMetricBlock label="展业 · 在贷" value={maskUsd(investedSumUsd)} accent />
+          ) : null}
+          {marketWithEco ? (
+            <MapMetricBlock label={`${ecoLabel ?? "机构"} · 样本`} value={`${ecoSum} 家`} accent />
+          ) : null}
+        </div>
+      ) : (
+        <MapMetricBlock
+          label={
+            ecoOn
+              ? `${ecoLabel ?? "其他机构"}`
+              : marketOn
+                ? `全市场 · 在贷${filterActive ? " · 筛选后" : ""}`
+                : "展业 · 已投在贷"
+          }
+          value={
+            ecoOn ? `${ecoSum} 家` : marketOn ? formatUsdTn(filteredSumBn) : maskUsd(investedSumUsd)
+          }
+        />
+      )}
+      <div
+        style={{
+          fontSize: 10,
+          color: c.textTertiary,
+          marginTop: 3,
+          lineHeight: 1.25,
+          letterSpacing: "0.02em",
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        {ecoOn
+          ? `落点 ${Object.keys(fillValues).filter((k) => (fillValues[k] ?? 0) > 0).length} 国 · 样本去重 ${ecoSum} 家${filterActive ? ` · ${[imfLabel, wbLabel].filter((x) => x && !x.startsWith("全部")).join(" · ")}` : ""}`
+          : investedOn && !marketOn && !marketWithEco
+            ? `展业 ${investedCountryCount} 国 · 对照全市场 ${formatUsdTn(marketAllSumBn)}${
+                !guest && marketVsInvestedPct != null ? ` · 约 ${marketVsInvestedPct.toFixed(2)}%` : ""
+              }`
+            : marketWithEco
+              ? `覆盖 ${coveredCountries} 国 · 有数据 ${dataCountries} 国 · ${ecoLabel ?? "机构"}落点 ${ecoCountryCount} 国 · 样本去重 ${ecoSum} 家${
+                  filterActive
+                    ? ` · ${[imfFilter !== "all" ? imfLabel : "", wbFilter !== "all" ? wbLabel : ""].filter(Boolean).join(" · ")}`
+                    : ""
+                }`
+              : both
+                ? `覆盖 ${coveredCountries} 国 · 有数据 ${dataCountries} 国 · 展业 ${investedCountryCount} 国${
+                    !guest && marketVsInvestedPct != null ? ` · 占比约 ${marketVsInvestedPct.toFixed(2)}%` : ""
+                  }${filterActive ? ` · ${[imfFilter !== "all" ? imfLabel : "", wbFilter !== "all" ? wbLabel : ""].filter(Boolean).join(" · ")}` : ""}`
+                : `覆盖 ${coveredCountries} 国 · 有数据 ${dataCountries} 国${
+                    filterActive
+                      ? ` · ${[imfFilter !== "all" ? imfLabel : "", wbFilter !== "all" ? wbLabel : ""].filter(Boolean).join(" · ")}`
+                      : ""
+                  }`}
+      </div>
+    </div>
+  );
+
   return (
     <div
       style={
@@ -651,11 +725,31 @@ export function FullMarketChoropleth({
               overflow: "hidden",
             }
           : bottomLegend
-            ? { display: "flex", flexDirection: "column", width: "100%", gap: 12 }
+            ? { display: "flex", flexDirection: "column", width: "100%", gap: headerFlow ? 8 : 12, flexShrink: 0 }
             : { display: "flex", flexWrap: "wrap", gap: 20, alignItems: "stretch" }
       }
     >
-      {/* 地图区：合计/全屏钮叠在地图框内，与宏观同构，避免框外错位 */}
+      {/* 大屏：指标栏在地图上方自然排版；全屏/CRM 仍叠在 SVG 顶栏 */}
+      {headerFlow && !focus ? (
+        <div
+          data-no-drag
+          style={{
+            position: "relative",
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            padding: "4px 0 8px",
+            boxSizing: "border-box",
+          }}
+        >
+          {mapMetricsInner}
+          {mapCorner ? (
+            <div style={{ flexShrink: 0, display: "flex", gap: 2, alignItems: "center" }}>{mapCorner}</div>
+          ) : null}
+        </div>
+      ) : null}
       <div
         ref={mapWrapRef}
         style={
@@ -664,8 +758,7 @@ export function FullMarketChoropleth({
                 position: "absolute",
                 inset: 0,
                 overflow: "hidden",
-                borderRadius: 4,
-                border: `1px solid ${c.panelBorder}`,
+                borderRadius: 0,
                 cursor: focus ? "default" : "grab",
                 touchAction: "none",
                 background: c.mapBg,
@@ -673,14 +766,14 @@ export function FullMarketChoropleth({
             : {
                 position: "relative",
                 width: "100%",
-                maxWidth: width,
-                margin: "0 auto",
-                flex: bottomLegend ? undefined : "1 1 560px",
+                flex: bottomLegend ? "0 0 auto" : "1 1 560px",
+                flexShrink: 0,
                 cursor: focus ? "default" : "grab",
-                touchAction: "none",
-                borderRadius: 4,
-                border: `1px solid ${c.panelBorder}`,
-                overflow: "hidden",
+                touchAction: "pan-y",
+                border: "none",
+                borderRadius: 0,
+                overflow: "visible",
+                background: "transparent",
               }
         }
         onPointerDown={(e) => {
@@ -745,7 +838,7 @@ export function FullMarketChoropleth({
           e.currentTarget.style.cursor = focus ? "default" : "grab";
         }}
       >
-        {!focus ? (
+        {!headerFlow && !focus ? (
           <div
             data-no-drag
             style={{
@@ -761,91 +854,15 @@ export function FullMarketChoropleth({
               gap: 12,
               padding: "8px 44px 8px 14px",
               boxSizing: "border-box",
-              background: c.panelBg,
-              borderBottom: `1px solid ${c.panelBorder}`,
+              background: "transparent",
               pointerEvents: "none",
             }}
           >
-            <div style={{ minWidth: 0, flex: 1 }}>
-              {both || marketWithEco ? (
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "6px 32px",
-                    alignItems: "flex-end",
-                  }}
-                >
-                  <MapMetricBlock
-                    label={`全市场 · 在贷${filterActive ? " · 筛选后" : ""}`}
-                    value={formatUsdTn(filteredSumBn)}
-                  />
-                  {both ? (
-                    <MapMetricBlock
-                      label="展业 · 在贷"
-                      value={maskUsd(investedSumUsd)}
-                      accent
-                    />
-                  ) : null}
-                  {marketWithEco ? (
-                    <MapMetricBlock label={`${ecoLabel ?? "机构"} · 样本`} value={`${ecoSum} 家`} accent />
-                  ) : null}
-                </div>
-              ) : (
-                <MapMetricBlock
-                  label={
-                    ecoOn
-                      ? `${ecoLabel ?? "其他机构"}`
-                      : marketOn
-                        ? `全市场 · 在贷${filterActive ? " · 筛选后" : ""}`
-                        : "展业 · 已投在贷"
-                  }
-                  value={
-                    ecoOn
-                      ? `${ecoSum} 家`
-                      : marketOn
-                        ? formatUsdTn(filteredSumBn)
-                        : maskUsd(investedSumUsd)
-                  }
-                />
-              )}
-              <div
-                style={{
-                  fontSize: 10,
-                  color: c.textTertiary,
-                  marginTop: 3,
-                  lineHeight: 1.25,
-                  letterSpacing: "0.02em",
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                {ecoOn
-                  ? `落点 ${Object.keys(fillValues).filter((k) => (fillValues[k] ?? 0) > 0).length} 国 · 样本去重 ${ecoSum} 家${filterActive ? ` · ${[imfLabel, wbLabel].filter((x) => x && !x.startsWith("全部")).join(" · ")}` : ""}`
-                  : investedOn && !marketOn && !marketWithEco
-                    ? `展业 ${investedCountryCount} 国 · 对照全市场 ${formatUsdTn(marketAllSumBn)}${
-                        !guest && marketVsInvestedPct != null ? ` · 约 ${marketVsInvestedPct.toFixed(2)}%` : ""
-                      }`
-                    : marketWithEco
-                      ? `覆盖 ${coveredCountries} 国 · 有数据 ${dataCountries} 国 · ${ecoLabel ?? "机构"}落点 ${ecoCountryCount} 国 · 样本去重 ${ecoSum} 家${
-                          filterActive
-                            ? ` · ${[imfFilter !== "all" ? imfLabel : "", wbFilter !== "all" ? wbLabel : ""].filter(Boolean).join(" · ")}`
-                            : ""
-                        }`
-                      : both
-                        ? `覆盖 ${coveredCountries} 国 · 有数据 ${dataCountries} 国 · 展业 ${investedCountryCount} 国${
-                            !guest && marketVsInvestedPct != null ? ` · 占比约 ${marketVsInvestedPct.toFixed(2)}%` : ""
-                          }${filterActive ? ` · ${[imfFilter !== "all" ? imfLabel : "", wbFilter !== "all" ? wbLabel : ""].filter(Boolean).join(" · ")}` : ""}`
-                        : `覆盖 ${coveredCountries} 国 · 有数据 ${dataCountries} 国${
-                            filterActive
-                              ? ` · ${[imfFilter !== "all" ? imfLabel : "", wbFilter !== "all" ? wbLabel : ""].filter(Boolean).join(" · ")}`
-                              : ""
-                          }`}
-              </div>
-            </div>
+            {mapMetricsInner}
           </div>
         ) : null}
 
-        {mapCorner ? (
+        {mapCorner && (!headerFlow || focus) ? (
           <div
             data-no-drag
             style={{

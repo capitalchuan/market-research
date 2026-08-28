@@ -34,7 +34,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { ScreenSegChip, ScreenSegTrack, ScreenStatusPills } from "./HeatMapChrome";
+import { ScreenSegChip, ScreenSegTrack, ScreenStatusPills, AtlasSideRail } from "./HeatMapChrome";
 import {
   DATA_QUALITY_LABEL,
   NBFC_STATS,
@@ -16557,10 +16557,8 @@ function CursorStyleComposer({
             display: "flex",
             flexDirection: "column",
             gap: 8,
-            padding: 10,
-            borderRadius: 10,
-            background: theme.bg.elevated,
-            border: `1px solid ${theme.stroke.tertiary}`,
+            padding: "4px 0",
+            background: "transparent",
             boxSizing: "border-box",
           })}
         >
@@ -22464,7 +22462,7 @@ function LoginPage() {
 }
 
 /** Cursor 风格登录后身份条：缩写头像 · 名称 · 角色 · Update · 设置 */
-function SessionChrome() {
+function SessionChrome({ trailing }: { trailing?: ReactNode }) {
   const theme = useHostTheme();
   const [session, setSession] = useCanvasState("authSession1", "");
   const [users, setUsers] = useCanvasState<Record<string, AuthUserRecord>>("authUsers1", {});
@@ -22520,64 +22518,67 @@ function SessionChrome() {
 
   return (
     <Stack gap={10}>
-      <div
-        style={mergeStyle({
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "8px 10px",
-          borderRadius: 10,
-          background: theme.bg.elevated,
-          border: `1px solid ${theme.stroke.tertiary}`,
-        })}
-      >
+      <Row gap={8} align="center" wrap style={{ width: "100%" }}>
         <div
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 999,
-            background: theme.fill.secondary,
-            color: theme.text.primary,
+          style={mergeStyle({
+            flex: 1,
+            minWidth: 0,
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            fontSize: 11,
-            fontWeight: 600,
-            flexShrink: 0,
-          }}
+            gap: 10,
+            padding: "4px 0",
+            background: "transparent",
+          })}
         >
-          {initials}
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 999,
+              background: theme.fill.secondary,
+              color: theme.text.primary,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 11,
+              fontWeight: 600,
+              flexShrink: 0,
+            }}
+          >
+            {initials}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Text size="small" weight="medium">
+              {user.displayLocal}
+            </Text>
+            <Text size="small" tone="tertiary">
+              {admin ? "Admin" : session === "guest" ? "Guest" : "Member"}
+            </Text>
+          </div>
+          <Button
+            variant="primary"
+            onClick={() => setPanel(panel === "password" ? "none" : "password")}
+          >
+            Update
+          </Button>
+          <IconButton
+            title="设置"
+            size="sm"
+            onClick={() => setPanel(panel === "admin" ? "none" : admin ? "admin" : "password")}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+              <circle cx="7" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.2" />
+              <path
+                d="M7 1.2v1.4M7 11.4v1.4M1.2 7h1.4M11.4 7h1.4M2.6 2.6l1 1M10.4 10.4l1 1M10.4 2.6l-1 1M2.6 11.4l1-1"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </IconButton>
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Text size="small" weight="medium">
-            {user.displayLocal}
-          </Text>
-          <Text size="small" tone="tertiary">
-            {admin ? "Admin" : session === "guest" ? "Guest" : "Member"}
-          </Text>
-        </div>
-        <Button
-          variant="primary"
-          onClick={() => setPanel(panel === "password" ? "none" : "password")}
-        >
-          Update
-        </Button>
-        <IconButton
-          title="设置"
-          size="sm"
-          onClick={() => setPanel(panel === "admin" ? "none" : admin ? "admin" : "password")}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-            <circle cx="7" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.2" />
-            <path
-              d="M7 1.2v1.4M7 11.4v1.4M1.2 7h1.4M11.4 7h1.4M2.6 2.6l1 1M10.4 10.4l1 1M10.4 2.6l-1 1M2.6 11.4l1-1"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </IconButton>
-      </div>
+        {trailing ? <div style={{ flexShrink: 0 }}>{trailing}</div> : null}
+      </Row>
 
       {panel === "password" ? (
         <div
@@ -23651,14 +23652,13 @@ function AtlasStickyChrome({ children }: { children?: ReactNode }) {
     <div
       ref={ref}
       style={{
+        position: "sticky",
+        top: 0,
         flexShrink: 0,
         zIndex: 40,
-        margin: "0 -16px",
-        padding: "0 16px 8px",
+        padding: "0 0 8px",
         background: theme.bg.elevated,
-        /* 与下方 sticky 贴合，避免露底色白缝 */
         borderBottom: "none",
-        boxShadow: `inset 0 -1px 0 ${theme.stroke.tertiary}`,
       }}
     >
       {children}
@@ -23680,50 +23680,11 @@ function AtlasStickySub({
     <div
       style={{
         position: "sticky",
-        top: 0,
+        top: "var(--atlas-sticky-h, 0px)",
         zIndex: 35,
-        margin: "0 -16px",
-        padding: compact ? "6px 16px 6px" : "8px 16px 8px",
+        padding: compact ? "6px 0" : "8px 0",
         background: theme.bg.elevated,
-        borderBottom: `1px solid ${theme.stroke.tertiary}`,
-        boxShadow: `0 10px 0 0 ${theme.bg.elevated}`,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-/** 主内容滚动区：顶栏以下滚动；信源/快讯/研报等共用 */
-function AtlasScrollBody({ children }: { children?: ReactNode }) {
-  return (
-    <div
-      data-atlas-scroll-body="1"
-      style={{
-        flex: 1,
-        minHeight: 0,
-        overflow: "auto",
-        overflowAnchor: "none",
-        scrollbarGutter: "stable",
-        paddingTop: 0,
-      }}
-      ref={(node) => {
-        if (!node || typeof window === "undefined") return;
-        const mem = getAtlasScrollMem();
-        mem.shell = node;
-        const mark = node as unknown as { __crmScrollInit?: boolean };
-        if (mark.__crmScrollInit) return;
-        mark.__crmScrollInit = true;
-        const y = mem.y;
-        if (y <= 8) return;
-        const cur = node.scrollTop;
-        if (cur >= 8) return;
-        mem.restoring = true;
-        node.scrollTop = y;
-        requestAnimationFrame(() => {
-          node.scrollTop = mem.y > 8 ? mem.y : y;
-          mem.restoring = false;
-        });
+        borderBottom: "none",
       }}
     >
       {children}
@@ -23941,113 +23902,6 @@ function ensureAtlasScrollMem() {
       if (y > 0) mem.y = y;
     },
     { capture: true, passive: true },
-  );
-}
-
-function PersistScrollShell({ children }: { children?: ReactNode }) {
-  ensureAtlasScrollMem();
-  const theme = useHostTheme();
-  const [tail, setTail] = useState<"idle" | "spin" | "empty">("idle");
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    let spinTimer: ReturnType<typeof setTimeout> | undefined;
-    let emptyTimer: ReturnType<typeof setTimeout> | undefined;
-    const onScroll = () => {
-      const mem = getAtlasScrollMem();
-      if (mem.restoring) return;
-      const scroller = findAtlasScroller(mem.shell);
-      const el =
-        scroller instanceof Window
-          ? document.documentElement
-          : (scroller as HTMLElement | null);
-      if (!el) return;
-      const top = scroller instanceof Window ? window.scrollY : (scroller as HTMLElement).scrollTop;
-      const view =
-        scroller instanceof Window ? window.innerHeight : (scroller as HTMLElement).clientHeight;
-      const height =
-        scroller instanceof Window
-          ? document.documentElement.scrollHeight
-          : (scroller as HTMLElement).scrollHeight;
-      const nearBottom = top + view >= height - 48;
-      if (!nearBottom) {
-        if (spinTimer) clearTimeout(spinTimer);
-        if (emptyTimer) clearTimeout(emptyTimer);
-        setTail("idle");
-        return;
-      }
-      setTail((prev) => (prev === "idle" ? "spin" : prev));
-      if (spinTimer) clearTimeout(spinTimer);
-      spinTimer = setTimeout(() => {
-        setTail("empty");
-        emptyTimer = setTimeout(() => setTail("idle"), 1600);
-      }, 700);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true, capture: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll, true);
-      if (spinTimer) clearTimeout(spinTimer);
-      if (emptyTimer) clearTimeout(emptyTimer);
-    };
-  }, []);
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "calc(100dvh - 68px)",
-        maxHeight: "calc(100dvh - 68px)",
-        minHeight: 0,
-        overflow: "hidden",
-        overflowAnchor: "none",
-      }}
-      ref={(node) => {
-        if (!node || typeof window === "undefined") return;
-        const mem = getAtlasScrollMem();
-        // 优先用内部滚动体；尚无滚动体时先挂壳
-        if (!mem.shell || !node.contains(mem.shell)) {
-          const body = node.querySelector("[data-atlas-scroll-body='1']");
-          if (body instanceof HTMLElement) mem.shell = body;
-          else mem.shell = node;
-        }
-      }}
-    >
-      {children}
-      {tail !== "idle" ? (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            flexShrink: 0,
-            padding: "12px 0 16px",
-            color: theme.text.tertiary,
-            fontSize: 12,
-          }}
-          aria-live="polite"
-        >
-          {tail === "spin" ? (
-            <>
-              <span
-                style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius: 999,
-                  border: `2px solid ${theme.stroke.tertiary}`,
-                  borderTopColor: theme.text.secondary,
-                  animation: "atlasTailSpin 0.7s linear infinite",
-                  boxSizing: "border-box",
-                }}
-              />
-              加载中
-            </>
-          ) : (
-            "没有更多了"
-          )}
-          <style>{`@keyframes atlasTailSpin{to{transform:rotate(360deg)}}`}</style>
-        </div>
-      ) : null}
-    </div>
   );
 }
 
@@ -25566,10 +25420,7 @@ function FintechStockWatchPanel() {
       {viewMode === "read" ? (
         <div
           style={{
-            maxHeight: "calc(100dvh - 220px)",
-            overflow: "auto",
-            border: `1px solid ${theme.stroke.tertiary}`,
-            borderRadius: 10,
+            overflowX: "auto",
             WebkitOverflowScrolling: "touch",
             background: tableBase,
           }}
@@ -25779,13 +25630,7 @@ function FintechStockWatchPanel() {
           </table>
         </div>
       ) : (
-      <div
-        style={{
-          maxHeight: "calc(100dvh - 220px)",
-          overflow: "auto",
-          WebkitOverflowScrolling: "touch",
-        }}
-      >
+      <div>
       <div
         style={{
           display: "grid",
@@ -26899,11 +26744,8 @@ function NbfcStatsSubpage() {
 
       <div
         style={{
-          overflow: "auto",
-          maxHeight: "min(78vh, 920px)",
-          border: `1px solid ${theme.stroke.tertiary}`,
-          borderRadius: 10,
-          background: theme.bg.elevated,
+          width: "100%",
+          overflowX: "auto",
         }}
       >
         <table
@@ -27008,11 +26850,7 @@ function NbfcStatsSubpage() {
 }
 
 function MapPanel({ children }: { children: ReactNode }) {
-  return (
-    <Card>
-      <CardBody>{children}</CardBody>
-    </Card>
-  );
+  return <>{children}</>;
 }
 
 /** 地图右上角：线框图标钮 · 全屏 / 退出 */
@@ -27281,7 +27119,7 @@ function BigScreenOverlay({
   const regionZoomCodes = mapRegion ? COUNTRIES_BY_REGION[mapRegion] : null;
 
   const corner = mapFullscreenCorner(present, onPresent, onExit);
-  const globe = (
+  return (
     <FullMarketChoropleth
       height={height}
       fill={bare}
@@ -27296,26 +27134,6 @@ function BigScreenOverlay({
       regionZoomCodes={regionZoomCodes}
     />
   );
-
-  const frame = bare ? (
-    <div style={{ position: "relative", width: "100%", height: "100%", minHeight: 0 }}>{globe}</div>
-  ) : (
-    <div style={{ width: "100%" }}>{globe}</div>
-  );
-
-  const staged =
-    onPresent != null ? (
-      <MapStage present={present} onPresent={onPresent ?? (() => undefined)} onExit={onExit} showCornerToggle={false}>
-        {bare ? frame : <MapPanel>{frame}</MapPanel>}
-      </MapStage>
-    ) : bare ? (
-      frame
-    ) : (
-      <MapPanel>{frame}</MapPanel>
-    );
-
-  if (bare) return staged;
-  return staged;
 }
 
 /** 大屏：宏观因子地域分布（可叠展业徽章 + 区域缩放） */
@@ -27340,37 +27158,17 @@ function BigScreenMacro({
 }) {
   const corner = mapFullscreenCorner(present, onPresent, onExit);
   const regionZoomCodes = mapRegion ? COUNTRIES_BY_REGION[mapRegion] : null;
-  const map = bare ? (
+  return (
     <MacroHeatGlobe
       height={height}
       factor={factor}
-      fill
+      fill={bare}
       legendPlacement="bottom"
       showInvested={showInvested}
       mapCorner={corner}
       regionZoomCodes={regionZoomCodes}
     />
-  ) : (
-    <MapPanel>
-      <MacroHeatGlobe
-        height={height}
-        factor={factor}
-        legendPlacement="bottom"
-        showInvested={showInvested}
-        mapCorner={corner}
-        regionZoomCodes={regionZoomCodes}
-      />
-    </MapPanel>
   );
-  const staged =
-    onPresent != null ? (
-      <MapStage present={present} onPresent={onPresent} onExit={onExit} showCornerToggle={false}>
-        {map}
-      </MapStage>
-    ) : (
-      map
-    );
-  return staged;
 }
 
 /** 大屏主控：宏观（在贷余额/因子）· 机构 · 非银名单 — 对齐 gh-pages */
@@ -27613,21 +27411,19 @@ function BigScreen() {
           <ScreenImfWbFilterBar />
         </>
       ) : isEco ? (
-        <div style={{ width: "100%", maxHeight: 96, overflow: "auto" }}>
-          <ScreenSegTrack style={{ width: "100%", overflow: "visible" }}>
-            {INST_BUCKET_ORDER.flatMap((bucket) =>
-              INST_BUCKET_TYPES[bucket].map((t) => (
-                <ScreenSegChip
-                  key={t}
-                  label={`${INSTITUTION_TYPE_LABEL[t]} · ${countEcoType(t)}`}
-                  active={ecoType === t}
-                  clearable
-                  onClick={() => selectEcoType(t)}
-                />
-              )),
-            )}
-          </ScreenSegTrack>
-        </div>
+        <ScreenSegTrack style={{ width: "100%" }}>
+          {INST_BUCKET_ORDER.flatMap((bucket) =>
+            INST_BUCKET_TYPES[bucket].map((t) => (
+              <ScreenSegChip
+                key={t}
+                label={`${INSTITUTION_TYPE_LABEL[t]} · ${countEcoType(t)}`}
+                active={ecoType === t}
+                clearable
+                onClick={() => selectEcoType(t)}
+              />
+            )),
+          )}
+        </ScreenSegTrack>
       ) : null}
     </div>
   ) : null;
@@ -27731,16 +27527,8 @@ function BigScreen() {
   }
 
   return (
-    <Stack gap={16}>
-      <Stack
-        gap={10}
-        style={{
-          padding: "12px 14px",
-          borderRadius: 4,
-          border: `1px solid ${theme.stroke.secondary}`,
-          background: theme.bg.elevated,
-        }}
-      >
+    <Stack gap={16} style={{ flexShrink: 0 }}>
+      <Stack gap={10} style={{ flexShrink: 0 }}>
         {layerTabs}
         {mapSubChrome}
       </Stack>
@@ -27750,7 +27538,7 @@ function BigScreen() {
         <div
           style={{
             width: "100%",
-            minHeight: compactMap ? Math.round(Math.min(vh * 0.52, 640)) : undefined,
+            flexShrink: 0,
           }}
         >
           {mapPane}
@@ -28148,6 +27936,11 @@ export default function Canvas() {
   const guestNoCite = !canViewSourceCite(authSession);
 
   useEffect(() => {
+    ensureAtlasScrollMem();
+    getAtlasScrollMem().shell = null;
+  }, []);
+
+  useEffect(() => {
     if (!guestNoCite) return;
     if (hub === "sources") {
       setHub("home");
@@ -28157,32 +27950,29 @@ export default function Canvas() {
   }, [guestNoCite, hub, setHub, setSourceReturnHub, setSourceFocus]);
 
   if (!authSession) {
-    return (
-      <PersistScrollShell>
-        <LoginPage />
-      </PersistScrollShell>
-    );
+    return <LoginPage />;
   }
 
   if (appTab === "screen") {
     return (
-      <PersistScrollShell>
-        <Stack gap={16} style={{ scrollbarGutter: "stable", overflowAnchor: "none" }}>
-          <SessionChrome />
-          <Row gap={8} align="center" justify="end">
-            <MapScreenButton active onClick={() => setAppTab("crm")} />
-          </Row>
+      <AtlasSideRail>
+        <Stack gap={16} style={{ flexShrink: 0, overflow: "visible" }}>
+          <SessionChrome
+            trailing={<MapScreenButton active onClick={() => setAppTab("crm")} />}
+          />
           <BigScreen />
         </Stack>
-      </PersistScrollShell>
+      </AtlasSideRail>
     );
   }
 
   return (
-    <PersistScrollShell>
+    <AtlasSideRail>
       <AtlasStickyChrome>
       <Stack gap={16}>
-      <SessionChrome />
+      <SessionChrome
+        trailing={<MapScreenButton active={false} onClick={() => setAppTab("screen")} />}
+      />
 
       <Row gap={8} align="start">
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -28191,7 +27981,6 @@ export default function Canvas() {
             onChange={setKeyword}
             sideSlot={
               <>
-                <MapScreenButton fillHeight active={false} onClick={() => setAppTab("screen")} />
                 <SideHubButton
                   active={hub === "compare"}
                   title="对照"
@@ -28355,8 +28144,7 @@ export default function Canvas() {
       </Stack>
       </AtlasStickyChrome>
 
-      <AtlasScrollBody>
-      <Stack gap={0} style={{ overflowAnchor: "none" }}>
+      <Stack gap={0} style={{ overflowAnchor: "none", overflow: "visible", flexShrink: 0 }}>
 
       {hub === "home" ? (
         <Stack gap={16} style={{ paddingTop: kw || ecoNavExpanded ? 12 : 0 }}>
@@ -29501,8 +29289,7 @@ export default function Canvas() {
         </Stack>
       ) : null}
       </Stack>
-      </AtlasScrollBody>
-    </PersistScrollShell>
+    </AtlasSideRail>
   );
 }
 

@@ -75,6 +75,38 @@ export function mapFrameWidth(height: number, aspect: number = MAP_ASPECT_WIDE):
   return Math.round(height * aspect);
 }
 
+/** 嵌入/总览内容区：左右边线 + 与页缘留白（无上下框） */
+export const ATLAS_SIDE_RAIL_INSET = 12;
+
+export function atlasSideRailStyle(panelBorder: string, inset = ATLAS_SIDE_RAIL_INSET): CSSProperties {
+  return {
+    marginLeft: inset,
+    marginRight: inset,
+    paddingLeft: 14,
+    paddingRight: 14,
+    borderLeft: `1px solid ${panelBorder}`,
+    borderRight: `1px solid ${panelBorder}`,
+    boxSizing: "border-box",
+  };
+}
+
+/** @deprecated 用 atlasSideRailStyle / AtlasSideRail */
+export function mapSideRailStyle(panelBorder: string): CSSProperties {
+  return atlasSideRailStyle(panelBorder);
+}
+
+export function AtlasSideRail({
+  children,
+  style,
+}: {
+  children?: ReactNode;
+  style?: CSSProperties;
+}) {
+  const theme = useHostTheme();
+  const c = mapChrome(theme);
+  return <div style={mergeStyle(atlasSideRailStyle(c.panelBorder), style)}>{children}</div>;
+}
+
 /** 大屏分段轨道：图层/因子共用，弱化糖果胶囊感 */
 export function ScreenSegTrack({
   children,
@@ -473,19 +505,23 @@ export function MapSvgFrame({
       style={{
         display: "block",
         background: c.mapBg,
-        borderRadius: fill ? 0 : 8,
-        border: fill ? "none" : `1px solid ${c.panelBorder}`,
+        borderRadius: 0,
+        border: "none",
         ...(fill
           ? {
               position: "absolute",
               inset: 0,
               width: "100%",
               height: "100%",
+              background: c.mapBg,
             }
-          : null),
+          : {
+              aspectRatio: `${width} / ${height}`,
+              background: "transparent",
+            }),
       }}
     >
-      <rect width={width} height={height} fill={c.mapBg} />
+      <rect width={width} height={height} fill={fill ? c.mapBg : c.ocean} />
       {children}
     </svg>
   );
@@ -640,12 +676,8 @@ export function MapSideLegend({
             : {
                 flex: "0 0 auto",
                 width: "100%",
-                background: c.panelBg,
-                border: `1px solid ${c.panelBorder}`,
-                borderRadius: 4,
-                padding: "12px 14px",
-                maxHeight: 280,
-                overflow: "auto",
+                padding: "8px 0 0",
+                overflow: "visible",
               }
         }
       >
