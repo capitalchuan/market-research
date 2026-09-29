@@ -6,11 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:ev": "vite build --config vite.config.ev.ts && node -e \"const fs=require('fs');const p='dist-ev/index-ev.html';const t='dist-ev/index.html';if(fs.existsSync(p))fs.renameSync(p,t);fs.writeFileSync('dist-ev/.nojekyll','');\"",
     "typecheck": "tsc -b",
     "lint": "oxlint",
     "preview": "vite preview",
+    "preview:ev": "vite preview --outDir dist-ev",
+    "fetch:store-listing": "python3 scripts/fetch_store_listing_status.py",
     "deploy": "npm run build && gh-pages -d dist -b gh-pages -r https://github.com/capitalchuan/market-research.git -m \"Deploy web build to gh-pages\"",
-    "deploy:site": "npm run deploy"
+    "deploy:site": "npm run deploy",
+    "deploy:ev": "npm run build:ev && gh-pages -d dist-ev -b gh-pages -e ev -r https://github.com/capitalchuan/market-research.git -m \"Deploy EV asset portfolio to gh-pages/ev\""
   },
   "dependencies": {
     "react": "^19.2.8",

@@ -61,10 +61,17 @@ const STORE_RANK_SORT_LABEL: Record<StoreRankSortMode, string> = {
   desc: "商店榜名次 · 降序",
 };
 
-export function storeRankSortOptions(): { value: StoreRankSortMode; label: string }[] {
-  return (Object.keys(STORE_RANK_SORT_LABEL) as StoreRankSortMode[]).map((k) => ({
+const STORE_RANK_SORT_LABEL_EN: Record<StoreRankSortMode, string> = {
+  off: "Default order",
+  asc: "Store rank · ascending (#1 first)",
+  desc: "Store rank · descending",
+};
+
+export function storeRankSortOptions(lang: "zh" | "en" = "zh"): { value: StoreRankSortMode; label: string }[] {
+  const labels = lang === "en" ? STORE_RANK_SORT_LABEL_EN : STORE_RANK_SORT_LABEL;
+  return (Object.keys(labels) as StoreRankSortMode[]).map((k) => ({
     value: k,
-    label: STORE_RANK_SORT_LABEL[k],
+    label: labels[k],
   }));
 }
 

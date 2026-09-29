@@ -40,6 +40,8 @@ import { heatColorWarm } from "./heatMapTheme";
 import { formatCountryLanguageLine } from "./data/countryLanguage";
 import { PartnerHoldingsSection, useGuestMask } from "./PartnerHoldingsSection";
 import { SENSITIVE_MASK } from "./authAccess";
+import { useCanvasState } from "./shims/cursor-canvas";
+import { countryLabelUi, detectBrowserUiLang, type UiLang } from "./uiI18n";
 
 type CountryProps = { name?: string };
 
@@ -56,6 +58,7 @@ const N3_TO_A2: Record<string, string> = {
   "710": "ZA",
   "144": "LK",
   "288": "GH",
+  "324": "GN",
   "586": "PK",
   "566": "NG",
   "404": "KE",
@@ -138,15 +141,21 @@ function DetailPanel({
   onClose: () => void;
   overlay?: boolean;
 }) {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const invested = INVESTED_BY_CODE[code];
   const zoom = COUNTRY_ZOOM_BY_CODE[code];
   const nbfc = summarizeNbfcForCountry(code);
-  const name = COUNTRY_LABEL_ZH[code] ?? invested?.country_zh ?? code;
+  const name = countryLabelUi(code, uiLang, COUNTRY_LABEL_ZH[code] ?? invested?.country_zh ?? code);
   const chartUrl = zoom?.source_url || playFinanceChartUrl(code);
-  const langLine = formatCountryLanguageLine(code);
+  const langLine = formatCountryLanguageLine(code, uiLang);
   const baseSub = invested
-    ? "已投国家 · 面填=市场放贷 / 圆点大小=已投在贷"
-    : "市场放贷详情";
+    ? en
+      ? "Invested · fill = market lending / dots = invested outstanding"
+      : "已投国家 · 面填=市场放贷 / 圆点大小=已投在贷"
+    : en
+      ? "Market lending detail"
+      : "市场放贷详情";
 
   return (
     <MapDetailShell
@@ -157,30 +166,37 @@ function DetailPanel({
     >
       <PartnerHoldingsSection invested={invested} dense={overlay} />
 
-      <MapSection title="市场放贷">
+      <MapSection title={en ? "Market lending" : "市场放贷"}>
         {nbfc ? (
           <>
             <MapKV
-              k="放贷总量(USD)"
+              k={en ? "Lending total (USD)" : "放贷总量(USD)"}
               v={
                 nbfc.lendingUsdBn > 0
-                  ? `约 USD ${nbfc.lendingUsdBn >= 10 ? nbfc.lendingUsdBn.toFixed(1) : nbfc.lendingUsdBn.toFixed(2)} bn`
+                  ? `${en ? "~" : "约 "}USD ${nbfc.lendingUsdBn >= 10 ? nbfc.lendingUsdBn.toFixed(1) : nbfc.lendingUsdBn.toFixed(2)} bn`
                   : "—"
               }
             />
-            <MapKV k="机构数量口径" v={nbfc.nbfcCountDisplay} />
+            <MapKV k={en ? "Institution count" : "机构数量口径"} v={nbfc.nbfcCountDisplay} />
           </>
         ) : (
-          <MapMuted>暂无 NBFC 放贷总量</MapMuted>
+          <MapMuted>{en ? "No NBFC lending total" : "暂无 NBFC 放贷总量"}</MapMuted>
         )}
       </MapSection>
 
       {zoom ? (
-        <MapSection title="人口 / Play Finance">
-          <MapKV k="人口（约）" v={`${zoom.population_millions.toLocaleString()} 百万`} />
+        <MapSection title={en ? "Population / Play Finance" : "人口 / Play Finance"}>
+          <MapKV
+            k={en ? "Population (approx.)" : "人口（约）"}
+            v={
+              en
+                ? `${zoom.population_millions.toLocaleString()} m`
+                : `${zoom.population_millions.toLocaleString()} 百万`
+            }
+          />
           {zoom.available !== false ? (
             <div style={{ fontSize: 12, marginTop: 4 }}>
-              <MapExtLink href={chartUrl}>Play Finance 免费榜</MapExtLink>
+              <MapExtLink href={chartUrl}>{en ? "Play Finance free chart" : "Play Finance 免费榜"}</MapExtLink>
             </div>
           ) : null}
         </MapSection>
@@ -220,6 +236,8 @@ export function CombinedHeatGlobe({
   const bottomLegend = fill || legendPlacement === "bottom";
   const place: MapLegendPlacement = bottomLegend ? "bottom" : "side";
   const { guest, maskUsd } = useGuestMask();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const marketOn = showMarket;
   const investedOn = showInvested && !showEco;
   const ecoOn = Boolean(showEco && ecoCounts);
@@ -624,13 +642,15 @@ export function CombinedHeatGlobe({
               maxWidth: "48%",
             }}
           >
-            {/* 详情浮层已有「返回全球」；此处只标已放大，避免双按钮叠字 */}
+            {/* Detail shell already has Back to world; chip only to avoid double CTA */}
             <MapChip>
-              已放大：{COUNTRY_LABEL_ZH[focus] ?? INVESTED_BY_CODE[focus]?.country_zh ?? focus}
+              {en
+                ? `Zoomed: ${countryLabelUi(focus, uiLang, COUNTRY_LABEL_ZH[focus] ?? INVESTED_BY_CODE[focus]?.country_zh ?? focus)}`
+                : `已放大：${COUNTRY_LABEL_ZH[focus] ?? INVESTED_BY_CODE[focus]?.country_zh ?? focus}`}
             </MapChip>
             {!bottomLegend ? (
               <Button variant="secondary" size="sm" onClick={() => setFocus(null)}>
-                返回全球
+                {en ? "Back to world" : "返回全球"}
               </Button>
             ) : null}
           </div>
@@ -670,7 +690,7 @@ export function CombinedHeatGlobe({
                   setHover(
                     hoverPayload(
                       a2,
-                      COUNTRY_LABEL_ZH[a2] ?? inv?.country_zh ?? f.properties?.name ?? a2,
+                      countryLabelUi(a2, uiLang, COUNTRY_LABEL_ZH[a2] ?? inv?.country_zh ?? f.properties?.name ?? a2),
                       loc.x,
                       loc.y,
                     ),
@@ -684,7 +704,7 @@ export function CombinedHeatGlobe({
                   setHover(
                     hoverPayload(
                       a2,
-                      COUNTRY_LABEL_ZH[a2] ?? inv?.country_zh ?? f.properties?.name ?? a2,
+                      countryLabelUi(a2, uiLang, COUNTRY_LABEL_ZH[a2] ?? inv?.country_zh ?? f.properties?.name ?? a2),
                       loc.x,
                       loc.y,
                     ),
@@ -799,7 +819,7 @@ export function CombinedHeatGlobe({
                   setHover(
                     hoverPayload(
                       "HK",
-                      COUNTRY_LABEL_ZH.HK ?? inv?.country_zh ?? "中国香港",
+                      countryLabelUi("HK", uiLang, COUNTRY_LABEL_ZH.HK ?? inv?.country_zh ?? "中国香港"),
                       loc.x,
                       loc.y,
                     ),
@@ -834,7 +854,7 @@ export function CombinedHeatGlobe({
                     fontWeight={600}
                     style={{ pointerEvents: "none" }}
                   >
-                    中国香港
+                    {countryLabelUi("HK", uiLang, COUNTRY_LABEL_ZH.HK ?? "中国香港")}
                   </text>
                 ) : null}
               </g>
@@ -853,19 +873,25 @@ export function CombinedHeatGlobe({
             <div style={{ fontWeight: 600 }}>{hover.name}</div>
             {marketOn ? (
               hover.lendingBn > 0 ? (
-                <div style={{ color: c.removed }}>市场放贷 ≈ USD {hover.lendingBn.toFixed(2)} bn</div>
+                <div style={{ color: c.removed }}>
+                  {en ? "Market lending ≈" : "市场放贷 ≈"} USD {hover.lendingBn.toFixed(2)} bn
+                </div>
               ) : (
-                <div style={{ color: c.textTertiary }}>市场放贷总量暂无</div>
+                <div style={{ color: c.textTertiary }}>
+                  {en ? "No market lending total" : "市场放贷总量暂无"}
+                </div>
               )
             ) : null}
             {investedOn && hover.invested ? (
               <div style={{ color: c.added }}>
-                展业在贷 {maskUsd(hover.outstandingUsd)} · 基金 {maskUsd(hover.investmentUsd)}
+                {en ? "Invested outstanding" : "展业在贷"} {maskUsd(hover.outstandingUsd)} ·{" "}
+                {en ? "Fund" : "基金"} {maskUsd(hover.investmentUsd)}
               </div>
             ) : null}
             {ecoOn && hover.ecoCount > 0 ? (
               <div style={{ color: c.added }}>
-                {ecoLabel ?? "生态机构"} · {hover.ecoCount} 家样本
+                {ecoLabel ?? (en ? "Eco institutions" : "生态机构")} · {hover.ecoCount}{" "}
+                {en ? "samples" : "家样本"}
               </div>
             ) : null}
           </MapTooltip>
@@ -883,14 +909,24 @@ export function CombinedHeatGlobe({
         <MapSideLegend
           title={
             marketEcoOn
-              ? `市场 × ${ecoLabel ?? "其他机构"}`
+              ? en
+                ? `Market × ${ecoLabel ?? "other institutions"}`
+                : `市场 × ${ecoLabel ?? "其他机构"}`
               : ecoOnly
-                ? `${ecoLabel ?? "其他机构"}分布`
+                ? en
+                  ? `${ecoLabel ?? "Other institutions"} map`
+                  : `${ecoLabel ?? "其他机构"}分布`
                 : bothOn
-                  ? "市场 × 展业"
+                  ? en
+                    ? "Market × invested"
+                    : "市场 × 展业"
                   : marketOn
-                    ? "市场图例"
-                    : "展业图例"
+                    ? en
+                      ? "Market legend"
+                      : "市场图例"
+                    : en
+                      ? "Invested legend"
+                      : "展业图例"
           }
           placement={place}
         >
@@ -904,21 +940,29 @@ export function CombinedHeatGlobe({
           >
             {marketOn ? (
               <SteppedLegend
-                label="点阵 · 非银/等效放贷（琥珀点色/点径；非 AUM）"
+                label={
+                  en
+                    ? "Dots · NBFC/peer lending (amber size; not AUM)"
+                    : "点阵 · 非银/等效放贷（琥珀点色/点径；非 AUM）"
+                }
                 kind="warm"
                 compact={bottomLegend}
               />
             ) : null}
             {investedOn ? (
               <SteppedLegend
-                label="点阵 · 展业在贷（蓝点色/点径）"
+                label={en ? "Dots · invested outstanding (blue)" : "点阵 · 展业在贷（蓝点色/点径）"}
                 kind="accent"
                 compact={bottomLegend}
               />
             ) : null}
             {ecoOn ? (
               <SteppedLegend
-                label={`点阵 · ${ecoLabel ?? "其他机构"}样本数`}
+                label={
+                  en
+                    ? `Dots · ${ecoLabel ?? "other institutions"} sample count`
+                    : `点阵 · ${ecoLabel ?? "其他机构"}样本数`
+                }
                 kind="accent"
                 compact={bottomLegend}
               />
@@ -926,19 +970,21 @@ export function CombinedHeatGlobe({
           </div>
           {ecoOn ? (
             <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 8 }}>
-              浅底透图 · {ecoLabel ?? "其他机构"}覆盖 {ecoRanked.length} 国 · 样本{" "}
-              {ecoRanked.reduce((s, [, n]) => s + n, 0)} 家 · 点击横条放大
+              {en
+                ? `Light basemap · ${ecoLabel ?? "other institutions"} in ${ecoRanked.length} countries · ${ecoRanked.reduce((s, [, n]) => s + n, 0)} samples · click bars to zoom`
+                : `浅底透图 · ${ecoLabel ?? "其他机构"}覆盖 ${ecoRanked.length} 国 · 样本 ${ecoRanked.reduce((s, [, n]) => s + n, 0)} 家 · 点击横条放大`}
             </div>
           ) : investedOn ? (
             <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 8, lineHeight: 1.45 }}>
-              浅底透图 · 展业 {investedRanked.length} 国 · 在贷热力合计{" "}
-              {guest ? SENSITIVE_MASK : formatUsdCompact(TOTAL_OUTSTANDING_HEAT_USD)} · 基金合计{" "}
-              {guest ? SENSITIVE_MASK : formatUsdCompact(PRODUCER_HOLDINGS.total_investment_usd)} ·
-              点击点/横条放大
+              {en
+                ? `Light basemap · invested ${investedRanked.length} countries · heat outstanding ${guest ? SENSITIVE_MASK : formatUsdCompact(TOTAL_OUTSTANDING_HEAT_USD)} · fund total ${guest ? SENSITIVE_MASK : formatUsdCompact(PRODUCER_HOLDINGS.total_investment_usd)} · click dots/bars to zoom`
+                : `浅底透图 · 展业 ${investedRanked.length} 国 · 在贷热力合计 ${guest ? SENSITIVE_MASK : formatUsdCompact(TOTAL_OUTSTANDING_HEAT_USD)} · 基金合计 ${guest ? SENSITIVE_MASK : formatUsdCompact(PRODUCER_HOLDINGS.total_investment_usd)} · 点击点/横条放大`}
             </div>
           ) : (
             <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 8 }}>
-              浅底透图 · 市场放贷色点 · 点击点/横条可放大
+              {en
+                ? "Light basemap · market lending dots · click dots/bars to zoom"
+                : "浅底透图 · 市场放贷色点 · 点击点/横条可放大"}
             </div>
           )}
           <RankBarList
@@ -946,38 +992,60 @@ export function CombinedHeatGlobe({
             maxVisible={bottomLegend ? 20 : undefined}
             scaleHint={
               ecoOn
-                ? `条长 ∝ ${ecoLabel ?? "其他机构"}样本数`
+                ? en
+                  ? `Bar ∝ ${ecoLabel ?? "other institutions"} samples`
+                  : `条长 ∝ ${ecoLabel ?? "其他机构"}样本数`
                 : investedOn
-                  ? "条长 ∝ 已投生产商在贷（非本基金本金；缺数国用基金投资额近似）"
-                  : "条长 ∝ 市场放贷 USD bn（相对列表最大值）"
+                  ? en
+                    ? "Bar ∝ invested producer outstanding (≠ fund principal; fund used if missing)"
+                    : "条长 ∝ 已投生产商在贷（非本基金本金；缺数国用基金投资额近似）"
+                  : en
+                    ? "Bar ∝ market lending USD bn (vs list max)"
+                    : "条长 ∝ 市场放贷 USD bn（相对列表最大值）"
             }
             onSelect={(code) => setFocus(code)}
             items={
               ecoOn
                 ? ecoRanked.map(([code, n]) => ({
                     key: code,
-                    label: COUNTRY_LABEL_ZH[code] ?? code,
+                    label: countryLabelUi(code, uiLang, COUNTRY_LABEL_ZH[code] ?? code),
                     value: n,
-                    valueLabel: `${n} 家`,
+                    valueLabel: en ? `${n}` : `${n} 家`,
                     secondaryLabel:
                       marketEcoOn && lending[code]
-                        ? `市场约 USD ${lending[code].toFixed(1)} bn`
+                        ? en
+                          ? `Market ~ USD ${lending[code].toFixed(1)} bn`
+                          : `市场约 USD ${lending[code].toFixed(1)} bn`
                         : undefined,
                   }))
                 : investedOn
                   ? investedRanked.map((row) => {
                       const fundBit = guest
-                        ? `基金 ${SENSITIVE_MASK}`
-                        : `基金 ${formatUsdCompact(row.investment_usd)}`;
+                        ? en
+                          ? `Fund ${SENSITIVE_MASK}`
+                          : `基金 ${SENSITIVE_MASK}`
+                        : en
+                          ? `Fund ${formatUsdCompact(row.investment_usd)}`
+                          : `基金 ${formatUsdCompact(row.investment_usd)}`;
                       const proxyBit =
-                        !guest && row.outstanding_known === false ? "在贷暂用基金近似" : null;
+                        !guest && row.outstanding_known === false
+                          ? en
+                            ? "Outstanding ≈ fund"
+                            : "在贷暂用基金近似"
+                          : null;
                       const mkt =
                         bothOn && lending[row.country_code]
-                          ? `市场约 USD ${lending[row.country_code].toFixed(1)} bn`
+                          ? en
+                            ? `Market ~ USD ${lending[row.country_code].toFixed(1)} bn`
+                            : `市场约 USD ${lending[row.country_code].toFixed(1)} bn`
                           : null;
                       return {
                         key: row.country_code,
-                        label: COUNTRY_LABEL_ZH[row.country_code] ?? row.country_zh,
+                        label: countryLabelUi(
+                          row.country_code,
+                          uiLang,
+                          COUNTRY_LABEL_ZH[row.country_code] ?? row.country_zh,
+                        ),
                         value: row.outstanding_usd_for_heat,
                         valueLabel: guest
                           ? SENSITIVE_MASK
@@ -990,7 +1058,7 @@ export function CombinedHeatGlobe({
                       .sort((a, b) => b[1] - a[1])
                       .map(([code, bn]) => ({
                         key: code,
-                        label: COUNTRY_LABEL_ZH[code] ?? code,
+                        label: countryLabelUi(code, uiLang, COUNTRY_LABEL_ZH[code] ?? code),
                         value: bn,
                         valueLabel: `USD ${bn >= 10 ? bn.toFixed(1) : bn.toFixed(2)} bn`,
                       }))
@@ -998,20 +1066,32 @@ export function CombinedHeatGlobe({
           />
           {(investedOn || ecoOn) && (INVESTED_BY_CODE.HK || (ecoMap.HK ?? 0) > 0) && !mapCodes.has("HK") ? (
             <div style={{ marginTop: 10, fontSize: 11, color: c.textSecondary, lineHeight: 1.5 }}>
-              中国香港在底图无独立面，地图上以锚点标出；下表含香港一行，可点击放大。
+              {en
+                ? "Hong Kong has no separate polygon on this basemap; shown as an anchor. Listed below — click to zoom."
+                : "中国香港在底图无独立面，地图上以锚点标出；下表含香港一行，可点击放大。"}
             </div>
           ) : null}
           <div style={{ marginTop: 12 }}>
             <MapMuted>
               {marketEcoOn
-                ? `琥珀点=市场放贷；蓝点=${ecoLabel ?? "其他机构"}样本数。切换图层不重载底图。`
+                ? en
+                  ? `Amber = market lending; blue = ${ecoLabel ?? "other institutions"} samples. Layer switch keeps basemap.`
+                  : `琥珀点=市场放贷；蓝点=${ecoLabel ?? "其他机构"}样本数。切换图层不重载底图。`
                 : bothOn
-                  ? "琥珀点=市场放贷；蓝点=已投生产商在贷（≠基金本金）。切换图层不重载底图。"
+                  ? en
+                    ? "Amber = market lending; blue = invested outstanding (≠ fund principal). Layer switch keeps basemap."
+                    : "琥珀点=市场放贷；蓝点=已投生产商在贷（≠基金本金）。切换图层不重载底图。"
                   : marketOn
-                    ? "琥珀点色/点径=市场放贷强弱。"
+                    ? en
+                      ? "Amber size = market lending strength."
+                      : "琥珀点色/点径=市场放贷强弱。"
                     : ecoOnly
-                      ? `蓝点色/点径=${ecoLabel ?? "其他机构"}样本数强弱。`
-                      : "蓝点色/点径=已投生产商在贷强弱（≠基金本金）。"}
+                      ? en
+                        ? `Blue size = ${ecoLabel ?? "other institutions"} sample strength.`
+                        : `蓝点色/点径=${ecoLabel ?? "其他机构"}样本数强弱。`
+                      : en
+                        ? "Blue size = invested outstanding strength (≠ fund principal)."
+                        : "蓝点色/点径=已投生产商在贷强弱（≠基金本金）。"}
             </MapMuted>
           </div>
         </MapSideLegend>

@@ -1,3 +1,5 @@
+import type { UiLang } from "../uiI18n";
+
 /**
  * 国别语言区（现金贷/平台金融展业粗分）。
  * zone = 业务语言区；languages = 官方/通行语；productHint = 产品文案/催收常用语提示。
@@ -10,6 +12,174 @@ export type CountryLanguageInfo = {
   /** 产品/客服常用语提示（可选） */
   productHint?: string;
 };
+
+/** 语言区中文 → EN（筛选芯片与地图细标共用） */
+const ZONE_EN: Record<string, string> = {
+  汉语区: "Chinese-speaking",
+  "汉语/英语区": "Chinese / English",
+  "汉语/葡语区": "Chinese / Portuguese",
+  日语区: "Japanese-speaking",
+  韩语区: "Korean-speaking",
+  蒙古语区: "Mongolian-speaking",
+  印尼语区: "Indonesian-speaking",
+  越南语区: "Vietnamese-speaking",
+  "马来语/英语区": "Malay / English",
+  泰语区: "Thai-speaking",
+  "他加禄/英语区": "Tagalog / English",
+  "英语/多语区": "English / multilingual",
+  "印地语/英语区": "Hindi / English",
+  孟加拉语区: "Bengali-speaking",
+  "乌尔都语/英语区": "Urdu / English",
+  "僧伽罗/泰米尔区": "Sinhala / Tamil",
+  "突厥语/俄语区": "Turkic / Russian",
+  "波斯语族/俄语区": "Persianate / Russian",
+  突厥语区: "Turkic-speaking",
+  西语区: "Spanish-speaking",
+  葡语区: "Portuguese-speaking",
+  阿语区: "Arabic-speaking",
+  "阿语/法语区": "Arabic / French",
+  "阿语/英语区": "Arabic / English",
+  希伯来语区: "Hebrew-speaking",
+  土耳其语区: "Turkish-speaking",
+  波斯语区: "Persian-speaking",
+  英语区: "English-speaking",
+  "斯瓦希里/英语区": "Swahili / English",
+  "英语/法语区": "English / French",
+  阿姆哈拉语区: "Amharic-speaking",
+  法语区: "French-speaking",
+  "法语/英语区": "French / English",
+  "马达加斯加语/法语区": "Malagasy / French",
+  "德语区": "German-speaking",
+  荷兰语区: "Dutch-speaking",
+  意大利语区: "Italian-speaking",
+  瑞典语区: "Swedish-speaking",
+  波兰语区: "Polish-speaking",
+  俄语区: "Russian-speaking",
+};
+
+const LANG_LINE_PHRASE_EN: readonly [string, string][] = [
+  ["简体中文（官方）", "Simplified Chinese (official)"],
+  ["繁体中文（官方）", "Traditional Chinese (official)"],
+  ["繁体中文、英语（官方）", "Traditional Chinese, English (official)"],
+  ["繁体中文、葡萄牙语（官方）", "Traditional Chinese, Portuguese (official)"],
+  ["日语（官方）", "Japanese (official)"],
+  ["韩语（官方）", "Korean (official)"],
+  ["蒙古语（官方）；俄语通行", "Mongolian (official); Russian widely used"],
+  ["印尼语（官方）；英语商务", "Indonesian (official); English in business"],
+  ["越南语（官方）", "Vietnamese (official)"],
+  ["马来语、英语（官方）；华语通行", "Malay, English (official); Chinese widely used"],
+  ["泰语（官方）", "Thai (official)"],
+  ["菲律宾语、英语（官方）", "Filipino, English (official)"],
+  ["英语、马来语、华语、泰米尔语（官方）", "English, Malay, Chinese, Tamil (official)"],
+  ["印地语、英语（联邦）；多邦官方语", "Hindi, English (federal); state languages"],
+  ["孟加拉语（官方）；英语商务", "Bengali (official); English in business"],
+  ["乌尔都语、英语（官方）", "Urdu, English (official)"],
+  ["僧伽罗语、泰米尔语（官方）；英语通行", "Sinhala, Tamil (official); English widely used"],
+  ["哈萨克语、俄语（官方）", "Kazakh, Russian (official)"],
+  ["乌兹别克语（官方）；俄语通行", "Uzbek (official); Russian widely used"],
+  ["吉尔吉斯语、俄语（官方）", "Kyrgyz, Russian (official)"],
+  ["塔吉克语（官方）；俄语通行", "Tajik (official); Russian widely used"],
+  ["土库曼语（官方）；俄语通行", "Turkmen (official); Russian widely used"],
+  ["西班牙语（官方）", "Spanish (official)"],
+  ["葡萄牙语（官方）", "Portuguese (official)"],
+  ["西班牙语、克丘亚语等（官方）", "Spanish, Quechua etc. (official)"],
+  ["阿拉伯语（官方）；英语商务", "Arabic (official); English in business"],
+  ["阿拉伯语、柏柏尔语（官方）；法语通行", "Arabic, Berber (official); French widely used"],
+  ["阿拉伯语（官方）；法语通行", "Arabic (official); French widely used"],
+  ["阿拉伯语（官方）", "Arabic (official)"],
+  ["阿拉伯语、英语（官方）", "Arabic, English (official)"],
+  ["阿拉伯语（官方）；英语商务通行", "Arabic (official); English in business"],
+  ["阿拉伯语（官方）；英语通行", "Arabic (official); English widely used"],
+  ["阿拉伯语（官方）；法语、英语通行", "Arabic (official); French & English widely used"],
+  ["阿拉伯语、库尔德语（官方）", "Arabic, Kurdish (official)"],
+  ["希伯来语（官方）；阿拉伯语、英语通行", "Hebrew (official); Arabic & English widely used"],
+  ["土耳其语（官方）", "Turkish (official)"],
+  ["波斯语（官方）", "Persian (official)"],
+  ["英语（官方）；豪萨/约鲁巴/伊博等", "English (official); Hausa/Yoruba/Igbo etc."],
+  ["斯瓦希里语、英语（官方）", "Swahili, English (official)"],
+  ["英语（官方）", "English (official)"],
+  ["英语、南非荷兰语等11种官方语", "English, Afrikaans + 11 official languages"],
+  ["英语（官方）；斯瓦希里通行", "English (official); Swahili widely used"],
+  ["基尼阿卢旺达语、英语、法语（官方）", "Kinyarwanda, English, French (official)"],
+  ["阿姆哈拉语（联邦工作语）；多民族语", "Amharic (federal working); multi-ethnic"],
+  ["法语（官方）", "French (official)"],
+  ["法语（官方）；沃洛夫通行", "French (official); Wolof widely used"],
+  ["法语、英语（官方）", "French, English (official)"],
+  ["法语（官方工作语）；多民族语", "French (official working); multi-ethnic"],
+  ["法语（官方）；林加拉/斯瓦希里等", "French (official); Lingala/Swahili etc."],
+  ["英语（事实官方）；西语通行", "English (de facto); Spanish widely used"],
+  ["英语、法语（官方）", "English, French (official)"],
+  ["德语（官方）", "German (official)"],
+  ["荷兰语（官方）；英语高普及", "Dutch (official); high English proficiency"],
+  ["意大利语（官方）", "Italian (official)"],
+  ["瑞典语（官方）；英语高普及", "Swedish (official); high English proficiency"],
+  ["波兰语（官方）", "Polish (official)"],
+  ["爱尔兰语、英语（官方）", "Irish, English (official)"],
+  ["俄语（官方）", "Russian (official)"],
+  ["英语（官方）；法语、克里奥尔通行", "English (official); French & Creole widely used"],
+  ["马达加斯加语、法语（官方）", "Malagasy, French (official)"],
+  ["英语（官方）；茨瓦纳语通行", "English (official); Tswana widely used"],
+  ["英语等16种官方语", "English + 16 official languages"],
+  ["（官方）", " (official)"],
+];
+
+const PRODUCT_HINT_EN: Record<string, string> = {
+  简中为主: "Simplified Chinese primary",
+  "繁中+英语": "Trad. Chinese + English",
+  繁中为主: "Trad. Chinese primary",
+  繁中: "Trad. Chinese",
+  日语: "Japanese",
+  韩语: "Korean",
+  "蒙古语+俄语": "Mongolian + Russian",
+  印尼语为主: "Indonesian primary",
+  越南语: "Vietnamese",
+  "马来语+英语": "Malay + English",
+  泰语: "Thai",
+  "英语+他加禄": "English + Tagalog",
+  英语为主: "English primary",
+  "英语+印地/本地语": "English + Hindi/local",
+  孟加拉语: "Bengali",
+  "乌尔都语+英语": "Urdu + English",
+  "僧伽罗/泰米尔+英语": "Sinhala/Tamil + English",
+  "俄语+哈萨克语": "Russian + Kazakh",
+  "乌兹别克语+俄语": "Uzbek + Russian",
+  "俄语+吉尔吉斯语": "Russian + Kyrgyz",
+  "塔吉克语+俄语": "Tajik + Russian",
+  "土库曼语+俄语": "Turkmen + Russian",
+  西语: "Spanish",
+  西语为主: "Spanish primary",
+  葡语: "Portuguese",
+  阿语: "Arabic",
+  "阿语+法语": "Arabic + French",
+  "阿语+英语": "Arabic + English",
+  "阿语+法/英": "Arabic + FR/EN",
+  "希伯来语+英语": "Hebrew + English",
+  土耳其语: "Turkish",
+  波斯语: "Persian",
+  "斯瓦希里+英语": "Swahili + English",
+  英语: "English",
+  "英语+本地语": "English + local",
+  "阿姆哈拉语+英语": "Amharic + English",
+  法语: "French",
+  "法语+英语": "French + English",
+  "英语+法语": "English + French",
+  "马达加斯加语+法语": "Malagasy + French",
+  德语: "German",
+  "荷兰语+英语": "Dutch + English",
+  意大利语: "Italian",
+  "瑞典语+英语": "Swedish + English",
+  波兰语: "Polish",
+  俄语: "Russian",
+};
+
+function localizeLanguagesLine(languages: string, lang: UiLang): string {
+  if (lang !== "en") return languages;
+  let out = languages;
+  for (const [zh, en] of LANG_LINE_PHRASE_EN) {
+    if (out.includes(zh)) out = out.split(zh).join(en);
+  }
+  return out;
+}
 
 export const COUNTRY_LANGUAGE: Record<string, CountryLanguageInfo> = {
   // —— 东亚 ——
@@ -97,6 +267,7 @@ export const COUNTRY_LANGUAGE: Record<string, CountryLanguageInfo> = {
   ML: { zone: "法语区", languages: "法语（官方工作语）；多民族语", productHint: "法语" },
   CD: { zone: "法语区", languages: "法语（官方）；林加拉/斯瓦希里等", productHint: "法语" },
   GA: { zone: "法语区", languages: "法语（官方）", productHint: "法语" },
+  GN: { zone: "法语区", languages: "法语（官方）；马林凯/苏苏等民族语", productHint: "法语" },
 
   // —— 欧美 ——
   US: { zone: "英语区", languages: "英语（事实官方）；西语通行", productHint: "英语" },
@@ -119,15 +290,27 @@ export function getCountryLanguage(code: string): CountryLanguageInfo | undefine
 }
 
 /** 卡片/地图一行展示：阿语区 · 阿拉伯语（官方） */
-export function formatCountryLanguageLine(code: string): string | undefined {
+export function formatCountryLanguageLine(code: string, lang: UiLang = "zh"): string | undefined {
   const info = getCountryLanguage(code);
   if (!info) return undefined;
-  return `${info.zone} · ${info.languages}`;
+  const zone = lang === "en" ? ZONE_EN[info.zone] || info.zone : info.zone;
+  const languages = localizeLanguagesLine(info.languages, lang);
+  return `${zone} · ${languages}`;
 }
 
 /** 短标：仅语言区 */
-export function countryLanguageZone(code: string): string | undefined {
-  return getCountryLanguage(code)?.zone;
+export function countryLanguageZone(code: string, lang: UiLang = "zh"): string | undefined {
+  const zone = getCountryLanguage(code)?.zone;
+  if (!zone) return undefined;
+  if (lang !== "en") return zone;
+  return ZONE_EN[zone] || zone;
+}
+
+export function countryProductHint(code: string, lang: UiLang = "zh"): string | undefined {
+  const hint = getCountryLanguage(code)?.productHint;
+  if (!hint) return undefined;
+  if (lang !== "en") return hint;
+  return PRODUCT_HINT_EN[hint] || hint;
 }
 
 /** 筛选芯片顺序：多国同区优先，其余按名称 */
@@ -142,9 +325,15 @@ export const LANGUAGE_ZONE_ORDER: string[] = (() => {
   });
 })();
 
-/** 某语言区覆盖的 ISO 国码 */
+/** 某语言区覆盖的 ISO 国码（zone 为中文键，与 COUNTRY_LANGUAGE.zone 一致） */
 export function countriesInLanguageZone(zone: string): string[] {
   return Object.entries(COUNTRY_LANGUAGE)
     .filter(([, info]) => info.zone === zone)
     .map(([code]) => code);
+}
+
+/** 语言区展示名（筛选芯片） */
+export function languageZoneLabelUi(zoneZh: string, lang: UiLang): string {
+  if (lang !== "en") return zoneZh;
+  return ZONE_EN[zoneZh] || zoneZh;
 }

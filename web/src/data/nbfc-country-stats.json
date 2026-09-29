@@ -406,6 +406,25 @@
       "loan_book_usd_bn": 0.36
     },
     {
+      "country_code": "GN",
+      "country_name_zh": "几内亚",
+      "nbfc_equivalent_name": "非银消费信贷/小贷（待监管名录核验）",
+      "regulator": "BCRG（几内亚央行）",
+      "source_url": "https://www.bcrg-guinee.org/",
+      "source_title": "Banque Centrale de la République de Guinée",
+      "as_of": "2026-08",
+      "nbfc_count": "—",
+      "loan_book_total": "—",
+      "loan_book_usd": "—",
+      "loan_book_usd_bn": null,
+      "borrowers_covered": "—",
+      "avg_loan_size": "—",
+      "default_rate": "—",
+      "other_info": "TE宏观已落库；NBFC/等效放贷存量待央行或协会名录续采",
+      "data_quality": "not_found",
+      "notes": "地图可点选国别宏观；放贷热力待口径"
+    },
+    {
       "country_code": "MN",
       "country_name_zh": "外蒙古",
       "nbfc_equivalent_name": "非银行金融机构",

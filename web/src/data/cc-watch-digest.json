@@ -1,13 +1,13 @@
 {
   "source": "展业国 + 点点热门定向扫描",
-  "generatedAt": "2026-08-17 05:13",
-  "displayDate": "2026-08-17",
+  "generatedAt": "2026-08-21 00:56",
+  "displayDate": "2026-08-21",
   "note": "Google RSS 不可达，已用区域财经 RSS 回退并 merge 人工条目。",
   "stats": {
     "marketCount": 14,
-    "itemTotal": 34,
+    "itemTotal": 33,
     "rssHits": 0,
-    "altRssHits": 21
+    "altRssHits": 34
   },
   "markets": [
     {
@@ -36,7 +36,8 @@
           "when": "",
           "what": "把数字借贷规则整合进统一框架，覆盖银行与 NBFC 等受监管主体。",
           "how": "",
-          "result": "线上现金贷必须挂在持牌主体上，流量方不能“自己放、自己催”绕开监管。"
+          "result": "线上现金贷必须挂在持牌主体上，流量方不能“自己放、自己催”绕开监管。",
+          "titleEn": "RBI consolidates digital-lending rules"
         },
         {
           "title": "NBFC 可将符合条件的违约担保计入拨备",
@@ -48,7 +49,8 @@
           "when": "",
           "what": "允许 NBFC 将符合条件的违约损失担保计入预期信用损失拨备。",
           "how": "担保须是贷款合同内生安排，不能随意外挂。",
-          "result": "合作结构会影响资本占用；谈流量分润时要把担保与拨备口径谈清楚。"
+          "result": "合作结构会影响资本占用；谈流量分润时要把担保与拨备口径谈清楚。",
+          "titleEn": "NBFCs may count eligible default guarantees toward provisions"
         },
         {
           "title": "RBI 征求意见：拟禁止 NBFC 提供循环授信，仅允许期限贷款（信用卡除外）",
@@ -60,7 +62,8 @@
           "when": "2026-08-06 发布草案，征求意见至 2026-08-28",
           "what": "拟修订 NBFC 信贷设施方向：仅允许期限贷款，禁止循环授信/可循环额度；持信用卡牌照 NBFC 除外。",
           "how": "公开征求意见；一旦定稿拟立即生效。",
-          "result": ""
+          "result": "",
+          "titleEn": "RBI consults on banning NBFC revolving credit (term loans only; cards excepted)"
         },
         {
           "title": "马恒达高管称GST下调与利率平稳支撑汽车需求",
@@ -118,7 +121,8 @@
           "when": "",
           "what": "",
           "how": "经监管指定报送通道上报；违者可被行政制裁。",
-          "result": "展业要预留日报与系统对接成本；漏报会直接变成合规风险。"
+          "result": "展业要预留日报与系统对接成本；漏报会直接变成合规风险。",
+          "titleEn": "OJK issues POJK 8/2026 requiring full, timely P2P transaction reporting"
         },
         {
           "title": "点点H1：非法网贷大规模关停，现金贷新上架存活率低",
@@ -130,7 +134,8 @@
           "when": "",
           "what": "",
           "how": "用关停数量与新上架存活率观察出清强度。",
-          "result": "流量盘子大但属压力盘；活下来的关键是持牌续存，不是继续赌无牌投放。"
+          "result": "流量盘子大但属压力盘；活下来的关键是持牌续存，不是继续赌无牌投放。",
+          "titleEn": "Diandian H1: illegal online lenders shut at scale; new cash-loan apps survive poorly"
         },
         {
           "title": "OJK公布提升金融素养与普惠的5项策略",
@@ -223,7 +228,8 @@
           "when": "2025-01-31 公告更新（持续适用至 2026）",
           "what": "更新负责任放贷通告：持续债务户定义调整，要求在法催/转让前提供重组方案。",
           "how": "",
-          "result": "泰展业贷后处置与重组流程成本上升。（2025初口径；续盯BOT 负责任借贷）"
+          "result": "泰展业贷后处置与重组流程成本上升。（2025初口径；续盯BOT 负责任借贷）",
+          "titleEn": "BOT responsible-lending update: persistent-debtor definition & restructuring duties tighten"
         }
       ],
       "cashLoanHint": "下载第9、明星盘口径。个人贷与 Nano 有利率上限，且禁止收提前还款费，定价与退出费空间都窄。",
@@ -255,7 +261,8 @@
           "when": "",
           "what": "解除线上借贷平台五年禁令，按平台数分级提高实缴资本，单一主体最多运营 5 个平台。",
           "how": "重新开放申请窗口，按新资本与平台数量门槛审批。",
-          "result": "入口重开但门槛更高；想展业要按抬高后的资本金测算，不是“开闸就能冲量”。"
+          "result": "入口重开但门槛更高；想展业要按抬高后的资本金测算，不是“开闸就能冲量”。",
+          "titleEn": "SEC lifts five-year OLP ban and raises capital bars"
         },
         {
           "title": "法评：解禁不等于自动批准",
@@ -267,7 +274,8 @@
           "when": "",
           "what": "强调解除禁令不等于自动获批。",
           "how": "仍要满足披露、业务计划、消费者保护与持续监管要求。",
-          "result": "申报材料与消保能力会成为过会关键，不能只盯“窗口已开”。"
+          "result": "申报材料与消保能力会成为过会关键，不能只盯“窗口已开”。",
+          "titleEn": "Legal note: unfreeze ≠ automatic approval"
         },
         {
           "title": "BSP：拿下线上放贷监管权后将优先打掠夺性放贷与不当催收",
@@ -279,7 +287,8 @@
           "when": "",
           "what": "一旦取得线上放贷全面监管权，将优先整治掠夺性放贷与不当催收。",
           "how": "监管重心可能从证监会转向央行框架。",
-          "result": "催收话术、联系人策略与投诉率会成为展业红线，需提前改贷后流程。"
+          "result": "催收话术、联系人策略与投诉率会成为展业红线，需提前改贷后流程。",
+          "titleEn": "BSP: after taking online-lending oversight, will prioritize predatory lending & abusive collections"
         }
       ],
       "cashLoanHint": "下载第3、压力盘。监管重开线上借贷牌照窗口并抬高资本；催收整治可能由证监转向央行主导。",
@@ -299,7 +308,7 @@
           "url": "https://www.condusef.gob.mx/"
         }
       ],
-      "count": 4,
+      "count": 5,
       "items": [
         {
           "title": "墨西哥Condusef持续更新消费金融主体与费用披露核验",
@@ -324,7 +333,8 @@
           "when": "",
           "what": "点点H1观察：墨西哥一边推进金融科技法修订，一边加强信贷透明度抽查。",
           "how": "改法与抽查并行，重点压费用披露与不当销售。",
-          "result": "展业要同时跟法律口径与抽查要点，获客文案和费率披露不能只按旧法准备。"
+          "result": "展业要同时跟法律口径与抽查要点，获客文案和费率披露不能只按旧法准备。",
+          "titleEn": "Diandian H1: Mexico Fintech Law amendments run alongside credit-transparency checks"
         },
         {
           "title": "墨西哥CNBV/SOFOM监管与CAT披露要求趋严",
@@ -349,6 +359,19 @@
           "what": "比索反弹，重新回到约17比索/美元附近",
           "how": "",
           "result": "跨境投放与回款盯汇率波动；短线反弹不等于波动结束。",
+          "who": "",
+          "when": ""
+        },
+        {
+          "title": "墨西哥比索反弹，汇率回到约17比索兑1美元附近",
+          "url": "https://www.elfinanciero.com.mx/mercados/2026/08/19/peso-se-aprecia-sobre-el-dolar-como-cerrara-el-tipo-de-cambio-en-2026-y-2027/",
+          "published": "2026-08-20",
+          "source": "ElFinanciero",
+          "query": "alt-rss:MX",
+          "titleEn": "‘La venganza del superpeso’: ¿Cómo cerrará el tipo de cambio este año y en 2027? Estos son los pronósticos",
+          "what": "报道称比索反弹，重新回到约17比索/美元附近。跨境投放与回款仍须盯汇率波动，短线反弹不等于波动结束。",
+          "how": "",
+          "result": "",
           "who": "",
           "when": ""
         }
@@ -382,7 +405,8 @@
           "when": "咨询结论发布于 2026年3月13日；拟 2026年8月1日起对新牌照条件生效",
           "what": "对低收入无抵押个人贷按债务收入比上限定贷额与期限，并禁止要求借款人提供推荐人。",
           "how": "通过放债人牌照新条件落地。",
-          "result": "获客与额度模型要按更紧的偿债比重算；推荐人获客路径基本关掉。"
+          "result": "获客与额度模型要按更紧的偿债比重算；推荐人获客路径基本关掉。",
+          "titleEn": "FSTB: new money-lender licenses may cap DTI and ban referrers"
         },
         {
           "title": "金管局：数字银行牌照暂不新发",
@@ -394,7 +418,8 @@
           "when": "既有口径仍适用至 2026",
           "what": "认为现有 8 家数字银行牌照已充足，暂无新发计划。",
           "how": "不再新增虚拟银行牌照窗口。",
-          "result": "现金贷展业仍主要走放债人路径，不要把叙事押在新数字银行牌照上。"
+          "result": "现金贷展业仍主要走放债人路径，不要把叙事押在新数字银行牌照上。",
+          "titleEn": "HKMA: no new digital-bank licenses for now"
         },
         {
           "title": "HKMA 数字银行专题页更新：现有牌照框架与授权指引入口",
@@ -406,7 +431,8 @@
           "when": "",
           "what": "维持数字银行授权指引入口；强调与传统银行同一监管要求。",
           "how": "",
-          "result": "与「暂不新发」叙事交叉；新进入难度高。"
+          "result": "与「暂不新发」叙事交叉；新进入难度高。",
+          "titleEn": "HKMA digital-bank page update: current license framework & authorization guide"
         }
       ],
       "cashLoanHint": "展业国主位。现金贷关键看放债人牌照：低收入无抵押贷额按债务收入比限制，并禁止要求推荐人。",
@@ -509,7 +535,8 @@
           "when": "",
           "what": "肯尼亚被划入压力盘：体量大且下载环比承压。",
           "how": "用下载与活跃环比观察大盘。",
-          "result": "不宜按高增长故事扩表；先压风险与获客效率。"
+          "result": "不宜按高增长故事扩表；先压风险与获客效率。",
+          "titleEn": "Diandian: Kenya grouped with Indonesia/Mexico/Philippines on pressure plate"
         }
       ]
     },
@@ -548,7 +575,8 @@
           "when": "2026-08-10 Pix 管理报告",
           "what": "研究 Pix 与境外瞬时支付互联；并评估以未来 Pix 流作成贷抵押、降低融资成本。",
           "how": "官方管理报告口径。",
-          "result": "支付基建向信贷抵押延伸；利好场景贷风控数据。"
+          "result": "支付基建向信贷抵押延伸；利好场景贷风控数据。",
+          "titleEn": "BCB: considering Pix cross-border rails; exploring future Pix cashflows as credit collateral"
         },
         {
           "title": "点点H1：工薪代扣贷累计放款破约 1200 亿雷亚尔",
@@ -560,7 +588,8 @@
           "when": "",
           "what": "工薪代扣贷累计放款约 1200 亿雷亚尔。",
           "how": "从工资代扣场景放量。",
-          "result": "增量清楚，但要评估代扣集中度与政策变化风险。"
+          "result": "增量清楚，但要评估代扣集中度与政策变化风险。",
+          "titleEn": "Diandian H1: payroll-deduct loans cumulative origination tops ~BRL120bn"
         },
         {
           "title": "巴西出现冒用大牌名义推销假贷款的诈骗",
@@ -608,7 +637,8 @@
           "when": "",
           "what": "美国相关下载体量仍在全球前十，但环比约下降 24%。",
           "how": "用全球下载榜做对照，不直接当展业优先级。",
-          "result": "不要把美国流量波动外推成新兴市场展业信号。"
+          "result": "不要把美国流量波动外推成新兴市场展业信号。",
+          "titleEn": "Diandian H1: US-related downloads down ~25% MoM"
         },
         {
           "title": "美联储征求意见：拟现代化银行向内部人放贷规则",
@@ -715,5 +745,6 @@
     }
   ],
   "overallVerdict": "展业国：印尼 POJK 8/2026 日报落地；印度 RBI 拟禁 NBFC 循环授信；泰国负责任借贷/禁提前还款费约束仍硬；香港数字银行存量竞争；墨西哥 SOFOM/CAT 披露加严（媒体口径待双端）。热点国：巴西 Pix 探索信贷抵押；肯尼亚 DCP 持牌扩至约 252；尼日利亚开放银行与 FCCPC 放贷登记并行。",
-  "foreword": ""
+  "foreword": "",
+  "overallVerdictEn": "Invested: Indonesia POJK 8/2026 daily reporting live; India RBI draft to ban NBFC revolving credit; Thailand responsible-lending / early-repay fee rules still tight; Hong Kong digital banks in share fight; Mexico SOFOM/CAT disclosure tightening (media — pending dual-source). Hot: Brazil Pix exploring credit collateral; Kenya DCP licenses ~252; Nigeria open banking + FCCPC lender registry in parallel."
 }

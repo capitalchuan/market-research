@@ -7,10 +7,15 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
+  type KeyboardEvent,
   type ReactNode,
 } from "react";
+
+/** Re-export React hooks used by canvases that import from `cursor/canvas`. */
+export { useEffect, useRef, useState };
 
 /* ---------- theme ---------- */
 
@@ -73,12 +78,25 @@ function tokensFromPalette(p: typeof paletteLight) {
     accent: {
       primary: p.accent,
       control: p.buttonBackground,
+      controlHover: p.buttonHoverBackground,
     },
     diff: {
       insertedLine: p.diffInsertedLine,
       removedLine: p.diffRemovedLine,
       stripAdded: p.diffStripAdded,
       stripRemoved: p.diffStripRemoved,
+    },
+    // Cursor canvas category tokens（状态色：涨跌/未读/灾害等）
+    category: {
+      gray: "#8A8A8A",
+      purple: "#7B64B8",
+      green: "#1F8A65",
+      yellow: "#B8860B",
+      cyan: "#2A9D8F",
+      pink: "#C45B8A",
+      blue: "#3685BF",
+      orange: "#C47A2A",
+      red: "#CF2D56",
     },
   };
 }
@@ -681,6 +699,8 @@ export function Pill({
   style,
   active,
   onClick,
+  leadingContent,
+  title,
 }: {
   children?: ReactNode;
   tone?: "neutral" | "info" | "success" | "warning" | "danger";
@@ -688,17 +708,21 @@ export function Pill({
   style?: CSSProperties;
   active?: boolean;
   onClick?: () => void;
+  leadingContent?: ReactNode;
+  title?: string;
 }) {
   const t = useHostTheme();
   const Tag = onClick ? "button" : "span";
   return (
     <Tag
       type={onClick ? "button" : undefined}
+      title={title}
       onClick={onClick}
       style={mergeStyle(
         {
           display: "inline-flex",
           alignItems: "center",
+          gap: 6,
           height: size === "sm" ? 20 : 24,
           padding: "0 8px",
           borderRadius: 999,
@@ -713,6 +737,7 @@ export function Pill({
         style,
       )}
     >
+      {leadingContent}
       {children}
     </Tag>
   );
@@ -753,18 +778,63 @@ export function Stat({
   label,
   tone,
   style,
+  size = "default",
 }: {
   value?: ReactNode;
   label?: ReactNode;
   tone?: string;
   style?: CSSProperties;
+  /** sm：计划冻结 KPI 等紧凑条 */
+  size?: "default" | "sm";
 }) {
   const t = useHostTheme();
+  const toneColor =
+    tone === "success"
+      ? t.category?.green
+      : tone === "danger"
+        ? t.category?.red
+        : tone === "warning"
+          ? t.category?.orange
+          : tone === "info"
+            ? t.category?.blue
+            : undefined;
+  const compact = size === "sm";
   return (
-    <div style={mergeStyle({ display: "flex", flexDirection: "column", gap: 2 }, style)}>
-      <div style={{ fontSize: 20, fontWeight: 600, color: t.text.primary }}>{value}</div>
+    <div
+      style={mergeStyle(
+        {
+          display: "flex",
+          flexDirection: "column",
+          gap: compact ? 1 : 2,
+          minWidth: 0,
+          maxWidth: "100%",
+        },
+        style,
+      )}
+    >
+      <div
+        style={{
+          fontSize: compact ? 14 : "clamp(15px, 2.6vw, 20px)",
+          fontWeight: 600,
+          color: toneColor || t.text.primary,
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+          lineHeight: 1.2,
+        }}
+      >
+        {value}
+      </div>
       {label != null ? (
-        <div style={{ fontSize: 12, color: t.text.tertiary }}>{label}</div>
+        <div
+          style={{
+            fontSize: compact ? 11 : 12,
+            color: t.text.tertiary,
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
+          {label}
+        </div>
       ) : null}
     </div>
   );
@@ -835,6 +905,8 @@ export function UsageBar({
 export function TextInput({
   value,
   onChange,
+  onBlur,
+  onKeyDown,
   placeholder,
   disabled,
   type = "text",
@@ -842,6 +914,8 @@ export function TextInput({
 }: {
   value?: string;
   onChange?: (value: string) => void;
+  onBlur?: () => void;
+  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
   placeholder?: string;
   disabled?: boolean;
   type?: "text" | "email" | "password" | "number" | "url" | "search";
@@ -855,6 +929,8 @@ export function TextInput({
       disabled={disabled}
       placeholder={placeholder}
       onChange={(e) => onChange?.(e.target.value)}
+      onBlur={() => onBlur?.()}
+      onKeyDown={(e) => onKeyDown?.(e)}
       style={mergeStyle(
         {
           height: 28,
@@ -1081,17 +1157,229 @@ export function Table({
   );
 }
 
-/* stubs for unused exports */
-export function BarChart() {
-  return null;
+/* ---------- chart stubs (browser) ---------- */
+
+export type Color =
+  | "gray"
+  | "purple"
+  | "green"
+  | "yellow"
+  | "cyan"
+  | "pink"
+  | "blue"
+  | "orange"
+  | "red";
+
+export type ChartTone = Color;
+
+export const usageColorSequence: Color[] = [
+  "blue",
+  "green",
+  "orange",
+  "purple",
+  "cyan",
+  "pink",
+  "yellow",
+  "red",
+  "gray",
+];
+
+type ChartSeries = {
+  name: string;
+  data: number[];
+  tone?: ChartTone;
+  color?: Color;
+};
+
+function chartSeriesColor(
+  theme: CanvasHostTheme,
+  s: ChartSeries,
+  i: number,
+): string {
+  const key = (s.color || s.tone || usageColorSequence[i % usageColorSequence.length]) as Color;
+  return theme.category[key] || theme.category.blue;
 }
-export function LineChart() {
-  return null;
+
+export function Swatch({
+  color,
+  style,
+}: {
+  color?: Color;
+  style?: CSSProperties;
+}) {
+  const t = useHostTheme();
+  const fill = color ? t.category[color] : t.category.blue;
+  return (
+    <span
+      style={mergeStyle(
+        {
+          width: 10,
+          height: 10,
+          borderRadius: 2,
+          background: fill,
+          display: "inline-block",
+          flexShrink: 0,
+          border: `1px solid ${t.stroke.secondary}`,
+        },
+        style,
+      )}
+    />
+  );
 }
+
+export function BarChart({
+  categories = [],
+  series = [],
+  height = 220,
+  beginAtZero = true,
+  yMax,
+}: {
+  categories?: string[];
+  series?: ChartSeries[];
+  height?: number;
+  beginAtZero?: boolean;
+  yMax?: number;
+}) {
+  const t = useHostTheme();
+  const n = categories.length;
+  if (!n || !series.length) return null;
+  const allVals = series.flatMap((s) => s.data);
+  const maxV = Math.max(
+    yMax ?? 0,
+    beginAtZero ? 0 : Math.min(...allVals, 0),
+    ...allVals,
+    1e-6,
+  );
+  const minV = beginAtZero ? 0 : Math.min(0, ...allVals);
+  const span = Math.max(1e-6, maxV - minV);
+  const w = Math.max(280, n * 36);
+  const pad = { t: 12, r: 12, b: 28, l: 40 };
+  const plotH = height - pad.t - pad.b;
+  const plotW = w - pad.l - pad.r;
+  const groupW = plotW / n;
+  const barW = Math.max(4, (groupW * 0.7) / Math.max(1, series.length));
+  const yOf = (v: number) => pad.t + plotH - ((v - minV) / span) * plotH;
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${w} ${height}`} style={{ display: "block", maxHeight: height }}>
+      {[0, 0.5, 1].map((f) => {
+        const v = minV + span * f;
+        const y = yOf(v);
+        return (
+          <g key={f}>
+            <line x1={pad.l} x2={w - pad.r} y1={y} y2={y} stroke={t.stroke.tertiary} strokeWidth={1} />
+            <text x={pad.l - 4} y={y + 3} textAnchor="end" fill={t.text.tertiary} fontSize={10}>
+              {Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : Math.round(v * 10) / 10}
+            </text>
+          </g>
+        );
+      })}
+      {categories.map((cat, ci) => {
+        const gx = pad.l + ci * groupW + groupW / 2;
+        return (
+          <g key={`${cat}-${ci}`}>
+            {series.map((s, si) => {
+              const v = s.data[ci] || 0;
+              const y0 = yOf(0);
+              const y1 = yOf(v);
+              const top = Math.min(y0, y1);
+              const h = Math.max(1, Math.abs(y1 - y0));
+              const x = gx - (series.length * barW) / 2 + si * barW;
+              return (
+                <rect
+                  key={s.name}
+                  x={x}
+                  y={top}
+                  width={barW - 1}
+                  height={h}
+                  fill={chartSeriesColor(t, s, si)}
+                >
+                  <title>{`${cat} · ${s.name}: ${v}`}</title>
+                </rect>
+              );
+            })}
+            <text x={gx} y={height - 8} textAnchor="middle" fill={t.text.tertiary} fontSize={9}>
+              {cat.length > 6 ? `${cat.slice(0, 5)}…` : cat}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+export function LineChart({
+  categories = [],
+  series = [],
+  height = 220,
+}: {
+  categories?: string[];
+  series?: ChartSeries[];
+  height?: number;
+}) {
+  const t = useHostTheme();
+  const n = categories.length;
+  if (!n || !series.length) return null;
+  const allVals = series.flatMap((s) => s.data.filter((x) => Number.isFinite(x)));
+  const maxV = Math.max(...allVals, 1e-6);
+  const minV = Math.min(0, ...allVals);
+  const span = Math.max(1e-6, maxV - minV);
+  const w = Math.max(320, n * 18);
+  const pad = { t: 12, r: 12, b: 28, l: 44 };
+  const plotH = height - pad.t - pad.b;
+  const plotW = w - pad.l - pad.r;
+  const xOf = (i: number) => pad.l + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+  const yOf = (v: number) => pad.t + plotH - ((v - minV) / span) * plotH;
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${w} ${height}`} style={{ display: "block", maxHeight: height }}>
+      {[0, 0.5, 1].map((f) => {
+        const v = minV + span * f;
+        const y = yOf(v);
+        return (
+          <g key={f}>
+            <line x1={pad.l} x2={w - pad.r} y1={y} y2={y} stroke={t.stroke.tertiary} strokeWidth={1} />
+            <text x={pad.l - 4} y={y + 3} textAnchor="end" fill={t.text.tertiary} fontSize={10}>
+              {Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : Math.round(v * 10) / 10}
+            </text>
+          </g>
+        );
+      })}
+      {series.map((s, si) => {
+        const pts = s.data
+          .map((v, i) => `${xOf(i)},${yOf(Number.isFinite(v) ? v : 0)}`)
+          .join(" ");
+        return (
+          <polyline
+            key={s.name}
+            fill="none"
+            stroke={chartSeriesColor(t, s, si)}
+            strokeWidth={2}
+            points={pts}
+          >
+            <title>{s.name}</title>
+          </polyline>
+        );
+      })}
+      {categories.map((cat, i) =>
+        i % Math.max(1, Math.ceil(n / 8)) === 0 || i === n - 1 ? (
+          <text
+            key={`${cat}-${i}`}
+            x={xOf(i)}
+            y={height - 8}
+            textAnchor="middle"
+            fill={t.text.tertiary}
+            fontSize={9}
+          >
+            {cat}
+          </text>
+        ) : null,
+      )}
+    </svg>
+  );
+}
+
 export function PieChart() {
-  return null;
-}
-export function Swatch() {
   return null;
 }
 export function TodoList() {

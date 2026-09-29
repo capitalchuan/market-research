@@ -37,6 +37,8 @@ export type ResearchPlayerUpdate = {
   region?: string;
   countries?: string[];
   metric: string;
+  /** EN 玩家指标行；缺省时 EN 模式不展示中文 metric */
+  metricEn?: string;
   actions?: string;
   cashLoanHint?: string;
   confidence?: ResearchConfidence;
@@ -64,6 +66,8 @@ export type ResearchDocKind =
 export type ResearchReport = {
   id: string;
   title: string;
+  /** EN 列表/详情标题；缺省时展示层回退 title */
+  titleEn?: string;
   publisher: string;
   period: string;
   asOf: string;
@@ -76,10 +80,17 @@ export type ResearchReport = {
   pages?: number;
   regions?: string[];
   thesis: string;
+  /** EN 导语/摘要 */
+  summaryEn?: string;
+  thesisEn?: string;
   growthFormula?: string;
   macroBullets?: string[];
   policyBullets?: string[];
+  /** EN 监管要点；缺省时 EN 模式不展示中文 policyBullets */
+  policyBulletsEn?: string[];
   industryMetrics?: Record<string, string>;
+  /** EN 行业指标键值；缺省回退 industryMetrics 或隐藏 */
+  industryMetricsEn?: Record<string, string>;
   marketNotes?: { region: string; summary: string }[];
   rankings?: Record<string, ResearchRankingRow[]>;
   quadBuckets?: {
@@ -91,7 +102,7 @@ export type ResearchReport = {
   };
   sources?: ResearchSourceLink[];
   playerUpdates: ResearchPlayerUpdate[];
-  analysis: { verdict: string; bullets: string[] };
+  analysis: { verdict: string; bullets: string[]; verdictEn?: string; bulletsEn?: string[] };
 };
 
 export type IndustryResearchLibrary = {

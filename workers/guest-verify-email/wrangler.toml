@@ -1,0 +1,7 @@
+name = "guest-verify-email"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# secrets: wrangler secret put RESEND_API_KEY
+# secrets: wrangler secret put FROM_EMAIL
+# optional: wrangler secret put ALLOWED_ORIGINS

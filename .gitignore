@@ -1,10 +1,12 @@
 node_modules/
 web/node_modules/
 web/dist/
+web/dist-ev/
 .gh-pages-latest/
 tmp_ic_extract/
 tmp_nbfc/
 package-lock.json
+.tmp-word-*/
 *.canvas.tsx
 !global-platform-fintech-atlas.canvas.tsx
 !ev-asset-portfolio-model.canvas.tsx

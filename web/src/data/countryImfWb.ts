@@ -15,8 +15,8 @@ export type CountryImfWbRow = {
 export type CountryImfWbDataset = {
   asOf: string;
   note: string;
-  imfOptions: { id: string; labelZh: string }[];
-  wbOptions: { id: string; labelZh: string }[];
+  imfOptions: { id: string; labelZh: string; labelEn?: string }[];
+  wbOptions: { id: string; labelZh: string; labelEn?: string }[];
   byCode: Record<string, CountryImfWbRow>;
 };
 

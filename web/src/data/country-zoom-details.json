@@ -731,6 +731,17 @@
     ]
   },
   {
+    "country_code": "GN",
+    "as_of": "2026-08-24",
+    "source_url": "https://play.google.com/store/apps/category/FINANCE?hl=en&gl=GN",
+    "available": false,
+    "note": "Play Finance chart not fetched yet; population from TE/WB.",
+    "population_millions": 14.36,
+    "demographic_note": "Young West African population; mobile money and mining economy.",
+    "population_source": "Trading Economics / WB ~2025",
+    "top_free_finance": []
+  },
+  {
     "country_code": "PK",
     "as_of": "2026-08-06",
     "source_url": "https://play.google.com/store/apps/category/FINANCE?hl=en&gl=PK",

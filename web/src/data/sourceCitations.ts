@@ -208,9 +208,19 @@ export const CORE_SOURCE_CITATIONS: SourceCitation[] = [
   {
     no: 24,
     id: "nev-tariff-vat",
-    title: "新能源整车关税 / 本地增值税（海关税则与税法）",
+    title: "新能源 HS 关税分列 / 本地增值税（海关税则与税法）",
     kind: "regulator",
-    note: "国别 BEV/CBU 进口关税（含对华附加税合计示意）与本地出厂 VAT·GST·IVA；优先官方税则/财政法令，新闻辅证标「待双端」；不含购置税/首次登记税除非文案明示",
+    note:
+      "分列：①HS8703 BEV/CBU 整车（地图主尺 nevImportTariff）②CKD/SKD 组装路径（nevHsCkd，常拆 8707+零部件）③HS8507.60 锂电（nevHsBattery）④HS8501 驱动电机（nevHsMotor）；另本地出厂 VAT·GST·IVA。优先官方税则/WTO·WITS/财政法令；激励窗口与新闻辅证标「待双端」；不含购置税/首次登记税除非文案明示",
+    asOf: "2026-08",
+  },
+  {
+    no: 25,
+    id: "yidaiyilu",
+    title: "中国一带一路网（国别页 / 各国数据）",
+    kind: "research",
+    url: "https://www.yidaiyilu.gov.cn/",
+    note: "国别概况、对华进出口与直接投资序时；/country/{英文名} 与 /dataChart；与 TE/IMF 宏观分轨",
     asOf: "2026-08",
   },
 ];
@@ -228,7 +238,21 @@ const KIND_LABEL: Record<string, string> = {
   exchange: "交易所",
 };
 
-export function sourceCiteKindLabel(kind: string): string {
+const KIND_LABEL_EN: Record<string, string> = {
+  macro: "Macro",
+  regulator: "Regulator",
+  research: "Research",
+  traffic: "Traffic",
+  news: "News",
+  bond: "Bond",
+  secondary: "Secondary",
+  market_data: "Market data",
+  disclosure: "Disclosure",
+  exchange: "Exchange",
+};
+
+export function sourceCiteKindLabel(kind: string, lang: "zh" | "en" = "zh"): string {
+  if (lang === "en") return KIND_LABEL_EN[kind] || kind;
   return KIND_LABEL[kind] || kind;
 }
 

@@ -40,7 +40,8 @@ export type CountryMacroSnap = {
   fuelToPowerRatio?: string;
   /**
    * 新能源整车（优先 BEV CBU）进口关税/附加关税合计示意（%）
-   * 文案首个数字供地图色阶；激励/FTA/厂商分化写在 · 后备注
+   * 文案首个数字供地图色阶；须标 HS8703（乘用车·仅电动驱动示意）；激励/FTA 写 · 后备注。
+   * 不含 CKD/SKD/动力电池等零部件税率（见 nevHsCkd / nevHsBattery）。
    */
   nevImportTariff?: string;
   /**
@@ -53,6 +54,25 @@ export type CountryMacroSnap = {
    * 正值=进口关税高于本地出厂增值税，CBU 相对本地出厂税负更重；双端齐全才测算
    */
   nevTaxGap?: string;
+  /**
+   * CKD/SKD 散件组装进口关税示意（%）。
+   * 常低于 CBU；多与本地化/投资激励挂钩；税号实践上常拆 HS8707 车身 + 零部件，文案标「CKD路径」。
+   */
+  nevHsCkd?: string;
+  /**
+   * 动力电池进口关税示意（%）。优先 HS8507.60（锂离子蓄电池）；模组/电芯细分写备注。
+   */
+  nevHsBattery?: string;
+  /**
+   * 驱动电机进口关税示意（%）。优先 HS8501（电动机）牵引电机口径；细分写备注。
+   */
+  nevHsMotor?: string;
+  /**
+   * 购车端激励粗枚举（非全球金额色阶）。
+   * 文案以种类词开头：无 | 税费减免 | 现金或抵免 | 已退坡 | 混合 | 待核
+   * 后接环节说明 + asOf/信源；生产端 CKD 激励勿冒充购车补贴。
+   */
+  nevPurchaseIncentive?: string;
   creditNote?: string;
   cashLoanVerdict?: string;
 };
@@ -115,6 +135,39 @@ export function deriveNevTaxGap(
     n,
     raw: `${sign}${fmtNum(n)}个百分点＝进口关税${fmtNum(tariff)}%−出厂增值税${fmtNum(vat)}%（越高进口相对越吃亏）〔24〕`,
   };
+}
+
+/** 购车端激励粗种类（文案首词；金额不作全球色阶） */
+export type NevPurchaseIncentiveKind =
+  | "none"
+  | "tax_relief"
+  | "cash_or_credit"
+  | "tapered"
+  | "mixed"
+  | "unknown";
+
+export const NEV_PURCHASE_INCENTIVE_LABEL: Record<NevPurchaseIncentiveKind, string> = {
+  none: "无",
+  tax_relief: "税费减免",
+  cash_or_credit: "现金或抵免",
+  tapered: "已退坡",
+  mixed: "混合",
+  unknown: "待核",
+};
+
+export function parseNevPurchaseIncentiveKind(
+  raw?: string | null,
+): NevPurchaseIncentiveKind | null {
+  const s = (raw || "").trim();
+  if (!s || s === "—" || s.startsWith("—")) return null;
+  const head = s.split(/[·•｜|]/)[0]?.trim() ?? "";
+  if (head.startsWith("无")) return "none";
+  if (head.startsWith("税费减免")) return "tax_relief";
+  if (head.startsWith("现金或抵免")) return "cash_or_credit";
+  if (head.startsWith("已退坡")) return "tapered";
+  if (head.startsWith("混合")) return "mixed";
+  if (head.startsWith("待核")) return "unknown";
+  return "unknown";
 }
 
 /**
@@ -363,12 +416,29 @@ export function buildCashLoanMacroGroups(snap: CountryMacroSnap): CashLoanMacroG
     {
       id: "nev_tax",
       step: "①+",
-      title: "新能源车税负",
-      soWhat: "整车进口关税与本地出厂增值税决定落地成本；税差衡量 CBU 相对本地出厂的额外税负楔子，影响车贷/融资租赁定价与组装 vs 进口选择。",
+      title: "新能源车税负与购车激励",
+      soWhat:
+        "整车（HS8703 CBU）进口关税与本地出厂增值税决定落地成本；税差衡量 CBU 相对本地出厂的额外税负楔子。CKD（组装路径）与 HS8507.60 锂电、HS8501 电机为另列税率，常低于整车且与本地化激励挂钩。购车端激励另用粗枚举，不作全球金额色阶。",
       metrics: [
-        metric("新能源整车进口关税", "nevImportTariff", snap.nevImportTariff, pack, nevTariffFlag),
+        metric("整车关税 HS8703 CBU", "nevImportTariff", snap.nevImportTariff, pack, nevTariffFlag),
+        metric("CKD/SKD 组装路径", "nevHsCkd", snap.nevHsCkd, pack),
+        metric("动力电池 HS8507.60", "nevHsBattery", snap.nevHsBattery, pack),
+        metric("驱动电机 HS8501", "nevHsMotor", snap.nevHsMotor, pack),
         metric("本地出厂新能源车增值税", "nevLocalVat", snap.nevLocalVat, pack, nevVatFlag),
         metric("新能源税差", "nevTaxGap", nevGap?.raw, pack, nevGapFlag),
+        metric(
+          "购车端激励",
+          "nevPurchaseIncentive",
+          snap.nevPurchaseIncentive,
+          pack,
+          (() => {
+            const k = parseNevPurchaseIncentiveKind(snap.nevPurchaseIncentive);
+            if (k === "tapered") return "watch";
+            if (k === "cash_or_credit" || k === "tax_relief" || k === "mixed") return "ok";
+            if (k === "none") return "ok";
+            return undefined;
+          })(),
+        ),
       ].filter(Boolean) as CashLoanMacroMetric[],
     },
   ];

@@ -1,0 +1,182 @@
+{
+  "meta": {
+    "portalUrl": "https://www.yidaiyilu.gov.cn/",
+    "dataChartUrl": "https://www.yidaiyilu.gov.cn/dataChart",
+    "citeNo": 25,
+    "asOf": "2026-08",
+    "noteZh": "国别页与各国数据图说；对华贸易/投资序时为主尺，与 TE/IMF 宏观分轨。",
+    "noteEn": "Country profiles & data chart; China trade/FDI series as reference, separate from TE/IMF macro."
+  },
+  "slugs": {
+    "ID": "Indonesia",
+    "VN": "Vietnam",
+    "MY": "Malaysia",
+    "TH": "Thailand",
+    "PH": "Philippines",
+    "SG": "Singapore",
+    "BD": "Bangladesh",
+    "PK": "Pakistan",
+    "BR": "Brazil",
+    "CO": "Colombia",
+    "AR": "Argentina",
+    "PE": "Peru",
+    "CL": "Chile",
+    "EG": "Egypt",
+    "MA": "Morocco",
+    "NG": "Nigeria",
+    "KE": "Kenya",
+    "GH": "Ghana",
+    "GN": "Guinea",
+    "SN": "Senegal",
+    "CM": "Cameroon",
+    "AO": "Angola",
+    "CI": "Ivory-Coast",
+    "ZA": "South-Africa",
+    "TZ": "Tanzania",
+    "ET": "Ethiopia",
+    "JP": "Japan",
+    "KR": "South-Korea",
+    "MN": "Mongolia",
+    "KZ": "Kazakhstan",
+    "UZ": "Uzbekistan",
+    "RU": "Russia",
+    "DE": "Germany",
+    "FR": "France",
+    "GB": "United-Kingdom",
+    "IT": "Italy",
+    "ES": "Spain",
+    "PT": "Portugal",
+    "PL": "Poland",
+    "US": "United-States",
+    "CA": "Canada",
+    "SA": "Saudi-Arabia",
+    "AE": "United-Arab-Emirates",
+    "QA": "Qatar",
+    "KW": "Kuwait",
+    "TR": "Turkey",
+    "IR": "Iran",
+    "IQ": "Iraq",
+    "IL": "Israel"
+  },
+  "countries": {
+    "GN": {
+      "capitalZh": "科纳克里（Conakry）",
+      "capitalEn": "Conakry",
+      "gdpUsdM": { "year": 2023, "value": 23612.3 },
+      "bilateralZh": "西芒杜铁矿、马瑞巴亚港等合作项目；杂交水稻与基建合作见国别资讯。",
+      "bilateralEn": "Simandou iron, Marébaya port & agri/infra cooperation — see country news feed.",
+      "series": [
+        {
+          "id": "import_from_china",
+          "labelZh": "从中国进口",
+          "labelEn": "Imports from China",
+          "unitZh": "万美元",
+          "unitEn": "USD 10k",
+          "values": { "2021": 215847, "2022": 224607, "2023": 264289, "2024": 393017, "2025": 622474.11 }
+        },
+        {
+          "id": "export_to_china",
+          "labelZh": "对中国出口",
+          "labelEn": "Exports to China",
+          "unitZh": "万美元",
+          "unitEn": "USD 10k",
+          "values": { "2021": 279387, "2022": 452146, "2023": 640837, "2024": 763791, "2025": 1200372.56 }
+        },
+        {
+          "id": "china_fdi_net",
+          "labelZh": "中国直接投资净额",
+          "labelEn": "China FDI net",
+          "unitZh": "万美元",
+          "unitEn": "USD 10k",
+          "values": { "2021": 48717, "2022": 3911, "2023": 2636, "2024": 13958 }
+        },
+        {
+          "id": "agri_share_gdp",
+          "labelZh": "农业占GDP",
+          "labelEn": "Agriculture share of GDP",
+          "unitZh": "%",
+          "unitEn": "%",
+          "values": { "2021": 27.32, "2022": 27.32, "2023": 28.2 }
+        }
+      ]
+    },
+    "ID": {
+      "capitalZh": "努山塔拉（Nusantara）",
+      "capitalEn": "Nusantara",
+      "gdpUsdM": { "year": 2023, "value": 1371171.15 },
+      "bilateralZh": "1950年建交；全面战略伙伴；雅万高铁、海洋支点与「一带一路」合作备忘录续签。",
+      "bilateralEn": "Est. 1950; comprehensive strategic partner; Jakarta-Bandung HSR & BRI/GMP cooperation MOUs.",
+      "pillarsZh": ["油气工业", "纺织业", "采矿业", "旅游业"],
+      "pillarsEn": ["Oil & gas", "Textiles", "Mining", "Tourism"],
+      "series": [
+        {
+          "id": "import_from_china",
+          "labelZh": "从中国进口",
+          "labelEn": "Imports from China",
+          "unitZh": "万美元",
+          "unitEn": "USD 10k",
+          "values": { "2021": 6064749, "2022": 7064104, "2023": 6519192, "2024": 7666906, "2025": 8532471.85 }
+        },
+        {
+          "id": "export_to_china",
+          "labelZh": "对中国出口",
+          "labelEn": "Exports to China",
+          "unitZh": "万美元",
+          "unitEn": "USD 10k",
+          "values": { "2021": 6392283, "2022": 7789081, "2023": 7407424, "2024": 7104656, "2025": 8216266.51 }
+        },
+        {
+          "id": "china_fdi_net",
+          "labelZh": "中国直接投资净额",
+          "labelEn": "China FDI net",
+          "unitZh": "万美元",
+          "unitEn": "USD 10k",
+          "values": { "2021": 437251, "2022": 454960, "2023": 313307, "2024": 459132 }
+        },
+        {
+          "id": "agri_share_gdp",
+          "labelZh": "农业占GDP",
+          "labelEn": "Agriculture share of GDP",
+          "unitZh": "%",
+          "unitEn": "%",
+          "values": { "2021": 13.28, "2022": 12.4, "2023": 12.53 }
+        }
+      ]
+    },
+    "TH": {
+      "bilateralZh": "东盟重要经贸伙伴；对华贸易序时见国别页或「各国数据」。",
+      "bilateralEn": "Key ASEAN partner; China trade series on country page or data chart."
+    },
+    "PH": {
+      "bilateralZh": "全面战略合作；对华贸易序时见国别页或「各国数据」。",
+      "bilateralEn": "Strategic cooperation; China trade series on country page or data chart."
+    },
+    "VN": {
+      "bilateralZh": "制造业供应链与口岸贸易活跃；序时见国别页或「各国数据」。",
+      "bilateralEn": "Manufacturing supply chain; series on country page or data chart."
+    },
+    "MY": {
+      "bilateralZh": "东盟经贸枢纽；对华贸易序时见国别页或「各国数据」。",
+      "bilateralEn": "ASEAN trade hub; series on country page or data chart."
+    },
+    "SG": {
+      "bilateralZh": "经贸与金融合作；对华贸易序时见国别页或「各国数据」。",
+      "bilateralEn": "Trade & finance ties; series on country page or data chart."
+    },
+    "MX": {
+      "bilateralZh": "无独立国别页（404）；对华贸易见「各国数据」检索墨西哥。",
+      "bilateralEn": "No country profile URL (404); use data chart to query Mexico.",
+      "noProfile": true
+    },
+    "IN": {
+      "bilateralZh": "无独立国别页（404）；对华贸易见「各国数据」检索印度。",
+      "bilateralEn": "No country profile URL (404); use data chart to query India.",
+      "noProfile": true
+    },
+    "HK": {
+      "bilateralZh": "无独立国别页；港澳经贸数据见「各国数据」或特区统计。",
+      "bilateralEn": "No country profile; use data chart or HK official stats.",
+      "noProfile": true
+    }
+  }
+}

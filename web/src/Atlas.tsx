@@ -34,11 +34,21 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { ScreenSegChip, ScreenSegTrack, ScreenStatusPills, AtlasSideRail } from "./HeatMapChrome";
+import { ScreenSegChip, ScreenSegTrack, ScreenStatusPills } from "./HeatMapChrome";
 import {
-  DATA_QUALITY_LABEL,
+  COUNTRY_LABEL_ZH,
+  NBFC_QUALITY_ORDER,
+  NBFC_REGION_ORDER,
   NBFC_STATS,
+  dataQualityLabelUi,
+  downloadNbfcCsv,
   downloadNbfcXlsx,
+  nbfcCountSortValue,
+  nbfcCountryRegion,
+  nbfcEquivNameUi,
+  nbfcFieldTextUi,
+  nbfcRowId,
+  type NbfcCountryStatRow,
   type NbfcDataQuality,
 } from "./data/nbfcCountryStats";
 import {
@@ -51,8 +61,51 @@ import {
 } from "./data/storeRankFinance";
 import { FullMarketChoropleth, ScreenImfWbFilterBar } from "./FullMarketChoropleth";
 import { MacroHeatGlobe } from "./MacroHeatGlobe";
-import { MACRO_MAP_FACTORS, type MacroMapFactorId } from "./data/macroMapMetrics";
-import { canViewSourceCite } from "./authAccess";
+import { MACRO_MAP_FACTORS, macroMapFactorLabel, type MacroMapFactorId } from "./data/macroMapMetrics";
+import {
+  canCreateCrmInstitution,
+  canGuestClickMapCountry,
+  canGuestUseMapLayer,
+  canViewSourceCite,
+  GUEST_VERIFY_ENABLED,
+  isGuestSession,
+  isGuestVerified,
+  isLimitedGuest,
+} from "./authAccess";
+import {
+  createGuestVerifyPending,
+  dispatchGuestVerificationEmail,
+  guestVerifyResendCooldownMs,
+  sealGuestVerifyPending,
+  stripLegacyPlainCode,
+  validateGuestRegistrationForm,
+  verifyGuestCode,
+  type GuestAccessProfile,
+  type GuestVerifyPending,
+} from "./data/guestRegistration";
+import { guestRegionSelectOptions } from "./data/guestRegions";
+import {
+  briefCountryCode,
+  briefPhraseToEn,
+  confidenceLabelUi,
+  countryLabelUi,
+  detectBrowserUiLang,
+  disasterTitleToEn,
+  flashShellToEn,
+  instBucketLabel,
+  institutionTypeLabel,
+  listedOriginLabelUi,
+  listedRegionLabelUi,
+  regionLabelUi,
+  researchKindLabelUi,
+  stockDisplayNameUi,
+  trafficKindLabelUi,
+  fundKindLabelUi,
+  equityKindLabelUi,
+  fintechKpiLabelUi,
+  uiCopy,
+  type UiLang,
+} from "./uiI18n";
 import { VitalPyramid } from "./VitalPyramid";
 import { getVitalCountry } from "./data/vitalSeries";
 import { CreditDebtCharts, FxCaCharts, IncomeSectorCharts, StressPricingCharts } from "./MacroFactorCharts";
@@ -63,6 +116,11 @@ import {
   disasterCountForCountry,
   disasterKindLabel,
 } from "./data/disasterWatchDigest";
+import {
+  STORE_LISTING_STATUS,
+  storeDelistCountForCountry,
+  storeListingFlashEvents,
+} from "./data/storeListingStatus";
 import { CC_SOURCE_TIERS } from "./data/ccSourceTiers";
 import {
   ensureFlashChinese,
@@ -89,6 +147,8 @@ import {
   resolveFintechStockEarning,
   pickFintechFundamental,
   fintechFundamentalSortValue,
+  fintechFundamentalColUi,
+  formatFintechFundamentalUi,
   FINTECH_FUNDAMENTAL_COLS,
   type FintechFundSortKey,
 } from "./data/fintechStockEarnings";
@@ -149,14 +209,18 @@ import {
   synthesizeCashLoanBrief,
   type CashLoanMacroGroup,
 } from "./data/countryMacro";
+import { localizeCashLoanMacroGroups, localizeMacroText } from "./data/macroTextUi";
+import { CountryBriReferencePanel } from "./CountryBriReferencePanel";
 import { CitedText, MacroAsOfLine, MacroSourcesBlock, useSourceCiteReturn } from "./SourceCite";
 import {
   COUNTRY_LANGUAGE,
   LANGUAGE_ZONE_ORDER,
   countriesInLanguageZone,
   countryLanguageZone,
+  countryProductHint,
   formatCountryLanguageLine,
   getCountryLanguage,
+  languageZoneLabelUi,
 } from "./data/countryLanguage";
 import phSecLendingRoster from "./data/ph-sec-lending-roster.json";
 import inNbfcDigitalRoster from "./data/in-nbfc-digital-roster.json";
@@ -859,17 +923,26 @@ function isCountryChipActive(sel: CountryFilter, k: CountryCode): boolean {
   return n !== "all" && n.includes(k);
 }
 
-function formatCountryFilterLabel(sel: CountryFilter, region: Region): string | null {
+function formatCountryFilterLabel(
+  sel: CountryFilter,
+  region: Region,
+  lang: UiLang = "zh",
+): string | null {
   const n = normalizeCountryFilter(sel);
   if (n === "all") return null;
+  const name = (c: CountryCode) => countryLabelUi(c, lang, COUNTRY_LABEL[c]);
   const pool = regionCountryPool(region);
   if (n.length === pool.length - 1 && pool.length > 1) {
     const missing = pool.find((c) => !n.includes(c));
-    if (missing) return `除${COUNTRY_LABEL[missing]}外`;
+    if (missing) {
+      return lang === "en" ? `All except ${name(missing)}` : `除${name(missing)}外`;
+    }
   }
-  if (n.length === 1) return COUNTRY_LABEL[n[0]];
-  if (n.length <= 3) return n.map((c) => COUNTRY_LABEL[c]).join("、");
-  return `已选 ${n.length} 地`;
+  if (n.length === 1) return name(n[0]);
+  if (n.length <= 3) {
+    return n.map((c) => name(c)).join(lang === "en" ? ", " : "、");
+  }
+  return lang === "en" ? `${n.length} markets` : `已选 ${n.length} 地`;
 }
 
 type LangZoneFilter = "all" | string;
@@ -2420,11 +2493,48 @@ function matchesGuaranteeFilter(
   return want.some((x) => inf.roles.includes(x));
 }
 
-function creditProductFilterLabel(l1: CreditProdL1, l2: CreditProdL2, l3: CreditProdL3): string {
-  if (l1 === "all") return "全部信贷产品";
-  if (l3 !== "all") return l3;
-  if (l2 !== "all") return l2;
-  return l1;
+/** 信贷产品树节点 → EN（筛选芯片 / 摘要 pill；键保持中文枚举） */
+const CREDIT_PROD_NODE_EN: Record<string, string> = {
+  个人信贷: "Consumer credit",
+  企业信贷: "Business credit",
+  信贷超市: "Credit marketplace",
+  信贷其他: "Other credit",
+  消费信贷: "Consumer lending",
+  住房信贷: "Housing credit",
+  汽车信贷: "Auto credit",
+  流贷: "Working-capital loan",
+  固贷: "Fixed-asset loan",
+  提前收款: "Merchant advance",
+  订单融资: "Order financing",
+  发票融资: "Invoice financing",
+  学生贷: "Student loan",
+  农户贷: "Farmer loan",
+  公务员贷: "Civil-servant loan",
+  现金贷: "Cash loan",
+  "消费分期/BNPL": "BNPL / installment",
+  信用卡: "Credit card",
+  信用租赁: "Consumer lease",
+  按揭贷: "Mortgage",
+  抵押贷: "Home-equity / mortgage collateral",
+  新车贷: "New-car loan",
+  二手车贷: "Used-car loan",
+};
+
+function creditProdNodeLabelUi(node: string, lang: UiLang = "zh"): string {
+  if (lang !== "en") return node;
+  return CREDIT_PROD_NODE_EN[node] || node;
+}
+
+function creditProductFilterLabel(
+  l1: CreditProdL1,
+  l2: CreditProdL2,
+  l3: CreditProdL3,
+  lang: UiLang = "zh",
+): string {
+  if (l1 === "all") return lang === "en" ? "All credit products" : "全部信贷产品";
+  if (l3 !== "all") return creditProdNodeLabelUi(l3, lang);
+  if (l2 !== "all") return creditProdNodeLabelUi(l2, lang);
+  return creditProdNodeLabelUi(l1, lang);
 }
 
 /** CRM 机构类型：玩家（下场）在前，其余为非下场生态角色 */
@@ -2547,6 +2657,31 @@ const INSTITUTION_TYPE_BLURB: Record<InstitutionType, string> = {
   律师事务所: "金融法务、合规、争议解决。",
   评级机构: "主体/债项信用评级。",
 };
+const INSTITUTION_TYPE_BLURB_EN: Record<InstitutionType, string> = {
+  玩家: "Operating lenders/platforms; browse by Scene-native or Credit-native.",
+  流量服务商:
+    "Traffic vendors overall; pick a subtype below (platform / agency / marketplace / ops).",
+  数据服务方: "Credit bureaus, multi-lender, alternative data, etc.",
+  监管: "Central bank / supervisor directories; region → country → statutory license filters.",
+  资金参与机构: "Local banks, bank agents, structuring, senior / mezzanine investors.",
+  风险参与机构: "Insurance and other credit enhancement / risk sharing.",
+  股权投资人: "PE / VC / strategic / bank financial investors on the equity side.",
+  风控服务方: "B2B scoring, antifraud, KYC and decisioning (not consumer scene entries).",
+  支付服务机构:
+    "Payout / pay-in / escrow payments: rails, national wallets, payment agents.",
+  回收机构: "National/local AMCs, NPL investors, collections and asset disposal.",
+  权益服务商: "Membership benefits, points, add-on packs.",
+  触达服务机构: "SMS, push, outbound voice, messaging.",
+  公关服务机构: "Brand PR, crisis comms, media relations.",
+  信托服务机构: "Trust plans, ABS / asset-trust servicing.",
+  会计师事务所: "Audit, capital verification, IPO/bond diligence and controls.",
+  律师事务所: "Financial legal, compliance, dispute resolution.",
+  评级机构: "Issuer / issue credit ratings.",
+};
+
+function institutionTypeBlurbUi(t: InstitutionType, lang: UiLang = "zh"): string {
+  return lang === "en" ? INSTITUTION_TYPE_BLURB_EN[t] || INSTITUTION_TYPE_BLURB[t] : INSTITUTION_TYPE_BLURB[t];
+}
 
 const ECO_ROLE_ORDER: EcoRole[] = INSTITUTION_TYPE_ORDER.filter((t): t is EcoRole => t !== "玩家");
 const ECO_ROLE_LABEL: Record<EcoRole, string> = {
@@ -3052,6 +3187,7 @@ function LoginPasswordField({
   onToggle: () => void;
 }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
   return (
     <div
       style={{
@@ -3065,7 +3201,7 @@ function LoginPasswordField({
     >
       <input
         type={showPass ? "text" : "password"}
-        placeholder="密码"
+        placeholder={uiLang === "en" ? "Password" : "密码"}
         autoComplete={showPass ? "off" : "current-password"}
         spellCheck={false}
         inputMode={showPass ? "text" : undefined}
@@ -3252,12 +3388,20 @@ type CountryMacroSnap = {
   electricityResidential?: string;
   /** 油电比 = 汽油USD/升 ÷ 电价USD/kWh（1升汽油≈可购居民电kWh数） */
   fuelToPowerRatio?: string;
-  /** 新能源整车（优先 BEV CBU）进口关税/附加税合计示意 % */
+  /** 新能源整车（优先 BEV CBU）进口关税/附加税合计示意 %；标 HS8703；非零部件/CKD */
   nevImportTariff?: string;
   /** 本地出厂/首次销售新能源车增值税（VAT/GST/IVA）一般税率 % */
   nevLocalVat?: string;
   /** 新能源税差（衍生）= 进口关税% − 出厂增值税%（百分点） */
   nevTaxGap?: string;
+  /** CKD/SKD 组装路径关税示意 % */
+  nevHsCkd?: string;
+  /** 动力电池 HS8507.60 关税示意 % */
+  nevHsBattery?: string;
+  /** 驱动电机 HS8501 关税示意 % */
+  nevHsMotor?: string;
+  /** 购车端激励粗枚举：无|税费减免|现金或抵免|已退坡|混合|待核 */
+  nevPurchaseIncentive?: string;
   creditNote?: string;
   /** 对照宏观阈值的简评（展示于国别卡片） */
   cashLoanVerdict?: string;
@@ -5693,6 +5837,30 @@ const SCENE_TAG_LABEL: Record<SceneTag, string> = {
   Web3: "Web3",
 };
 
+const SCENE_TAG_LABEL_EN: Record<SceneTag, string> = {
+  电商: "E-commerce",
+  出行: "Mobility",
+  外卖: "Food delivery",
+  社交: "Social",
+  支付钱包: "Payments & wallets",
+  游戏: "Gaming",
+  直播: "Live streaming",
+  信用管理: "Credit management",
+  金融: "Finance",
+  艺术: "Arts",
+  内容资讯: "Content & media",
+  企业服务: "Enterprise services",
+  法律服务: "Legal services",
+  本地生活: "Local services",
+  在线教育: "Online education",
+  在线医疗: "Telehealth",
+  Web3: "Web3",
+};
+
+function sceneTagLabelUi(tag: SceneTag, lang: UiLang = "zh"): string {
+  return lang === "en" ? SCENE_TAG_LABEL_EN[tag] || tag : SCENE_TAG_LABEL[tag] || tag;
+}
+
 /** 场景二级（对齐大宽表 + Web3）；历史「侨汇」→「跨境支付/汇款」 */
 const SCENE_SUB_ORDER: SceneSubTag[] = [
   "综合电商",
@@ -5789,6 +5957,103 @@ const SCENE_SUB_ORDER: SceneSubTag[] = [
 const SCENE_SUB_LABEL: Record<SceneSubTag, string> = Object.fromEntries(
   SCENE_SUB_ORDER.map((t) => [t, t]),
 ) as Record<SceneSubTag, string>;
+
+/** 场景二级 UI 英文（键仍为中文枚举） */
+const SCENE_SUB_LABEL_EN: Record<SceneSubTag, string> = {
+  综合电商: "General e-commerce",
+  垂直电商: "Vertical e-commerce",
+  社交电商: "Social commerce",
+  跨境电商: "Cross-border e-commerce",
+  "二手/闲置": "Secondhand / resale",
+  网约车: "Ride-hailing",
+  "顺风车/拼车": "Carpool",
+  "共享单车/电单车": "Shared bikes / e-bikes",
+  "地图/导航": "Maps / navigation",
+  代驾: "Designated driver",
+  餐饮外卖: "Food delivery",
+  "即时零售/闪购": "Quick commerce",
+  生鲜电商: "Grocery e-commerce",
+  药品配送: "Pharmacy delivery",
+  即时通讯: "Messaging",
+  "社区/论坛": "Community / forums",
+  陌生人社交: "Stranger social",
+  职场社交: "Professional social",
+  "婚恋/相亲": "Dating / matchmaking",
+  移动支付: "Mobile payments",
+  "跨境支付/汇款": "Cross-border pay / remittance",
+  "数字银行/虚拟账户": "Digital bank / virtual account",
+  "预付卡/储值": "Prepaid / stored value",
+  聚合支付: "Payment aggregation",
+  手游: "Mobile games",
+  "端游/页游": "PC / browser games",
+  云游戏: "Cloud gaming",
+  "游戏平台/分发": "Game platforms / distribution",
+  "电竞/赛事": "Esports / events",
+  娱乐直播: "Entertainment livestream",
+  游戏直播: "Game livestream",
+  "电商直播/带货": "Live commerce",
+  教育直播: "Education livestream",
+  "企业直播/会议": "Enterprise livestream / meetings",
+  征信查询: "Credit report inquiry",
+  "信用评分/画像": "Credit score / profiling",
+  反欺诈服务: "Anti-fraud services",
+  "债务管理/催收": "Debt mgmt / collections",
+  短视频: "Short video",
+  "中长视频/流媒体": "Long-form / streaming",
+  "新闻资讯/聚合": "News / aggregation",
+  "知识付费/专栏": "Paid knowledge / columns",
+  "播客/音频": "Podcasts / audio",
+  "企业通讯/协同": "Enterprise comms / collab",
+  项目管理: "Project management",
+  "云存储/云服务": "Cloud storage / services",
+  "在线文档/表格": "Online docs / sheets",
+  电子签章: "E-signature",
+  电子合同: "E-contracts",
+  "在线公证/存证": "Online notarization / evidence",
+  "法律咨询/智能法务": "Legal advice / legal tech",
+  到店团购: "Local deals / group buy",
+  "酒店/民宿预订": "Hotels / stays",
+  "票务/电影/演出": "Tickets / movies / shows",
+  "家政/保洁服务": "Home / cleaning services",
+  "美容/美发预约": "Beauty / salon booking",
+  K12学科辅导: "K-12 tutoring",
+  语言学习: "Language learning",
+  "职业教育/考证": "Vocational / certification",
+  "兴趣/素质教育": "Interest / enrichment",
+  "企业培训/SaaS化": "Corporate training / SaaS",
+  在线问诊: "Online consultation",
+  "药品电商/配送": "Pharmacy e-commerce / delivery",
+  "健康管理/慢病": "Health / chronic care",
+  心理咨询: "Mental health counseling",
+  体检预约: "Health checkup booking",
+  "中心化交易所（CEX）": "CEX",
+  "去中心化交易所（DEX）": "DEX",
+  NFT交易市场: "NFT marketplace",
+  自托管钱包: "Self-custody wallet",
+  托管钱包: "Custodial wallet",
+  硬件钱包: "Hardware wallet",
+  借贷协议: "Lending protocols",
+  "稳定币兑换/持有": "Stablecoin swap / hold",
+  质押生息: "Staking yield",
+  流动性挖矿: "Liquidity mining",
+  链游玩赚: "Play-to-earn",
+  游戏资产交易: "Game asset trading",
+  游戏公会参与: "Gaming guilds",
+  去中心化社交: "Decentralized social",
+  创作者代币: "Creator tokens",
+  内容打赏: "Content tipping",
+  "PFP头像/身份": "PFP / identity NFTs",
+  "音乐/艺术收藏": "Music / art collectibles",
+  "品牌会员/权益": "Brand membership / perks",
+  "票务/入场凭证": "Tickets / entry credentials",
+  稳定币汇款: "Stablecoin remittance",
+  加密货币支付: "Crypto payments",
+  抗通胀储蓄: "Inflation-hedge savings",
+};
+
+function sceneSubLabelUi(sub: SceneSubTag, lang: UiLang = "zh"): string {
+  return lang === "en" ? SCENE_SUB_LABEL_EN[sub] || sub : SCENE_SUB_LABEL[sub] || sub;
+}
 
 const SCENE_SUB_PARENT: Record<SceneSubTag, SceneTag> = {
   "综合电商": "电商",
@@ -6094,15 +6359,22 @@ const SCENE_TAG_DEPTH_BY_GROUP: Record<string, Partial<Record<SceneTag, Platform
   Revolut: { 支付钱包: "core", 信用管理: "extend" },
 };
 
-function formatSceneTags(tags: SceneTag[], subTags: SceneSubTag[] = []): string {
+function formatSceneTags(
+  tags: SceneTag[],
+  subTags: SceneSubTag[] = [],
+  lang: UiLang = "zh",
+): string {
+  const sep = lang === "en" ? " · " : " · ";
+  const kidSep = lang === "en" ? ", " : "·";
   return SCENE_TAG_ORDER.filter((t) => tags.includes(t))
     .map((t) => {
       const kids = SCENE_SUB_ORDER.filter(
         (s) => subTags.includes(s) && SCENE_SUB_PARENT[s] === t,
-      ).map((s) => SCENE_SUB_LABEL[s]);
-      return kids.length ? `${SCENE_TAG_LABEL[t]}/${kids.join("·")}` : SCENE_TAG_LABEL[t];
+      ).map((s) => sceneSubLabelUi(s, lang));
+      const parent = sceneTagLabelUi(t, lang);
+      return kids.length ? `${parent}/${kids.join(kidSep)}` : parent;
     })
-    .join(" · ");
+    .join(sep);
 }
 
 function formatLeaseLine(_leaseSubs: LeaseSubTag[]): string {
@@ -6118,6 +6390,18 @@ const LICENSE_KIND_LABEL: Record<LicenseKind, string> = {
   消金小贷: "消金/小贷等",
   其他: "其他牌照",
 };
+
+const LICENSE_KIND_LABEL_EN: Record<LicenseKind, string> = {
+  银行: "Bank",
+  保险: "Insurance",
+  支付: "Payments",
+  消金小贷: "Consumer / microlending",
+  其他: "Other licenses",
+};
+
+function licenseKindLabelUi(k: LicenseKind, lang: UiLang = "zh"): string {
+  return lang === "en" ? LICENSE_KIND_LABEL_EN[k] || k : LICENSE_KIND_LABEL[k] || k;
+}
 
 /**
  * 牌照粗类只认「已持有」表述，不认合作/导流/分发/申请中。
@@ -6885,6 +7169,7 @@ const creditCrmSeedTuples: [Exclude<Region, "all">, "cash" | "bnpl" | "lease" | 
   ["south-asia", "cash", "SmartCoin（·IN）"],
   ["south-asia", "cash", "Mpokket（·IN）"],
   ["south-asia", "cash", "Stashfin（·IN）"],
+  ["south-asia", "cash", "黑色基石 / Dakfunnd（BD·MFI合作现金贷）"],
   ["south-asia", "cash", "IDLC Finance（BD·BB NBFI）"],
   ["south-asia", "cash", "IPDC Finance（BD·BB NBFI）"],
   ["south-asia", "cash", "LankaBangla Finance（BD·BB NBFI）"],
@@ -7701,7 +7986,9 @@ function expandCreditSeeds(seeds: CreditSeed[], source: "crm" | "luffy" = "crm")
             : "中国"
         : isMn
           ? "外蒙古"
-          : REGION_COUNTRY[s.region],
+          : /·BD[）)]|孟加拉|Bangladesh/i.test(s.group)
+            ? "孟加拉"
+            : REGION_COUNTRY[s.region],
       languages: isMn ? "蒙古语/英语" : "待核实",
       licenses: official
         ? official.source === "pdicDigibank"
@@ -8079,6 +8366,16 @@ const CREDIT_KYC: Record<
   string,
   Partial<Pick<CreditRow, "controller" | "equity" | "licenseReg" | "trafficRank" | "verify" | "note" | "volume" | "users">>
 > = {
+  "黑色基石 / Dakfunnd（BD·MFI合作现金贷）": {
+    controller: "黑色基石（Dakfunnd Technology；华为 Mobile Money 合作伙伴口径·材料自述）",
+    equity: "非上市；寻求配资合作",
+    licenseReg: "BD：经当地 MFI（Sehed）合作路径展业现金贷（材料自述·待双端）",
+    trafficRank: "材料：Google Play 信贷类约半年内前三（自述）",
+    verify: "待双端",
+    volume: "出借总额约2000万人民币量级（材料自述）",
+    users: "累计注册约15万（材料自述）",
+    note: "材料导入·2026-08《海外金融融资方案》：孟加拉现金贷/发薪日；本地职场+MFI合作；向资金方配资（模式一固收/模式二分润）。属信贷玩家，非资金参与机构。",
+  },
   "奇富科技/奇富借条/Qfin（奇富·CN）": {
     controller: "奇富科技（原360数科路径；公开披露以年报/招股为准）",
     equity: "NASDAQ: QFIN",
@@ -16306,15 +16603,26 @@ function macroCountryMatchesKeyword(code: Exclude<CountryCode, "all">, q: string
   );
 }
 
-/** 创设玩家导入附件（Cursor 式 Composer 附件条） */
+/** 创设/导入机构：Composer 附件条（可带解析正文） */
 type ComposerAttach = {
   id: string;
   kind: "link" | "doc" | "image" | "text";
   label: string;
+  /** 可读正文（txt/md/csv 或 PDF 解析成功时） */
+  text?: string;
 };
 
 function looksLikeCreatePlayerIntent(text: string): boolean {
-  return /创设|创建|新建|录入|建档|添加玩家|新增玩家|想要创设/.test(text.trim());
+  return /创设|创建|新建|录入|建档|添加玩家|新增玩家|想要创设|导入机构|上传建档|侧写建档/.test(
+    text.trim(),
+  );
+}
+
+/** 文件名/标题像公司材料：合作方案、侧写、BP 等 */
+function looksLikeCompanyDeckLabel(label: string): boolean {
+  return /合作方案|业务介绍|公司侧写|侧写|商业计划|白皮书|融资方案|信贷合作|BP\b|Pitch/i.test(
+    label,
+  );
 }
 
 function extractCreatedPlayerName(text: string): string {
@@ -16323,57 +16631,168 @@ function extractCreatedPlayerName(text: string): string {
     /[-—–]\s*([^\s，,。；;（(/]{2,40})/,
     /(?:叫|名为|名称[是为]?)\s*([^\s，,。；;（(]{2,40})/,
     /公司[：:\s]*([^\s，,。；;（(]{2,40})/,
-    /(?:创设|创建|新建|录入|建档)[^，,]{0,24}?([一-龥A-Za-z0-9·]{2,24}(?:集团|公司|科技|控股|金服|金融)?)/,
+    /关于我们[^一-龥A-Za-z]{0,12}([一-龥A-Za-z0-9·]{2,24})/,
+    /(?:创设|创建|新建|录入|建档|导入)[^，,]{0,24}?([一-龥A-Za-z0-9·]{2,24}(?:集团|公司|科技|控股|金服|金融)?)/,
   ];
   for (const re of patterns) {
     const m = t.match(re);
     if (m?.[1]) {
       let name = m[1].replace(/[的了呢吧]$/u, "").trim();
       name = name.replace(/^(一个|一家|一名)/, "");
-      if (name.length >= 2 && !/融资租赁|汽车金融|上市公司|持有/.test(name)) return name;
+      if (name.length >= 2 && !/融资租赁|汽车金融|上市公司|持有|海外信贷|目标国家/.test(name)) {
+        return name;
+      }
     }
   }
   return "";
+}
+
+function nameFromDocLabel(label: string): string {
+  let s = label.replace(/\.[a-z0-9]+$/i, "").trim();
+  s = s.replace(/[（(]\d+[）)]\s*$/g, "").trim();
+  s = s.replace(
+    /(海外金融)?融资方案|(信贷)?合作方案|业务介绍|公司侧写|商业计划书?|白皮书|介绍材料|Pitch\s*Deck|BP/gi,
+    "",
+  );
+  s = s.replace(/[_\-·\s]+$/g, "").trim();
+  if (s.length >= 2 && s.length <= 40) return s;
+  return "";
+}
+
+function attachmentBlob(attachments: ComposerAttach[]): string {
+  return attachments
+    .map((a) => `${a.label}\n${(a.text || "").slice(0, 12000)}`)
+    .join("\n");
+}
+
+type ComposerImportClass = {
+  institutionTypes: InstitutionType[];
+  fundKinds: FundParticipationKind[];
+  hub: AtlasHub | "玩家";
+};
+
+/** 从正文/文件名粗分机构类型（侧写上传建档） */
+function classifyComposerInstitution(blob: string): ComposerImportClass {
+  const seekingCapital =
+    /配资|合作方案|资金方|投资回报|年化\s*\d|起投|资本金配资|模式一|模式二/.test(blob) &&
+    /现金贷|发薪日|Payday|分期|放款|催收|注册用户|出借/.test(blob);
+  const isFundProvider =
+    !seekingCapital &&
+    /资金参与|联合贷资金|出资方|优先级投资|夹层投资|结构化融资|本地银行|助贷资金/.test(blob);
+  const isRisk =
+    /风险参与|保险增信|信用保险|担保公司/.test(blob) && !/现金贷产品|出借总额/.test(blob);
+
+  if (isFundProvider) {
+    const fundKinds: FundParticipationKind[] = [];
+    if (/本地银行|商业银行|数字银行/.test(blob)) fundKinds.push("本地银行");
+    if (/银行代理|助贷通道|联合贷代理/.test(blob)) fundKinds.push("本地银行代理");
+    if (/结构化|ABS|ABN|券商/.test(blob)) fundKinds.push("结构化服务商");
+    if (/优先|Senior|固收/.test(blob)) fundKinds.push("优先投资人");
+    if (/夹层|Mezzanine/.test(blob)) fundKinds.push("夹层投资人");
+    if (!fundKinds.length) fundKinds.push("优先投资人");
+    return { institutionTypes: ["资金参与机构"], fundKinds, hub: "资金参与机构" };
+  }
+  if (isRisk) {
+    return { institutionTypes: ["风险参与机构"], fundKinds: [], hub: "风险参与机构" };
+  }
+  // 默认：展业玩家（含「向资金方要配资」的运营方材料）
+  return { institutionTypes: ["玩家"], fundKinds: [], hub: "玩家" };
 }
 
 function draftFromComposerCreate(
   text: string,
   attachments: ComposerAttach[],
 ): CreditDraft | null {
-  if (!looksLikeCreatePlayerIntent(text)) return null;
-  const name = extractCreatedPlayerName(text);
+  const attBlob = attachmentBlob(attachments);
+  const blobAll = `${text}\n${attBlob}`;
+  const deckOnly =
+    !text.trim() &&
+    attachments.some(
+      (a) =>
+        a.kind === "doc" ||
+        a.kind === "text" ||
+        looksLikeCompanyDeckLabel(a.label) ||
+        (a.text || "").length > 40,
+    );
+  if (!looksLikeCreatePlayerIntent(text) && !deckOnly) return null;
+
+  let name =
+    extractCreatedPlayerName(text) ||
+    extractCreatedPlayerName(attBlob) ||
+    attachments.map((a) => nameFromDocLabel(a.label)).find((n) => n.length >= 2) ||
+    "";
   if (!name) return null;
 
-  const blob = `${text} ${attachments.map((a) => a.label).join(" ")}`;
-  const inChina = /中国|CN\b|内地/.test(blob);
+  const cls = classifyComposerInstitution(blobAll);
+  const inChina = /中国|CN\b|内地/.test(blobAll);
+  const inBd = /孟加拉|Bangladesh|\bBD\b/.test(blobAll);
+  const inId = /印尼|印度尼西亚|Indonesia/.test(blobAll);
+  const inPh = /菲律宾|Philippines/.test(blobAll);
+  const inMx = /墨西哥|Mexico/.test(blobAll);
+  const inNg = /尼日利亚|Nigeria/.test(blobAll);
   const region: Exclude<Region, "all"> = inChina
     ? "east-asia"
-    : /印尼|东南亚|菲律宾|越南|马来|泰国|新加坡/.test(blob)
-      ? "se-asia"
-      : /印度/.test(blob)
-        ? "south-asia"
-        : /巴西|墨西哥|拉美/.test(blob)
+    : inBd || /印度\b|Pakistan|巴基斯坦/.test(blobAll)
+      ? "south-asia"
+      : inId || inPh || /越南|马来|泰国|新加坡|东南亚/.test(blobAll)
+        ? "se-asia"
+        : inMx || /巴西|拉美/.test(blobAll)
           ? "latam"
-          : "east-asia";
+          : inNg || /非洲|肯尼亚|加纳/.test(blobAll)
+            ? "africa"
+            : "east-asia";
   const countries = inChina
     ? "中国"
-    : /印尼|印度尼西亚/.test(blob)
-      ? "印度尼西亚"
-      : "待核实";
-  const line: CreditRow["line"] = /融资租赁|信用租赁|租机|汽车金融|车贷|租赁/.test(blob)
+    : inBd
+      ? "孟加拉"
+      : inId
+        ? "印度尼西亚"
+        : inPh
+          ? "菲律宾"
+          : inMx
+            ? "墨西哥"
+            : inNg
+              ? "尼日利亚"
+              : "待核实";
+  const line: CreditRow["line"] = /融资租赁|信用租赁|租机|汽车金融|车贷/.test(blobAll)
     ? "lease"
-    : /分期|BNPL|消费贷/.test(blob)
+    : /分期|BNPL|消费贷|3C分期/.test(blobAll)
       ? "bnpl"
-      : /超市|导流|助贷平台/.test(blob)
+      : /超市|导流|助贷平台/.test(blobAll)
         ? "agent"
         : "cash";
-  const listed = /上市|HKEX|港股|A股|NYSE|NASDAQ|股票/.test(blob);
-  const leaseLic = /融资租赁/.test(blob);
-  const short = name.replace(/(集团|公司|控股)$/u, "") || name;
-  const group = `${name}/${short}（${short}·${inChina ? "CN" : "XX"}）`;
+  const listed = /上市|HKEX|港股|A股|NYSE|NASDAQ/.test(blobAll);
+  const leaseLic = /融资租赁/.test(blobAll);
+  const mfiLic = /MFI|小微金融|吸储/.test(blobAll);
+  const short = name.replace(/(集团|公司|控股|科技)$/u, "") || name;
+  const cc =
+    countries === "中国"
+      ? "CN"
+      : countries === "孟加拉"
+        ? "BD"
+        : countries === "印度尼西亚"
+          ? "ID"
+          : countries === "菲律宾"
+            ? "PH"
+            : countries === "墨西哥"
+              ? "MX"
+              : countries === "尼日利亚"
+                ? "NG"
+                : "XX";
+  const typeTag =
+    cls.institutionTypes[0] === "资金参与机构"
+      ? `资金参与机构·${cls.fundKinds[0] || "待分"}`
+      : cls.institutionTypes[0] === "风险参与机构"
+        ? "风险参与机构"
+        : short;
+  const group =
+    cls.institutionTypes[0] === "玩家"
+      ? `${name}/${short}（${short}·${cc}）`
+      : `${name}｜${short}｜${name}（${typeTag}·${cc}）`;
   const attNote = attachments.length
-    ? `；附件：${attachments.map((a) => `${a.kind}:${a.label}`).join(" | ")}`
+    ? `；附件：${attachments.map((a) => `${a.kind}:${a.label}${a.text ? "·已解析" : ""}`).join(" | ")}`
     : "";
+  const snippet = (text.trim() || attBlob.replace(/\s+/g, " ")).slice(0, 220);
 
   return {
     region,
@@ -16382,43 +16801,78 @@ function draftFromComposerCreate(
     group,
     brands: short,
     countries,
-    languages: inChina ? "中文" : "待核实",
-    licenses: leaseLic ? "融资租赁牌照（录入自述）" : "牌照待核实（录入自述）",
-    timing: "人工创设",
-    regulators: inChina ? "地方金融监管/银保监路径待核" : "待核实",
+    languages: inChina ? "中文" : inBd ? "孟加拉语/英语" : "待核实",
+    licenses: leaseLic
+      ? "融资租赁牌照（录入自述）"
+      : mfiLic
+        ? "当地 MFI/合作持牌路径（录入自述）"
+        : "牌照待核实（录入自述）",
+    timing: "材料导入",
+    regulators: inBd ? "Bangladesh Bank / MFI 路径待核" : inChina ? "地方金融监管路径待核" : "待核实",
     traffic: "待核实",
-    volume: "待核实",
-    users: "待核实",
-    diandian: "人工创设〔1〕核实",
-    note: `Composer 创设：${text.trim().slice(0, 180)}${attNote}`,
-    institutionTypes: ["玩家"],
+    volume: /出借|放款|成交/.test(blobAll) ? "见导入材料" : "待核实",
+    users: /注册用户/.test(blobAll) ? "见导入材料" : "待核实",
+    diandian: "材料导入〔1〕核实",
+    note: `Composer 导入：${snippet}${attNote}`,
+    institutionTypes: cls.institutionTypes,
+    fundKinds: cls.fundKinds,
     licenseReg: leaseLic
-      ? `已持：融资租赁(${countries === "中国" ? "中国" : countries})`
-      : "牌照：待核实",
-    licenseKinds: leaseLic ? ["其他"] : [],
+      ? `已持：融资租赁(${countries})`
+      : mfiLic
+        ? `合作/间接：MFI(${countries})`
+        : "牌照：待核实",
+    licenseKinds: leaseLic ? ["其他"] : mfiLic ? ["消金小贷"] : [],
     equity: listed ? "上市公司（录入自述；代码待核）" : "待核实",
     controller: name,
-    trafficRank: "人工创设",
+    trafficRank: "材料导入",
     verify: "待双端",
   };
 }
 
-type SpeechRecLike = {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  start: () => void;
-  stop: () => void;
-  onresult: ((ev: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null;
-  onerror: ((ev: unknown) => void) | null;
-  onend: (() => void) | null;
-};
+type PickedLocalFile = { name: string; size: number; text?: string };
 
-let activeSpeechRec: SpeechRecLike | null = null;
+async function readFileAsText(file: File): Promise<string> {
+  const lower = file.name.toLowerCase();
+  if (/\.(txt|md|csv|json|log)$/i.test(lower) || file.type.startsWith("text/")) {
+    return await file.text();
+  }
+  // PDF：浏览器端尽力抽取（无 pdf.js 依赖时返回空，仍可用文件名建档）
+  if (/\.pdf$/i.test(lower) || file.type === "application/pdf") {
+    try {
+      const buf = await file.arrayBuffer();
+      const u8 = new Uint8Array(buf);
+      // 粗抽 PDF 字面量串（扫描型 PDF 无效；文字型合作方案可用）
+      let raw = "";
+      const decoder = new TextDecoder("latin1");
+      const chunk = decoder.decode(u8);
+      const re = /\((?:\\.|[^\\)]){2,200}\)/g;
+      let m: RegExpExecArray | null;
+      let n = 0;
+      while ((m = re.exec(chunk)) && n < 4000) {
+        let s = m[0].slice(1, -1);
+        s = s
+          .replace(/\\n/g, "\n")
+          .replace(/\\r/g, "")
+          .replace(/\\t/g, " ")
+          .replace(/\\\(/g, "(")
+          .replace(/\\\)/g, ")")
+          .replace(/\\(\d{3})/g, (_, o) => String.fromCharCode(parseInt(o, 8)));
+        if (/[\u4e00-\u9fffA-Za-z]{2,}/.test(s)) {
+          raw += s + "\n";
+          n++;
+        }
+      }
+      return raw.slice(0, 20000);
+    } catch {
+      return "";
+    }
+  }
+  return "";
+}
 
 function pickLocalFiles(
   accept: string,
-  onPick: (files: { name: string; size: number }[]) => void,
+  onPick: (files: PickedLocalFile[]) => void,
 ): string | null {
   try {
     const input = document.createElement("input");
@@ -16426,7 +16880,15 @@ function pickLocalFiles(
     input.accept = accept;
     input.multiple = true;
     input.onchange = () => {
-      onPick(Array.from(input.files ?? []).map((f) => ({ name: f.name, size: f.size })));
+      const list = Array.from(input.files ?? []);
+      void (async () => {
+        const out: PickedLocalFile[] = [];
+        for (const f of list) {
+          const text = await readFileAsText(f);
+          out.push({ name: f.name, size: f.size, text: text.trim() ? text : undefined });
+        }
+        onPick(out);
+      })();
     };
     input.click();
     return null;
@@ -16496,6 +16958,7 @@ function CursorStyleComposer({
   onChange,
   onSubmit,
   sideSlot,
+  canCreateCrm = true,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -16503,17 +16966,21 @@ function CursorStyleComposer({
   onSubmit: (payload: { text: string; attachments: ComposerAttach[] }) => string;
   /** 贴在搜索框右侧，高度与搜索框对齐（地图/对照/信源） */
   sideSlot?: ReactNode;
+  /** 白名单成员可上传建档；访客仅检索 */
+  canCreateCrm?: boolean;
 }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const [menuOpen, setMenuOpen] = useCanvasState("cPlus1", false);
   const [linkVal, setLinkVal] = useCanvasState("cLink1", "");
   const [atts, setAtts] = useCanvasState<ComposerAttach[]>("cAtt1", EMPTY_COMPOSER_ATTS);
   const [listening, setListening] = useCanvasState("cVoice1", false);
   const [status, setStatus] = useCanvasState("cStat1", "");
 
-  function pushAtt(kind: ComposerAttach["kind"], label: string) {
+  function pushAtt(kind: ComposerAttach["kind"], label: string, body?: string) {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    setAtts((prev) => [{ id, kind, label }, ...prev].slice(0, 20));
+    setAtts((prev) => [{ id, kind, label, text: body }, ...prev].slice(0, 20));
   }
 
   const createHint = looksLikeCreatePlayerIntent(value);
@@ -16529,12 +16996,12 @@ function CursorStyleComposer({
               onClick={() => setAtts((prev) => prev.filter((x) => x.id !== a.id))}
             >
               {a.kind === "link"
-                ? "链接"
+                ? t.attachLink
                 : a.kind === "doc"
-                  ? "文档"
+                  ? t.attachDoc
                   : a.kind === "image"
-                    ? "图片"
-                    : "文本"}
+                    ? t.attachImage
+                    : t.attachText}
               · {a.label.length > 28 ? `${a.label.slice(0, 28)}…` : a.label} ×
             </Pill>
           ))}
@@ -16557,15 +17024,17 @@ function CursorStyleComposer({
             display: "flex",
             flexDirection: "column",
             gap: 8,
-            padding: "4px 0",
-            background: "transparent",
+            padding: 10,
+            borderRadius: 8,
+            background: theme.bg.elevated,
+            border: `1px solid ${theme.stroke.tertiary}`,
             boxSizing: "border-box",
           })}
         >
           <TextInput
             value={value}
             onChange={onChange}
-            placeholder="搜索机构；或写「创设…玩家名」建档（可附链接/文档/图片）"
+            placeholder={canCreateCrm ? t.searchPhMember : t.searchPhGuest}
             type="text"
             style={{
               width: "100%",
@@ -16577,7 +17046,7 @@ function CursorStyleComposer({
 
           <Row gap={6} align="center">
             <IconButton
-              title="添加附件"
+              title={t.addAttach}
               variant="circle"
               size="md"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -16594,17 +17063,13 @@ function CursorStyleComposer({
 
             <div style={{ flex: 1 }} />
 
-            <Text size="small" tone="tertiary">
-              Auto
-            </Text>
-
             <IconButton
-              title={listening ? "停止语音" : "语音录入"}
+              title={listening ? t.voiceStop : t.voiceStart}
               variant="circle"
               size="md"
               onClick={() => {
                 const err = toggleVoiceDictation((t) => onChange(t), setListening);
-                setStatus(err ?? (listening ? "" : "聆听中…再点麦克风结束"));
+                setStatus(err ?? (listening ? "" : t.voiceListening));
               }}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
@@ -16627,7 +17092,7 @@ function CursorStyleComposer({
             </IconButton>
 
             <IconButton
-              title={listening ? "停止" : createHint ? "创设玩家" : "搜索"}
+              title={listening ? t.stopBtn : createHint ? t.createPlayerBtn : t.searchBtn}
               variant="circle"
               size="md"
               onClick={() => {
@@ -16638,8 +17103,12 @@ function CursorStyleComposer({
                 }
                 const msg = onSubmit({ text: value, attachments: atts });
                 setStatus(msg);
-                if (looksLikeCreatePlayerIntent(value) && msg.startsWith("已创设")) {
+                if (
+                  msg.startsWith("已根据材料创设") ||
+                  msg.startsWith("已存在相近机构")
+                ) {
                   setAtts([]);
+                  onChange("");
                 }
               }}
             >
@@ -16698,73 +17167,118 @@ function CursorStyleComposer({
         >
           <Stack gap={10}>
             <Text size="small" weight="medium">
-              添加上下文 · 创设玩家导入
+              {canCreateCrm ? t.attachMenuTitleMember : t.attachMenuTitleGuest}
             </Text>
             <Text size="small" tone="secondary">
-              对齐 Cursor Composer：先挂链接/文档/图片，再在输入框描述或检索。移动端可用语音。
+              {canCreateCrm ? t.attachMenuHintMember : t.guestSearchOnly}
             </Text>
             <Row gap={8} wrap>
               <div style={{ flex: 1, minWidth: 160 }}>
                 <TextInput
                   value={linkVal}
                   onChange={setLinkVal}
-                  placeholder="粘贴链接 https://…"
+                  placeholder={t.pasteLinkPh}
                   type="url"
                 />
               </div>
               <Button
                 variant="secondary"
                 onClick={() => {
+                  if (!canCreateCrm) {
+                    setStatus(
+                      uiLang === "en"
+                        ? "Sign in with a whitelist email before adding CRM materials"
+                        : "请先用白名单邮箱登录后再添加建档材料",
+                    );
+                    return;
+                  }
                   const u = linkVal.trim();
                   if (!u) {
-                    setStatus("请先粘贴链接");
+                    setStatus(uiLang === "en" ? "Paste a link first" : "请先粘贴链接");
                     return;
                   }
                   pushAtt("link", u);
                   setLinkVal("");
-                  setStatus("已添加链接");
+                  setStatus(uiLang === "en" ? "Link added" : "已添加链接");
                 }}
               >
-                添加链接
+                {uiLang === "en" ? "Add link" : "添加链接"}
               </Button>
             </Row>
             <Row gap={8} wrap>
               <Button
                 variant="secondary"
                 onClick={() => {
+                  if (!canCreateCrm) {
+                    setStatus(
+                      uiLang === "en"
+                        ? "Sign in with a whitelist email before uploading docs"
+                        : "请先用白名单邮箱登录后再上传文档建档",
+                    );
+                    return;
+                  }
                   const err = pickLocalFiles(".pdf,.doc,.docx,.txt,.md,.csv", (files) => {
-                    for (const f of files) pushAtt("doc", f.name);
-                    setStatus(files.length ? `已添加 ${files.length} 个文档` : "");
+                    for (const f of files) pushAtt("doc", f.name, f.text);
+                    const parsed = files.filter((f) => f.text).length;
+                    setStatus(
+                      files.length
+                        ? uiLang === "en"
+                          ? `Added ${files.length} doc(s)${parsed ? ` (${parsed} with text)` : " (PDF without text layer will use filename)"} — send to create CRM`
+                          : `已添加 ${files.length} 个文档${parsed ? `（解析正文 ${parsed}）` : "（PDF 若无正文将按文件名建档）"}；点发送即可创设 CRM 机构`
+                        : "",
+                    );
                   });
                   if (err) setStatus(err);
                 }}
               >
-                文档
+                {t.attachDoc}
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => {
+                  if (!canCreateCrm) {
+                    setStatus(
+                      uiLang === "en"
+                        ? "Sign in with a whitelist email before uploading"
+                        : "请先用白名单邮箱登录后再上传建档材料",
+                    );
+                    return;
+                  }
                   const err = pickLocalFiles("image/*", (files) => {
                     for (const f of files) pushAtt("image", f.name);
-                    setStatus(files.length ? `已添加 ${files.length} 张图片` : "");
+                    setStatus(
+                      files.length
+                        ? uiLang === "en"
+                          ? `Added ${files.length} image(s)`
+                          : `已添加 ${files.length} 张图片`
+                        : "",
+                    );
                   });
                   if (err) setStatus(err);
                 }}
               >
-                图片
+                {t.attachImage}
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => {
+                  if (!canCreateCrm) {
+                    setStatus(
+                      uiLang === "en"
+                        ? "Sign in with a whitelist email before capturing notes"
+                        : "请先用白名单邮箱登录后再收录建档线索",
+                    );
+                    return;
+                  }
                   if (!value.trim()) {
-                    setStatus("先在输入框写下线索");
+                    setStatus(uiLang === "en" ? "Type a note in the box first" : "先在输入框写下线索");
                     return;
                   }
                   pushAtt("text", value.trim().slice(0, 60));
-                  setStatus("已收录文本线索");
+                  setStatus(uiLang === "en" ? "Text note captured" : "已收录文本线索");
                 }}
               >
-                收录当前输入
+                {uiLang === "en" ? "Capture current input" : "收录当前输入"}
               </Button>
             </Row>
           </Stack>
@@ -17144,6 +17658,7 @@ function SourceCiteEntryCard({
   focusNo: number;
 }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
   const focused = focusNo === c.no;
   return (
     <div
@@ -17164,7 +17679,7 @@ function SourceCiteEntryCard({
             {c.title}
           </Text>
           <Pill tone="neutral" size="sm">
-            {sourceCiteKindLabel(c.kind)}
+            {sourceCiteKindLabel(c.kind, uiLang)}
           </Pill>
           {c.reportId ? (
             <Pill tone="neutral" size="sm">
@@ -17174,7 +17689,7 @@ function SourceCiteEntryCard({
         </Row>
         {c.url ? (
           <Text size="small">
-            <Link href={c.url}>原文</Link>
+            <Link href={c.url}>{uiLang === "en" ? "Source" : "原文"}</Link>
           </Text>
         ) : null}
       </Row>
@@ -17192,6 +17707,8 @@ function SourceCatalogPanel() {
   const [focus, setFocus] = useCanvasState<string>("sourceCiteFocus", "");
   const focusNo = Number(focus) || 0;
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const { hasReturn, label, goBack } = useSourceCiteReturn();
   const core = catalog.filter((c) => c.no <= 23);
   const research = catalog.filter((c) => c.no > 23 && !isListedStockCitation(c));
@@ -17211,7 +17728,7 @@ function SourceCatalogPanel() {
     <Stack gap={16}>
       <Stack gap={8}>
         <Row gap={10} align="center" justify="space-between" wrap>
-          <H2>信源 / 研报编号目录</H2>
+          <H2>{uiLang === "en" ? "Sources / citation index" : "信源 / 研报编号目录"}</H2>
           <button
             type="button"
             onClick={goBack}
@@ -17233,16 +17750,18 @@ function SourceCatalogPanel() {
               boxSizing: "border-box",
             }}
           >
-            ← {hasReturn ? `返回${label}` : "返回总览"}
+            ← {hasReturn ? (uiLang === "en" ? `Back to ${label}` : `返回${label}`) : (uiLang === "en" ? "Overview" : "返回总览")}
           </button>
         </Row>
         <Text size="small" tone="tertiary">
-          每条为统一词条：编号〔n〕· 名称 · 类型 · 原文。正文点〔n〕跳转本页并高亮。核心含 TE〔1〕、点点〔2〕、墨腾〔3〕、出海小黑板〔21〕、GlobalPetrolPrices〔22〕、TE零售汽油表〔23〕、新能源关税/增值税〔24〕等。
+          {uiLang === "en"
+            ? "Each entry: cite no. [n] · title · type · source link. Click [n] in body text to jump here. Core set includes TE [1], Diandian [2], MomentumWorks [3], GlobalPetrolPrices [22], TE retail gasoline [23], NEV tariff/VAT [24], and more."
+            : "每条为统一词条：编号〔n〕· 名称 · 类型 · 原文。正文点〔n〕跳转本页并高亮。核心含 TE〔1〕、点点〔2〕、墨腾〔3〕、出海小黑板〔21〕、GlobalPetrolPrices〔22〕、TE零售汽油表〔23〕、新能源关税/增值税〔24〕等。"}
         </Text>
       </Stack>
 
       <Stack gap={8}>
-        <Text weight="medium">核心信源 · 〔1〕–〔23〕</Text>
+        <Text weight="medium">{uiLang === "en" ? "Core sources · [1]–[23]" : "核心信源 · 〔1〕–〔23〕"}</Text>
         {core.map((c) => (
           <SourceCiteEntryCard key={c.id} c={c} focusNo={focusNo} />
         ))}
@@ -17250,8 +17769,8 @@ function SourceCatalogPanel() {
 
       <SoftFold
         key={researchFocused ? `research-${focusNo}` : "research"}
-        title="情报库词条"
-        hint="研报与监管/信源包及其 sources[]"
+        title={t.foldIntel}
+        hint={uiLang === "en" ? "Research & regulator packs + sources[]" : "研报与监管/信源包及其 sources[]"}
         count={research.length}
         defaultOpen={researchFocused || research.length <= 12}
       >
@@ -17264,7 +17783,7 @@ function SourceCatalogPanel() {
 
       <SoftFold
         key={listedFocused ? `listed-${focusNo}` : "listed"}
-        title="上市公司词条"
+        title={t.foldListedEntry}
         hint="交易所门户与观察池已缓存财报/IR；行情总入口见〔16〕"
         count={listed.length}
         defaultOpen={listedFocused}
@@ -19577,12 +20096,17 @@ function resolveSceneTagDepthMap(
   return out;
 }
 
-function formatSceneTagDepthLine(group: string, tags: SceneTag[], trafficRank: string): string {
+function formatSceneTagDepthLine(
+  group: string,
+  tags: SceneTag[],
+  trafficRank: string,
+  lang: UiLang = "zh",
+): string {
   const depthMap = resolveSceneTagDepthMap(group, tags, trafficRank);
   return tags
     .map((t) => {
       const d = depthMap[t] ?? "core";
-      return `${SCENE_TAG_LABEL[t]}${d === "core" ? "●" : "○"}`;
+      return `${sceneTagLabelUi(t, lang)}${d === "core" ? "●" : "○"}`;
     })
     .join(" ");
 }
@@ -20226,12 +20750,12 @@ function PlayerLicenseBrief({
 }
 
 /** 生态机构：市场定位大类 + 服务性质词条（均标●，表示主业定位） */
-function formatEcoRoleDepthLine(r: CreditRow): string {
+function formatEcoRoleDepthLine(r: CreditRow, lang: UiLang = "zh"): string {
   const roles = (r.institutionTypes.length ? r.institutionTypes : r.ecoRoles).filter(
     (t) => t !== "玩家",
   ) as InstitutionType[];
   const list = roles.length ? roles : (["流量服务商"] as InstitutionType[]);
-  return list.map((t) => `${INSTITUTION_TYPE_LABEL[t]}●`).join(" ");
+  return list.map((t) => `${institutionTypeLabel(t, lang, INSTITUTION_TYPE_LABEL[t])}●`).join(" ");
 }
 
 function MetricBar({
@@ -20556,36 +21080,84 @@ function HomeSectionTitle({ children }: { children?: ReactNode }) {
   );
 }
 
+/** 研报展开玩家名：少量中文描述名 → EN */
+function researchPlayerNameEn(nameZh: string): string {
+  const map: Record<string, string> = {
+    乐信: "Lexin",
+    "印度 NBFC/数字放贷入口": "India NBFC / digital-lending entry",
+    "菲律宾 OLP 持牌放贷": "Philippines licensed OLP lenders",
+    "泰国个人贷/Nano 持牌非银": "Thailand personal-loan / Nano licensed NBFIs",
+    "MexiCash/快牛": "MexiCash",
+    "Sea/Monee": "Sea / Monee",
+  };
+  return map[nameZh] || nameZh;
+}
+
 function ResearchLibraryHomePanel() {
   const research = latestResearchReports(6);
   /** 监管官方材料：有价值的才进研报轨（不作快讯列表） */
   const officialPacks = latestSourcePacks(4).filter((r) => !isResearchReportDoc(r));
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
+  const en = uiLang === "en";
   const [openId, setOpenId] = useState("");
   const docs = [...research, ...officialPacks];
   if (!docs.length) return null;
 
+  /** 研报标题/摘要勿走 ensureFlashChinese（会把 20-F 等压成「外媒/银行与信贷」壳） */
+  const researchSoft = (s: string) => softenBriefDecorations(s || "");
+
   /** 对齐 36氪专题：眉题 · 大标题 · 导语 · 分栏文章列表 */
   const renderTopic = (r: (typeof research)[0]) => {
     const open = openId === r.id;
-    const lede = softenBriefText(r.thesis || r.analysis.verdict || "");
-    const verdict = softenBriefText(r.analysis.verdict || "");
-    const bullets = (r.analysis.bullets || []).map(softenBriefText);
-    const policy = (r.policyBullets || []).map(softenBriefText);
-    const players = r.playerUpdates || [];
+    const titleUi = en
+      ? researchSoft(r.titleEn || r.title)
+      : researchSoft(r.title);
+    const ledeRaw = en
+      ? r.summaryEn || r.thesisEn || r.analysis.verdictEn || ""
+      : r.thesis || r.analysis.verdict || "";
+    const lede = researchSoft(ledeRaw);
+    const verdict = researchSoft(
+      en
+        ? r.analysis.verdictEn || r.summaryEn || r.thesisEn || ""
+        : r.analysis.verdict || "",
+    );
+    const bullets = (
+      en
+        ? r.analysis.bulletsEn?.length
+          ? r.analysis.bulletsEn
+          : [] // EN：无 bulletsEn 不回退中文墙
+        : r.analysis.bullets || []
+    ).map(researchSoft);
+    const policy = (
+      en
+        ? r.policyBulletsEn?.length
+          ? r.policyBulletsEn
+          : []
+        : r.policyBullets || []
+    ).map(researchSoft);
+    const players = (r.playerUpdates || []).filter((p) => {
+      if (!en) return true;
+      const m = (p.metricEn || "").trim();
+      // EN：无 metricEn 且 metric 含汉字则跳过该行，避免展开墙
+      if (m) return true;
+      return !/[\u4e00-\u9fff]/.test(p.metric || "");
+    });
     const sources = r.sources || [];
-    const regions = (r.regions || []).join("、");
+    const regions = (r.regions || []).join(en ? ", " : "、");
     const isOfficial = !isResearchReportDoc(r);
-    const brow = isOfficial ? "监管专题" : "热点专题";
+    const brow = isOfficial ? t.researchBrowOfficial : t.researchBrow;
+    const kindRaw = r.docKindLabel || docKindLabel(r);
+    const kindUi = kindRaw ? researchKindLabelUi(kindRaw, uiLang) : "";
 
     return (
       <div
         key={r.id}
         style={{
-          borderRadius: 10,
-          border: `1px solid ${theme.stroke.tertiary}`,
-          background: theme.bg.elevated,
-          overflow: "hidden",
+          borderBottom: `1px solid ${theme.stroke.tertiary}`,
+          paddingBottom: 12,
+          marginBottom: 4,
         }}
       >
         <button
@@ -20595,7 +21167,7 @@ function ResearchLibraryHomePanel() {
             display: "block",
             width: "100%",
             margin: 0,
-            padding: "14px 14px 12px",
+            padding: "10px 0 8px",
             border: "none",
             background: "transparent",
             cursor: "pointer",
@@ -20603,55 +21175,51 @@ function ResearchLibraryHomePanel() {
             font: "inherit",
             color: "inherit",
           }}
-          title={open ? "收起专题" : "进入专题"}
+          title={open ? t.collapse : t.expand}
         >
           <div
             style={{
               fontSize: 12,
-              letterSpacing: "0.04em",
               color: theme.text.tertiary,
-              fontWeight: 600,
-              marginBottom: 8,
+              fontWeight: 500,
+              marginBottom: 6,
             }}
           >
             {brow}
-            {r.docKindLabel || docKindLabel(r) ? ` · ${r.docKindLabel || docKindLabel(r)}` : ""}
+            {kindUi ? ` · ${kindUi}` : ""}
           </div>
           <div
             style={{
-              fontSize: 18,
+              fontSize: 14,
               fontWeight: 600,
-              lineHeight: 1.35,
+              lineHeight: 1.4,
               color: theme.text.primary,
-              letterSpacing: "-0.01em",
             }}
           >
-            {softenBriefText(r.title)}
+            {titleUi}
           </div>
           {lede ? (
-            <div style={{ marginTop: 10 }}>
+            <div style={{ marginTop: 8 }}>
               <HomeProse muted>
                 <GlossedText text={lede} />
               </HomeProse>
             </div>
           ) : null}
-          <div style={{ marginTop: 12 }}>
+          <div style={{ marginTop: 8 }}>
             <HomeMeta>
-              {softenBriefText(
-                [
-                  r.publisher,
-                  r.period,
-                  r.asOf ? `对照 ${r.asOf}` : "",
-                  regions ? `覆盖 ${regions}` : "",
-                  r.confidence ? `置信${r.confidence}` : "",
-                ]
-                  .filter(Boolean)
-                  .join(" · "),
-              )}
+              {[
+                r.publisher,
+                r.period,
+                r.asOf ? t.researchAsOf(r.asOf) : "",
+                regions ? t.researchCoverage(regions) : "",
+                r.confidence ? t.researchConfidence(confidenceLabelUi(r.confidence, uiLang)) : "",
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </HomeMeta>
           </div>
-          <div style={{ marginTop: 10 }}>
-            <HomeMeta>{open ? "收起专题" : "进入专题"}</HomeMeta>
+          <div style={{ marginTop: 8 }}>
+            <HomeMeta>{open ? t.collapse : t.expand}</HomeMeta>
           </div>
         </button>
 
@@ -20659,20 +21227,20 @@ function ResearchLibraryHomePanel() {
           <div
             style={{
               borderTop: `1px solid ${theme.stroke.tertiary}`,
-              padding: "8px 14px 14px",
+              padding: "8px 0 4px",
             }}
           >
             <Stack gap={12}>
               {verdict && verdict !== lede ? (
                 <Stack gap={8}>
-                  <HomeSectionTitle>「主编导读」</HomeSectionTitle>
+                  <HomeSectionTitle>{t.researchLede}</HomeSectionTitle>
                   <HomeProse muted>{verdict}</HomeProse>
                 </Stack>
               ) : null}
 
               {bullets.length ? (
                 <Stack gap={8}>
-                  <HomeSectionTitle>「核心结论」</HomeSectionTitle>
+                  <HomeSectionTitle>{t.researchConclusions}</HomeSectionTitle>
                   <Stack gap={0}>
                     {bullets.map((b, i) => (
                       <div
@@ -20713,7 +21281,7 @@ function ResearchLibraryHomePanel() {
 
               {policy.length ? (
                 <Stack gap={8}>
-                  <HomeSectionTitle>「监管对照」</HomeSectionTitle>
+                  <HomeSectionTitle>{t.researchPolicy}</HomeSectionTitle>
                   <Stack gap={0}>
                     {policy.slice(0, 6).map((b, i) => (
                       <div
@@ -20738,7 +21306,7 @@ function ResearchLibraryHomePanel() {
 
               {players.length ? (
                 <Stack gap={8}>
-                  <HomeSectionTitle>「相关玩家」</HomeSectionTitle>
+                  <HomeSectionTitle>{t.researchPlayers}</HomeSectionTitle>
                   <Stack gap={0}>
                     {players.slice(0, 12).map((p, i) => (
                       <div
@@ -20759,7 +21327,7 @@ function ResearchLibraryHomePanel() {
                             lineHeight: 1.4,
                           }}
                         >
-                          {p.nameZh}
+                          {en ? researchPlayerNameEn(p.nameZh) : p.nameZh}
                           {p.appName ? ` · ${p.appName}` : ""}
                         </div>
                         <div
@@ -20770,20 +21338,20 @@ function ResearchLibraryHomePanel() {
                             color: theme.text.secondary,
                           }}
                         >
-                          {softenBriefText(p.metric)}
+                          {researchSoft(en ? p.metricEn || p.metric : p.metric)}
                         </div>
                       </div>
                     ))}
                   </Stack>
                   {players.length > 12 ? (
-                    <HomeMeta>另有 {players.length - 12} 家未展开</HomeMeta>
+                    <HomeMeta>{t.researchMorePlayers(players.length - 12)}</HomeMeta>
                   ) : null}
                 </Stack>
               ) : null}
 
               {sources.length ? (
                 <Stack gap={8}>
-                  <HomeSectionTitle>「信源与附件」</HomeSectionTitle>
+                  <HomeSectionTitle>{t.researchSources}</HomeSectionTitle>
                   <Stack gap={0}>
                     {sources.map((s, i) => (
                       <div
@@ -20795,16 +21363,23 @@ function ResearchLibraryHomePanel() {
                         }}
                       >
                         <div style={{ fontSize: 14, fontWeight: 600, color: theme.text.primary }}>
-                          {s.title}
+                          {en && /[\u4e00-\u9fff]/.test(s.title)
+                            ? s.url
+                              ? new URL(s.url).hostname.replace(/^www\./, "")
+                              : t.researchSourceLink
+                            : s.title}
                           {s.url ? (
                             <>
                               {" "}
-                              <Link href={s.url}>原文</Link>
+                              <Link href={s.url}>{t.researchSourceLink}</Link>
                             </>
                           ) : null}
                         </div>
-                        {s.asOf ? <HomeMeta>时点 {s.asOf}</HomeMeta> : null}
-                        {(s.bullets || []).slice(0, 2).map((b, j) => (
+                        {s.asOf ? <HomeMeta>{t.researchSourceAsOf(s.asOf)}</HomeMeta> : null}
+                        {(s.bullets || [])
+                          .filter((b) => !(en && /[\u4e00-\u9fff]/.test(b)))
+                          .slice(0, 2)
+                          .map((b, j) => (
                           <div
                             key={`${s.id}-${j}`}
                             style={{
@@ -20814,13 +21389,13 @@ function ResearchLibraryHomePanel() {
                               color: theme.text.tertiary,
                             }}
                           >
-                            {softenBriefText(b)}
+                            {researchSoft(b)}
                           </div>
                         ))}
                       </div>
                     ))}
                   </Stack>
-                  {r.localPath ? <HomeMeta>本地稿 {r.localPath}</HomeMeta> : null}
+                  {r.localPath ? <HomeMeta>{t.researchLocalPath(r.localPath)}</HomeMeta> : null}
                 </Stack>
               ) : null}
 
@@ -20838,7 +21413,7 @@ function ResearchLibraryHomePanel() {
                   color: theme.text.tertiary,
                 }}
               >
-                收起专题
+                {t.researchCollapseTopic}
               </button>
             </Stack>
           </div>
@@ -20850,10 +21425,7 @@ function ResearchLibraryHomePanel() {
   return (
     <Stack gap={0}>
       <AtlasStickySub>
-        <HomeMeta>
-          研报 · {research.length} 篇专题
-          {officialPacks.length ? ` · 监管材料 ${officialPacks.length}` : ""}
-        </HomeMeta>
+        <HomeMeta>{t.researchMeta(research.length, officialPacks.length)}</HomeMeta>
       </AtlasStickySub>
       <Stack gap={12} style={{ paddingTop: 12 }}>
         {docs.map(renderTopic)}
@@ -20866,21 +21438,23 @@ function ResearchLibraryHomePanel() {
 function ListedDisclosureBrief({ group, ticker }: { group: string; ticker?: string }) {
   const d = resolveListedDisclosure(group, ticker);
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
   if (!d) return null;
   const filled = d.status === "filled" && d.kpis.length > 0;
   const originLabel = d.origin ? LISTED_ORIGIN_LABEL[d.origin] || d.origin : "";
   const regionLabel = d.region ? LISTED_REGION_LABEL[d.region] || d.region : "";
+  const en = uiLang === "en";
   return (
     <Stack gap={6}>
       <Row gap={8} align="center" justify="space-between" wrap>
         <Text size="small" weight="medium">
-          最近披露 KPI
+          {en ? "Latest filing KPIs" : "最近披露 KPI"}
           {d.period ? ` · ${d.period}` : ""}
         </Text>
         <Text size="small" tone="tertiary">
           T2
           {d.confidence ? ` · ${d.confidence}` : ""}
-          {!filled ? " · 待填" : ""}
+          {!filled ? (en ? " · pending" : " · 待填") : ""}
         </Text>
       </Row>
       <Row gap={6} wrap>
@@ -20918,7 +21492,7 @@ function ListedDisclosureBrief({ group, ticker }: { group: string; ticker?: stri
                 background: theme.bg.elevated,
               }}
             >
-              <div style={{ fontSize: 11, color: theme.text.tertiary, marginBottom: 4 }}>{k.label}</div>
+              <div style={{ fontSize: 11, color: theme.text.tertiary, marginBottom: 4 }}>{fintechKpiLabelUi(k.label, uiLang)}</div>
               <div style={{ fontSize: 13, fontWeight: 500, color: theme.text.primary }}>{k.value}</div>
               {k.yoy ? (
                 <div style={{ fontSize: 11, color: theme.text.tertiary, marginTop: 2 }}>{k.yoy}</div>
@@ -20928,7 +21502,7 @@ function ListedDisclosureBrief({ group, ticker }: { group: string; ticker?: stri
         </div>
       ) : (
         <Text size="small" tone="tertiary">
-          {d.cashLoanHint || "槽位已建，待财报/债项披露填入成交量/在贷/逾期等。"}
+          {d.cashLoanHint || (uiLang === "en" ? "Slot ready — pending volume / book / delinquency from filings." : "槽位已建，待财报/债项披露填入成交量/在贷/逾期等。")}
         </Text>
       )}
       {filled && d.cashLoanHint ? (
@@ -21033,6 +21607,7 @@ function FilterChip({
   active,
   present,
   clearable,
+  title,
   onClick,
 }: {
   label: string;
@@ -21040,21 +21615,31 @@ function FilterChip({
   /** 反向亮起：名下已有机构覆盖（未选中时用 info 色提示） */
   present?: boolean;
   clearable?: boolean;
+  title?: string;
   onClick: () => void;
 }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   return (
     <button
       type="button"
       onClick={onClick}
       title={
-        active && clearable
-          ? "点击清除"
+        title ||
+        (active && clearable
+          ? en
+            ? "Click to clear"
+            : "点击清除"
           : present && !active
-            ? "已有机构覆盖"
+            ? en
+              ? "Orgs present in library"
+              : "已有机构覆盖"
             : present === false
-              ? "尚无机构（未创设）"
-              : undefined
+              ? en
+                ? "No orgs yet (not created)"
+                : "尚无机构（未创设）"
+              : undefined)
       }
       style={{
         display: "inline-flex",
@@ -21064,7 +21649,7 @@ function FilterChip({
         borderRadius: 8,
         border: `1px solid ${active ? theme.stroke.secondary : theme.stroke.tertiary}`,
         background: active ? theme.fill.secondary : theme.bg.elevated,
-        color: present && !active ? theme.text.link : theme.text.primary,
+        color: present && !active ? theme.text.secondary : theme.text.primary,
         cursor: "pointer",
         font: "inherit",
         fontSize: 12,
@@ -21472,9 +22057,9 @@ function MacroStat({ raw, label }: { raw: string; label: string }) {
 
 type CompareMode = "macro" | InstitutionType;
 
-function compareModeLabel(m: CompareMode): string {
-  if (m === "macro") return "国别宏观";
-  return INSTITUTION_TYPE_LABEL[m];
+function compareModeLabel(m: CompareMode, lang: UiLang = "zh"): string {
+  if (m === "macro") return lang === "en" ? "Country macro" : "国别宏观";
+  return institutionTypeLabel(m, lang, INSTITUTION_TYPE_LABEL[m]);
 }
 
 /** 对照：国别宏观 / 玩家 / 其它机构类型并排 */
@@ -21508,6 +22093,8 @@ function compareSceneLabel(r: SceneRow): string {
 /** 对照：国别 / 机构多选并排（最多 6）；CRM 与大屏共用 */
 function CompareHubPanel({ dense = false }: { dense?: boolean }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const [mode, setMode] = useCanvasState<CompareMode>("cmpMode2", "玩家");
   const [macroKeysRaw, setMacroKeysRaw] = useCanvasState<string>("cmpMacroKeys1", "ID|IN");
   const [instKeysRaw, setInstKeysRaw] = useCanvasState<string>("cmpInstKeys1", "");
@@ -21691,12 +22278,12 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
     <Stack gap={dense ? 12 : 14}>
       <Stack gap={4}>
         <Text size="small" weight="medium">
-          对照对象
+          {uiLang === "en" ? "Compare" : "对照对象"}
         </Text>
         <Row gap={6} wrap>
           {modes.map((m) => (
             <FilterChip
-              label={compareModeLabel(m)}
+              label={compareModeLabel(m, uiLang)}
               active={mode === m}
               onClick={() => {
                 setMode(m);
@@ -21706,15 +22293,22 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
           ))}
         </Row>
         <Text size="small" tone="tertiary">
-          可多选，最多 {COMPARE_MAX} 个；再点已选项可取消。已选 {nShow}/{COMPARE_MAX}
-          {mode !== "macro" ? ` · 本类库内约 ${poolAll.length} 家` : ""}
+          {uiLang === "en"
+            ? `Multi-select up to ${COMPARE_MAX}. Click again to remove. Selected ${nShow}/${COMPARE_MAX}${
+                mode !== "macro" ? ` · ~${poolAll.length} in this class` : ""
+              }`
+            : `可多选，最多 ${COMPARE_MAX} 个；再点已选项可取消。已选 ${nShow}/${COMPARE_MAX}${
+                mode !== "macro" ? ` · 本类库内约 ${poolAll.length} 家` : ""
+              }`}
         </Text>
       </Stack>
 
       {mode === "macro" ? (
         <Stack gap={12}>
           <Text size="small" tone="tertiary">
-            有宏观快照的国家可点选（共 {macroCodes.length}）；不会一次铺开全部对照卡。
+            {uiLang === "en"
+              ? `Countries with macro snapshots (${macroCodes.length}). Cards open only for what you pick.`
+              : `有宏观快照的国家可点选（共 ${macroCodes.length}）；不会一次铺开全部对照卡。`}
           </Text>
           <Row gap={6} wrap>
             {macroCodes.map((c) => {
@@ -21722,7 +22316,7 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
               const on = macroKeys.includes(code);
               return (
                 <FilterChip
-                  label={COUNTRY_LABEL[c]}
+                  label={countryLabelUi(c, uiLang, COUNTRY_LABEL[c])}
                   active={on}
                   clearable={on}
                   present={on}
@@ -21743,10 +22337,10 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
                 <Stack key={code} gap={6}>
                   <Row gap={6} align="center" justify="space-between">
                     <Text size="small" tone="tertiary">
-                      {COUNTRY_LABEL[code]}
+                      {countryLabelUi(code, uiLang, COUNTRY_LABEL[code])}
                     </Text>
                     <Pill tone="neutral" size="sm" onClick={() => toggleMacro(code)}>
-                      移除
+                      {uiLang === "en" ? "Remove" : "移除"}
                     </Pill>
                   </Row>
                   <CountryMacroPanel country={code} />
@@ -21754,7 +22348,7 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
               ))}
             </div>
           ) : (
-            <Callout tone="neutral">请点选至少一个国家加入对照。</Callout>
+            <Callout tone="neutral">{t.comparePickCountry}</Callout>
           )}
         </Stack>
       ) : (
@@ -21762,7 +22356,7 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
           <TextInput
             value={pickQ}
             onChange={setPickQ}
-            placeholder={`搜索${compareModeLabel(mode)}：品牌 / 法定名 / 牌照 / 国家`}
+            placeholder={t.compareSearchPh(compareModeLabel(mode, uiLang))}
             type="search"
           />
           {selectedInst.length ? (
@@ -21780,9 +22374,13 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
             </Row>
           ) : null}
           <Callout tone="neutral">
-            {q
-              ? `匹配 ${matchTotal} 家${matchTotal > poolMatched.length ? `（下列展示前 ${poolMatched.length}）` : ""}；点行加入对照。`
-              : `库内约 ${poolAll.length} 家可对照（含监管名录导入的消金/LPBBTI 等）。默认不铺开全部，请搜索后点选；下列为随便看看 ${Math.min(COMPARE_BROWSE_HINT, poolAll.length)} 家。`}
+            {uiLang === "en"
+              ? q
+                ? `Matched ${matchTotal}${matchTotal > poolMatched.length ? ` (showing first ${poolMatched.length})` : ""}. Click a row to add.`
+                : `~${poolAll.length} in library (incl. regulator-list imports). Search to pick; browsing ${Math.min(COMPARE_BROWSE_HINT, poolAll.length)} below.`
+              : q
+                ? `匹配 ${matchTotal} 家${matchTotal > poolMatched.length ? `（下列展示前 ${poolMatched.length}）` : ""}；点行加入对照。`
+                : `库内约 ${poolAll.length} 家可对照（含监管名录导入的消金/LPBBTI 等）。默认不铺开全部，请搜索后点选；下列为随便看看 ${Math.min(COMPARE_BROWSE_HINT, poolAll.length)} 家。`}
           </Callout>
           <div
             style={{
@@ -21853,7 +22451,17 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
                         color: on ? theme.text.link : theme.text.tertiary,
                       }}
                     >
-                      {on ? "已选 · 取消" : full ? "已满" : "加入"}
+                      {on
+                        ? uiLang === "en"
+                          ? "Selected · remove"
+                          : "已选 · 取消"
+                        : full
+                          ? uiLang === "en"
+                            ? "Full"
+                            : "已满"
+                          : uiLang === "en"
+                            ? "Add"
+                            : "加入"}
                     </span>
                   </button>
                 );
@@ -21861,7 +22469,7 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
             ) : (
               <div style={{ padding: 12 }}>
                 <Text size="small" tone="tertiary">
-                  {q ? "无匹配机构，换个关键词试试。" : "本类暂无机构。"}
+                  {q ? t.compareNoMatch : t.compareEmptyClass}
                 </Text>
               </div>
             )}
@@ -21881,7 +22489,7 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
                       {p.label}
                     </Text>
                     <Pill tone="neutral" size="sm" onClick={() => toggleInst(p.key)}>
-                      移除
+                      {uiLang === "en" ? "Remove" : "移除"}
                     </Pill>
                   </Row>
                   {p.kind === "scene" ? <ScenePlayer r={p.row} /> : <CreditPlayer r={p.row} />}
@@ -21889,7 +22497,7 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
               ))}
             </div>
           ) : (
-            <Callout tone="neutral">搜索并点选机构加入对照（可多选，最多 {COMPARE_MAX}）。</Callout>
+            <Callout tone="neutral">{t.comparePickOrg(COMPARE_MAX)}</Callout>
           )}
         </Stack>
       )}
@@ -21898,8 +22506,14 @@ function CompareHubPanel({ dense = false }: { dense?: boolean }) {
 }
 
 function CashLoanFlagDot({ flag }: { flag?: "watch" | "hot" | "ok" }) {
+  const theme = useHostTheme();
   if (!flag) return null;
-  const color = flag === "hot" ? "#E53935" : flag === "watch" ? "#D97706" : "#1B8F4A";
+  const color =
+    flag === "hot"
+      ? theme.category.red
+      : flag === "watch"
+        ? theme.category.orange
+        : theme.category.green;
   const label = flag === "hot" ? "高压" : flag === "watch" ? "留意" : "偏稳";
   return (
     <span
@@ -21927,6 +22541,8 @@ function CashLoanMacroGroupBlock({
   defaultOpen?: boolean;
 }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const [open, setOpen] = useState(Boolean(defaultOpen && chart));
   return (
     <div
@@ -21955,7 +22571,7 @@ function CashLoanMacroGroupBlock({
               cursor: "pointer",
             }}
           >
-            {open ? "收起图 ▾" : "展开图 ▸"}
+            {open ? t.collapseChart : t.expandChart}
           </button>
         ) : null}
       </Row>
@@ -22000,32 +22616,39 @@ function CountryMacroPanel({ country }: { country: CountryCode }) {
   if (country === "all") return null;
   const code = country as Exclude<CountryCode, "all">;
   const snap = getCountryMacro(code) || COUNTRY_MACRO[code];
-  const macroBrief = snap ? synthesizeCashLoanBrief(snap) : "";
-  const macroNote = snap ? displayCreditNote(snap) : undefined;
-  const langLine = formatCountryLanguageLine(code);
-  const langInfo = getCountryLanguage(code);
-  const teUrl = teIndicatorsUrl(code);
   const theme = useHostTheme();
-  const groups = snap ? buildCashLoanMacroGroups(snap) : [];
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
+  const en = uiLang === "en";
+  const macroBrief = snap ? localizeMacroText(synthesizeCashLoanBrief(snap), uiLang) : "";
+  const macroNoteRaw = snap ? displayCreditNote(snap) : undefined;
+  const macroNote = macroNoteRaw ? localizeMacroText(macroNoteRaw, uiLang) : undefined;
+  const langLine = formatCountryLanguageLine(code, uiLang);
+  const productHint = countryProductHint(code, uiLang);
+  const teUrl = teIndicatorsUrl(code);
+  const countryTitle = countryLabelUi(code, uiLang, COUNTRY_LABEL[code]);
+  const groups = snap ? localizeCashLoanMacroGroups(buildCashLoanMacroGroups(snap), uiLang) : [];
   const citeNos = snap ? collectCountryMacroCiteNos(snap) : [];
 
   const chartById: Record<string, ReactNode> = snap
     ? {
-        fx_cross: <FxCaCharts snap={snap} countryLabel={COUNTRY_LABEL[code]} countryCode={code} />,
+        fx_cross: <FxCaCharts snap={snap} countryLabel={countryTitle} countryCode={code} />,
         borrower: (
           <Stack gap={10}>
             {getVitalCountry(code) ? (
-              <VitalPyramid country={code} countryLabel={COUNTRY_LABEL[code]} />
+              <VitalPyramid country={code} countryLabel={countryTitle} />
             ) : (
               <Text size="small" tone="tertiary">
-                暂无出生队列，人口结构图略。
+                {en
+                  ? "No birth cohort series — population pyramid omitted."
+                  : "暂无出生队列，人口结构图略。"}
               </Text>
             )}
-            <IncomeSectorCharts snap={snap} countryLabel={COUNTRY_LABEL[code]} countryCode={code} />
+            <IncomeSectorCharts snap={snap} countryLabel={countryTitle} countryCode={code} />
           </Stack>
         ),
-        credit_heat: <CreditDebtCharts snap={snap} countryLabel={COUNTRY_LABEL[code]} />,
-        stress: <StressPricingCharts countryCode={code} countryLabel={COUNTRY_LABEL[code]} />,
+        credit_heat: <CreditDebtCharts snap={snap} countryLabel={countryTitle} />,
+        stress: <StressPricingCharts countryCode={code} countryLabel={countryTitle} />,
       }
     : {};
 
@@ -22035,27 +22658,31 @@ function CountryMacroPanel({ country }: { country: CountryCode }) {
         <CardHeader
           trailing={
             <Row gap={6} align="center">
-              {countryLanguageZone(code) ? (
+              {countryLanguageZone(code, uiLang) ? (
                 <Pill tone="info" size="sm">
-                  {countryLanguageZone(code)}
+                  {countryLanguageZone(code, uiLang)}
                 </Pill>
               ) : null}
               <Pill tone="neutral" size="sm">
-                现金贷视角
+                {t.cashLoanLens}
               </Pill>
             </Row>
           }
         >
-          {COUNTRY_LABEL[code]}
+          {countryTitle}
         </CardHeader>
         <CardBody>
           <Stack gap={10}>
             {snap ? (
               <Stack gap={10}>
                 <Text size="small" tone="tertiary">
-                  对照时点 · {snap.asOf}
+                  {en ? "As of" : "对照时点"} · {localizeMacroText(snap.asOf || "", uiLang)}
                   {langLine ? ` · ${langLine}` : ""}
-                  {langInfo?.productHint ? ` · 产品常用语 ${langInfo.productHint}` : ""}
+                  {productHint
+                    ? en
+                      ? ` · Product language ${productHint}`
+                      : ` · 产品常用语 ${productHint}`
+                    : ""}
                 </Text>
                 <div
                   style={{
@@ -22066,13 +22693,17 @@ function CountryMacroPanel({ country }: { country: CountryCode }) {
                   }}
                 >
                   <div style={{ fontSize: 11, color: theme.text.tertiary, marginBottom: 4 }}>
-                    现金贷准入简评 · 决策序 ①监管基建 → ②汇兑 → ③客群 → ④过热 → ⑤压测
+                    {en
+                      ? "Cash-loan screening · order ① regs/infra → ② FX → ③ borrowers → ④ overheat → ⑤ stress"
+                      : "现金贷准入简评 · 决策序 ①监管基建 → ②汇兑 → ③客群 → ④过热 → ⑤压测"}
                   </div>
                   <div style={{ fontSize: 13, lineHeight: 1.5, color: theme.text.primary }}>
                     <CitedText text={macroBrief} size="small" />
                   </div>
                   <div style={{ fontSize: 11, color: theme.text.tertiary, marginTop: 6 }}>
-                    ①牌照/利率上限/催收见「监管」页，宏观卡从②起读。
+                    {en
+                      ? "① License / rate cap / collections: see Regulator hub. Macro card starts at ②."
+                      : "①牌照/利率上限/催收见「监管」页，宏观卡从②起读。"}
                   </div>
                 </div>
                 {groups.map((g) => (
@@ -22083,7 +22714,9 @@ function CountryMacroPanel({ country }: { country: CountryCode }) {
                     defaultOpen={g.id === "fx_cross"}
                   />
                 ))}
-                {macroNote ? <DetailField label="补充" value={macroNote} /> : null}
+                {macroNote ? (
+                  <DetailField label={en ? "Note" : "补充"} value={macroNote} />
+                ) : null}
                 <MacroSourcesBlock citeNos={citeNos} />
               </Stack>
             ) : (
@@ -22101,9 +22734,13 @@ function CountryMacroPanel({ country }: { country: CountryCode }) {
             )}
             {teUrl ? (
               <Text size="small" tone="tertiary">
-                <Link href={teUrl}>Trading Economics · {COUNTRY_LABEL[code]}指标</Link>
+                <Link href={teUrl}>
+                  Trading Economics · {countryTitle}
+                  {uiLang === "en" ? " indicators" : "指标"}
+                </Link>
               </Text>
             ) : null}
+            <CountryBriReferencePanel code={code} countryLabel={countryTitle} uiLang={uiLang} />
           </Stack>
         </CardBody>
       </Card>
@@ -22160,6 +22797,8 @@ function GeoAndLicenseFilters({
   /** 反向映射：该机构类型已覆盖的国家 */
   coveredCountries?: Set<Exclude<CountryCode, "all">>;
 }) {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const showPresent = Boolean(coveredRegions || coveredCountries);
   const regionPresent = (k: Region) => {
     if (!showPresent) return undefined;
@@ -22171,7 +22810,7 @@ function GeoAndLicenseFilters({
     if (k === "all") return (coveredCountries?.size ?? 0) > 0;
     return coveredCountries?.has(k) ?? false;
   };
-  const filterHint = formatCountryFilterLabel(country, region);
+  const filterHint = formatCountryFilterLabel(country, region, uiLang);
   const handleCountryChip = (k: CountryCode) => {
     if (onCountryChip) {
       onCountryChip(k);
@@ -22187,15 +22826,15 @@ function GeoAndLicenseFilters({
     <Stack gap={10}>
       <Stack gap={4}>
         <Text size="small" weight="medium">
-          涉足洲际
+          {t.foldRegions}
         </Text>
         <Text size="small" tone="tertiary">
-          亮起 = 已收录 · 未亮 = 尚未创设
+          {t.foldRegionsHint}
         </Text>
         <Row gap={6} wrap>
           {(Object.keys(REGION_LABEL) as Region[]).map((k) => (
             <FilterChip
-              label={REGION_LABEL[k]}
+              label={regionLabelUi(k, uiLang, REGION_LABEL[k])}
               active={region === k}
               present={regionPresent(k)}
               clearable={k !== "all"}
@@ -22207,23 +22846,33 @@ function GeoAndLicenseFilters({
 
       {onLangZone ? (
         <SoftFold
-          title="语言区"
-          hint={langZone === "all" ? "按展业语言区收窄；选项随洲际变化" : `已选 ${langZone}`}
+          title={t.foldLangZone}
+          hint={
+            langZone === "all"
+              ? uiLang === "en"
+                ? "Narrow by operating language zone; options follow region"
+                : "按展业语言区收窄；选项随洲际变化"
+              : uiLang === "en"
+                ? `Selected ${languageZoneLabelUi(langZone, uiLang)}`
+                : `已选 ${langZone}`
+          }
           count={languageZonesForRegion(region).length}
           defaultOpen={langZone !== "all"}
         >
           <Text size="small" tone="tertiary">
-            按展业语言区收窄；选项随洲际变化
+            {uiLang === "en"
+              ? "Narrow by operating language zone; options follow region"
+              : "按展业语言区收窄；选项随洲际变化"}
           </Text>
           <Row gap={6} wrap>
             <FilterChip
-              label="全部语言区"
+              label={t.filterAllLangZones}
               active={langZone === "all"}
               onClick={() => onLangZone("all")}
             />
             {languageZonesForRegion(region).map((z) => (
               <FilterChip
-                label={z}
+                label={languageZoneLabelUi(z, uiLang)}
                 active={langZone === z}
                 clearable
                 onClick={() => onLangZone(langZone === z ? "all" : z)}
@@ -22234,26 +22883,36 @@ function GeoAndLicenseFilters({
       ) : null}
 
       <SoftFold
-        title="涉足国家/地区"
+        title={t.foldCountries}
         hint={
           filterHint
-            ? `当前 · ${filterHint}`
+            ? uiLang === "en"
+              ? `Current · ${filterHint}`
+              : `当前 · ${filterHint}`
             : onCountryChip
-              ? "多选收窄；点标题可收起"
-              : "点选收窄；再点同一国取消"
+              ? uiLang === "en"
+                ? "Multi-select to narrow; collapse via title"
+                : "多选收窄；点标题可收起"
+              : uiLang === "en"
+                ? "Tap to narrow; tap again to clear"
+                : "点选收窄；再点同一国取消"
         }
         count={countriesForRegionAndLang(region, langZone).length}
         defaultOpen={country !== "all"}
       >
         <Text size="small" tone="tertiary">
           {onCountryChip
-            ? "多选：点「全部」后点掉某国 = 除该国以外；再点可加回/去掉"
-            : "点选收窄；再点同一国取消"}
+            ? uiLang === "en"
+              ? "Multi-select: All then deselect one = all except that market"
+              : "多选：点「全部」后点掉某国 = 除该国以外；再点可加回/去掉"
+            : uiLang === "en"
+              ? "Tap to narrow; tap again to clear"
+              : "点选收窄；再点同一国取消"}
         </Text>
         <Row gap={6} wrap>
           {countriesForRegionAndLang(region, langZone).map((k) => (
             <FilterChip
-              label={COUNTRY_LABEL[k]}
+              label={countryLabelUi(k, uiLang, COUNTRY_LABEL[k])}
               active={isCountryChipActive(country, k)}
               present={countryPresent(k)}
               clearable={k !== "all"}
@@ -22263,31 +22922,35 @@ function GeoAndLicenseFilters({
         </Row>
         {filterHint ? (
           <Text size="small" tone="secondary">
-            当前筛选 · {filterHint}
+            {uiLang === "en" ? "Filter ·" : "当前筛选 ·"} {filterHint}
           </Text>
         ) : null}
       </SoftFold>
 
       {showLicenseKind ? (
         <SoftFold
-          title="涉及金融牌照"
+          title={t.foldLicenses}
           hint={
             licenseKind === "all"
-              ? "按银行/保险/支付/消金等粗类收窄"
-              : `已选 ${LICENSE_KIND_LABEL[licenseKind]}`
+              ? uiLang === "en"
+                ? "Narrow by bank / insurance / payments / consumer-lending class"
+                : "按银行/保险/支付/消金等粗类收窄"
+              : uiLang === "en"
+                ? `Selected ${licenseKindLabelUi(licenseKind, uiLang)}`
+                : `已选 ${LICENSE_KIND_LABEL[licenseKind]}`
           }
           count={LICENSE_KIND_ORDER.length}
           defaultOpen={licenseKind !== "all"}
         >
           <Row gap={6} wrap>
             <FilterChip
-              label="全部牌照粗类"
+              label={t.filterAllLicenseKinds}
               active={licenseKind === "all"}
               onClick={() => onLicenseKind("all")}
             />
             {LICENSE_KIND_ORDER.map((k) => (
               <FilterChip
-                label={LICENSE_KIND_LABEL[k]}
+                label={licenseKindLabelUi(k, uiLang)}
                 active={licenseKind === k}
                 clearable
                 onClick={() => onLicenseKind(licenseKind === k ? "all" : k)}
@@ -22303,6 +22966,8 @@ function GeoAndLicenseFilters({
 /** 未登录门禁：受控输入（state + globalThis 双写，重建不丢字） */
 function LoginPage() {
   const theme = useHostTheme();
+  const [uiLang, setUiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const [users, setUsers] = useCanvasState<Record<string, AuthUserRecord>>("authUsers1", {});
   const [, setSession] = useCanvasState("authSession1", "");
   const [, setEmail] = useCanvasState("claimEmail1", "");
@@ -22335,31 +23000,36 @@ function LoginPage() {
     setPassSaved(draft.pass);
     const emailRaw = pickLoginValue(userSaved, draft.email).trim() || draft.email.trim();
     const pass = pickLoginValue(passSaved, draft.pass) || draft.pass;
+    const zh = uiLang === "zh";
     if (!emailRaw || !pass) {
-      setErr("请输入邮箱与密码");
+      setErr(zh ? "请输入邮箱与密码" : "Enter email and password");
       return;
     }
     if (!emailHasClaimPermission(emailRaw)) {
-      setErr("邮箱或密码错误");
+      setErr(zh ? "邮箱或密码错误" : "Incorrect email or password");
       return;
     }
     const key = claimLocalPart(emailRaw);
     const u = resolveAuthUser(users, key);
     if (!u.enabled) {
-      setErr("账号不可用，请联系管理员");
+      setErr(zh ? "账号不可用，请联系管理员" : "Account disabled — contact admin");
       return;
     }
     const isAdmin = isClaimAdmin(key);
     if (u.locked && !(isAdmin && pass === CLAIM_DEFAULT_PASSWORD)) {
-      setErr("账号已锁定，请联系管理员重置");
+      setErr(zh ? "账号已锁定，请联系管理员重置" : "Account locked — contact admin to reset");
       return;
     }
     if (pass !== u.password) {
       if (isAdmin) {
-        setErr("邮箱或密码错误");
+        setErr(zh ? "邮箱或密码错误" : "Incorrect email or password");
       } else {
         setUsers((prev) => ({ ...prev, [key]: { ...u, locked: true } }));
-        setErr("密码错误，账号已锁定，请联系管理员重置");
+        setErr(
+          zh
+            ? "密码错误，账号已锁定，请联系管理员重置"
+            : "Wrong password — account locked; contact admin to reset",
+        );
       }
       setPassInput("");
       return;
@@ -22376,12 +23046,28 @@ function LoginPage() {
 
   return (
     <Stack gap={24} style={{ maxWidth: 420 }}>
-      <Stack gap={6}>
-        <H1>CRM 生态系统</H1>
-        <Text size="small" tone="secondary">
-          登录后继续
-        </Text>
-      </Stack>
+      <Row gap={8} align="center" justify="space-between" wrap>
+        <Stack gap={6} style={{ flex: 1, minWidth: 0 }}>
+          <H1>{t.loginTitle}</H1>
+          <Text size="small" tone="secondary">
+            {t.loginSubtitle}
+          </Text>
+        </Stack>
+        <Row gap={4}>
+          <Button
+            variant={uiLang === "zh" ? "primary" : "secondary"}
+            onClick={() => setUiLang("zh")}
+          >
+            {t.langZh}
+          </Button>
+          <Button
+            variant={uiLang === "en" ? "primary" : "secondary"}
+            onClick={() => setUiLang("en")}
+          >
+            {t.langEn}
+          </Button>
+        </Row>
+      </Row>
       <div
         style={mergeStyle({
           padding: 16,
@@ -22393,11 +23079,11 @@ function LoginPage() {
         <Stack gap={12}>
           <Stack gap={4}>
             <Text size="small" weight="medium">
-              邮箱
+              {t.email}
             </Text>
             <input
               type="text"
-              placeholder="邮箱"
+              placeholder={t.emailPh}
               autoComplete="username"
               spellCheck={false}
               value={userInput}
@@ -22430,7 +23116,7 @@ function LoginPage() {
           </Stack>
           <Stack gap={4}>
             <Text size="small" weight="medium">
-              密码
+              {t.password}
             </Text>
             <LoginPasswordField
               value={passInput}
@@ -22443,7 +23129,7 @@ function LoginPage() {
 
           <Row gap={8} wrap>
             <Button variant="primary" onClick={onLogin}>
-              登录
+              {t.login}
             </Button>
             <Button
               variant="secondary"
@@ -22452,7 +23138,7 @@ function LoginPage() {
                 setErr("");
               }}
             >
-              访客进入
+              {t.guestEnter}
             </Button>
           </Row>
         </Stack>
@@ -22462,19 +23148,62 @@ function LoginPage() {
 }
 
 /** Cursor 风格登录后身份条：缩写头像 · 名称 · 角色 · Update · 设置 */
-function SessionChrome({ trailing }: { trailing?: ReactNode }) {
+function SessionChrome() {
   const theme = useHostTheme();
+  const [uiLang, setUiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const [session, setSession] = useCanvasState("authSession1", "");
   const [users, setUsers] = useCanvasState<Record<string, AuthUserRecord>>("authUsers1", {});
   const [, setEmail] = useCanvasState("claimEmail1", "");
-  const [panel, setPanel] = useCanvasState<"none" | "password" | "admin">("authPanel1", "none");
+  const [panel, setPanel] = useCanvasState<"none" | "password" | "admin" | "register">(
+    "authPanel1",
+    "none",
+  );
   const [oldPw, setOldPw] = useCanvasState("chgOld1", "");
   const [newPw, setNewPw] = useCanvasState("chgNew1", "");
   const [msg, setMsg] = useCanvasState("sessMsg1", "");
+  const [guestAccess, setGuestAccess] = useCanvasState<GuestAccessProfile | null>("guestAccess1", null);
+  const [guestVerifyPending, setGuestVerifyPending] = useCanvasState<GuestVerifyPending | null>(
+    "guestVerifyPending1",
+    null,
+  );
+  const [regStep, setRegStep] = useCanvasState<"form" | "code">("guestRegStep1", "form");
+  const [regCompany, setRegCompany] = useCanvasState("regCompany1", "");
+  const [regName, setRegName] = useCanvasState("regContactName1", "");
+  const [regEmail, setRegEmail] = useCanvasState("regEmail1", "");
+  const [regPhone, setRegPhone] = useCanvasState("regPhone1", "");
+  const [regCountry, setRegCountry] = useCanvasState("regCountry1", "");
+  const [regCode, setRegCode] = useCanvasState("regCode1", "");
+  const [regSending, setRegSending] = useState(false);
+  const [resendTick, setResendTick] = useState(0);
 
   const user = resolveAuthUser(users, session);
   const admin = isClaimAdmin(session);
+  const guest = isGuestSession(session);
+  const guestVerified = isGuestVerified(guestAccess);
+  const guestLimited = isLimitedGuest(session, guestAccess);
   const initials = (user.displayLocal || session || "?").slice(0, 2).toUpperCase();
+  const resendLeftMs = guestVerifyResendCooldownMs(guestVerifyPending);
+
+  useEffect(() => {
+    if (!GUEST_VERIFY_ENABLED) return;
+    const { changed, pending: cleaned } = stripLegacyPlainCode(
+      guestVerifyPending as (GuestVerifyPending & { code?: string }) | null,
+    );
+    if (!changed) return;
+    setGuestVerifyPending(cleaned);
+    if (!cleaned) {
+      setRegStep("form");
+      setMsg(uiLang === "zh" ? "请重新发送验证码" : "Please resend the verification code");
+    }
+  }, [guestVerifyPending, setGuestVerifyPending, setRegStep, setMsg, uiLang]);
+
+  useEffect(() => {
+    if (!GUEST_VERIFY_ENABLED) return;
+    if (!guestVerifyPending || resendLeftMs <= 0) return;
+    const t = window.setTimeout(() => setResendTick((n) => n + 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [guestVerifyPending, resendLeftMs, resendTick]);
 
   function logout() {
     setSession("");
@@ -22488,17 +23217,17 @@ function SessionChrome({ trailing }: { trailing?: ReactNode }) {
   function changePassword() {
     const u = resolveAuthUser(users, session);
     if (oldPw !== u.password) {
-      setMsg("原密码错误");
+      setMsg(t.oldPwWrong);
       return;
     }
     if (newPw.trim().length < 6) {
-      setMsg("新密码至少 6 位");
+      setMsg(t.newPwShort);
       return;
     }
     setUsers((prev) => ({ ...prev, [session]: { ...u, password: newPw.trim() } }));
     setOldPw("");
     setNewPw("");
-    setMsg("密码已更新");
+    setMsg(t.pwUpdated);
     setPanel("none");
   }
 
@@ -22516,71 +23245,360 @@ function SessionChrome({ trailing }: { trailing?: ReactNode }) {
     setUsers((prev) => ({ ...prev, [local]: { ...u, enabled: !u.enabled } }));
   }
 
+  async function sendRegisterCode() {
+    const err = validateGuestRegistrationForm(
+      {
+        company: regCompany,
+        contactName: regName,
+        email: regEmail,
+        phone: regPhone,
+        countryCode: regCountry,
+      },
+      uiLang,
+    );
+    if (err) {
+      setMsg(err);
+      return;
+    }
+    if (guestVerifyResendCooldownMs(guestVerifyPending) > 0) {
+      const sec = Math.ceil(guestVerifyResendCooldownMs(guestVerifyPending) / 1000);
+      setMsg(uiLang === "zh" ? `请 ${sec} 秒后再发送` : `Please wait ${sec}s before resending`);
+      return;
+    }
+    const pending = createGuestVerifyPending(
+      {
+        company: regCompany,
+        contactName: regName,
+        email: regEmail,
+        phone: regPhone,
+        countryCode: regCountry,
+      },
+      uiLang,
+    );
+    setRegSending(true);
+    setMsg("");
+    try {
+      const sent = await dispatchGuestVerificationEmail(pending.email, pending.code, {
+        locale: uiLang,
+        company: pending.company,
+        contactName: pending.contactName,
+        countryCode: pending.countryCode,
+        countryLabel: pending.countryLabel,
+      });
+      if (!sent.ok) {
+        setMsg(sent.error || (uiLang === "zh" ? "验证码发送失败" : "Failed to send code"));
+        return;
+      }
+      // 仅持久化哈希，明文不进 localStorage / 游客可见状态
+      setGuestVerifyPending(await sealGuestVerifyPending(pending));
+      setRegStep("code");
+      setRegCode("");
+      setMsg(`${t.codeSentOk} · ${pending.email}`);
+    } finally {
+      setRegSending(false);
+    }
+  }
+
+  async function confirmRegisterCode() {
+    const result = await verifyGuestCode(guestVerifyPending, regCode, uiLang);
+    if (!result.ok) {
+      setMsg(result.error);
+      return;
+    }
+    setGuestAccess(result.profile);
+    setGuestVerifyPending(null);
+    setRegStep("form");
+    setRegCode("");
+    setPanel("none");
+    setMsg(t.verifyOk);
+  }
+
+  function goLogin() {
+    setRegStep("form");
+    setRegCode("");
+    setPanel("none");
+    setMsg("");
+    setSession("");
+    setEmail("");
+  }
+
+  function openSettings() {
+    if (panel !== "none") {
+      setPanel("none");
+      return;
+    }
+    if (guest) setPanel("register");
+    else if (admin) setPanel("admin");
+    else setPanel("password");
+  }
+
   return (
     <Stack gap={10}>
-      <Row gap={8} align="center" wrap style={{ width: "100%" }}>
+      <div
+        style={mergeStyle({
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "8px 10px",
+          borderRadius: 10,
+          background: theme.bg.elevated,
+          border: `1px solid ${theme.stroke.tertiary}`,
+        })}
+      >
         <div
-          style={mergeStyle({
-            flex: 1,
-            minWidth: 0,
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 999,
+            background: theme.fill.secondary,
+            color: theme.text.primary,
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            padding: "4px 0",
-            background: "transparent",
-          })}
+            justifyContent: "center",
+            fontSize: 11,
+            fontWeight: 600,
+            flexShrink: 0,
+          }}
         >
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 999,
-              background: theme.fill.secondary,
-              color: theme.text.primary,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 11,
-              fontWeight: 600,
-              flexShrink: 0,
-            }}
+          {initials}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Text size="small" weight="medium">
+            {user.displayLocal}
+          </Text>
+          <Text size="small" tone="tertiary">
+            {admin
+              ? t.admin
+              : guest
+                ? GUEST_VERIFY_ENABLED
+                  ? guestVerified
+                    ? t.guestVerifiedRole
+                    : t.guestPreview
+                  : t.guestRole
+                : t.member}
+          </Text>
+        </div>
+        <Row gap={4}>
+          <Button
+            variant={uiLang === "zh" ? "primary" : "ghost"}
+            onClick={() => setUiLang("zh")}
+            title="中文"
           >
-            {initials}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Text size="small" weight="medium">
-              {user.displayLocal}
-            </Text>
-            <Text size="small" tone="tertiary">
-              {admin ? "Admin" : session === "guest" ? "Guest" : "Member"}
-            </Text>
-          </div>
+            中
+          </Button>
+          <Button
+            variant={uiLang === "en" ? "primary" : "ghost"}
+            onClick={() => setUiLang("en")}
+            title="English"
+          >
+            EN
+          </Button>
+        </Row>
+        {guest ? (
+          <>
+            <Button
+              variant="secondary"
+              onClick={goLogin}
+              title={t.memberLogin}
+            >
+              {t.loginBtn}
+            </Button>
+            {GUEST_VERIFY_ENABLED ? (
+              <Button
+                variant={panel === "register" ? "primary" : "secondary"}
+                onClick={() => setPanel(panel === "register" ? "none" : "register")}
+                title={guestVerified ? t.guestInfoTitle : t.registerUnlockTitle}
+              >
+                {guestVerified ? t.registered : t.register}
+              </Button>
+            ) : null}
+          </>
+        ) : (
           <Button
             variant="primary"
             onClick={() => setPanel(panel === "password" ? "none" : "password")}
           >
-            Update
+            {t.updatePw}
           </Button>
-          <IconButton
-            title="设置"
-            size="sm"
-            onClick={() => setPanel(panel === "admin" ? "none" : admin ? "admin" : "password")}
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-              <circle cx="7" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.2" />
-              <path
-                d="M7 1.2v1.4M7 11.4v1.4M1.2 7h1.4M11.4 7h1.4M2.6 2.6l1 1M10.4 10.4l1 1M10.4 2.6l-1 1M2.6 11.4l1-1"
-                stroke="currentColor"
-                strokeWidth="1.2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </IconButton>
-        </div>
-        {trailing ? <div style={{ flexShrink: 0 }}>{trailing}</div> : null}
-      </Row>
+        )}
+        <IconButton title={t.settings} size="sm" onClick={openSettings}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+            <circle cx="7" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.2" />
+            <path
+              d="M7 1.2v1.4M7 11.4v1.4M1.2 7h1.4M11.4 7h1.4M2.6 2.6l1 1M10.4 10.4l1 1M10.4 2.6l-1 1M2.6 11.4l1-1"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </IconButton>
+      </div>
 
-      {panel === "password" ? (
+      {panel === "register" && guest ? (
+        <div
+          style={mergeStyle({
+            padding: 12,
+            borderRadius: 10,
+            background: theme.bg.elevated,
+            border: `1px solid ${theme.stroke.tertiary}`,
+          })}
+        >
+          <Stack gap={10}>
+            {!GUEST_VERIFY_ENABLED ? (
+              <>
+                <Stack gap={4}>
+                  <Text size="small" weight="medium">
+                    {t.guestRole}
+                  </Text>
+                  <Text size="small" tone="tertiary">
+                    {t.guestBrowseHint}
+                  </Text>
+                </Stack>
+                <Row gap={8} wrap>
+                  <Button variant="ghost" onClick={() => setPanel("none")}>
+                    {t.close}
+                  </Button>
+                  <Button variant="secondary" onClick={goLogin}>
+                    {t.memberLogin}
+                  </Button>
+                  <Button variant="secondary" onClick={logout}>
+                    {t.exitGuest}
+                  </Button>
+                </Row>
+              </>
+            ) : guestVerified && guestAccess ? (
+              <>
+                <Stack gap={4}>
+                  <Text size="small" weight="medium">
+                    {t.guestVerified}
+                  </Text>
+                  <Text size="small" tone="tertiary">
+                    {guestAccess.company} · {guestAccess.contactName} ·{" "}
+                    {guestAccess.countryLabel || guestAccess.countryCode || "—"} · {guestAccess.email}
+                  </Text>
+                  <Text size="small" tone="tertiary">
+                    {t.verifiedAt} {guestAccess.verifiedAt ?? "—"}
+                  </Text>
+                </Stack>
+                <Row gap={8} wrap>
+                  <Button variant="ghost" onClick={() => setPanel("none")}>
+                    {t.close}
+                  </Button>
+                  <Button variant="secondary" onClick={goLogin}>
+                    {t.memberLogin}
+                  </Button>
+                  <Button variant="secondary" onClick={logout}>
+                    {t.exitGuest}
+                  </Button>
+                </Row>
+              </>
+            ) : regStep === "form" ? (
+              <>
+                <Stack gap={4}>
+                  <Text size="small" weight="medium">
+                    {t.registerUnlock}
+                  </Text>
+                  <Text size="small" tone="tertiary">
+                    {t.registerHint}
+                  </Text>
+                </Stack>
+                <Stack gap={4}>
+                  <Text size="small" weight="medium">
+                    {t.company}
+                  </Text>
+                  <TextInput value={regCompany} onChange={setRegCompany} placeholder={t.companyPh} />
+                </Stack>
+                <Stack gap={4}>
+                  <Text size="small" weight="medium">
+                    {t.contactName}
+                  </Text>
+                  <TextInput value={regName} onChange={setRegName} placeholder={t.contactNamePh} />
+                </Stack>
+                <Stack gap={4}>
+                  <Text size="small" weight="medium">
+                    {t.countryRegion}
+                  </Text>
+                  <Select
+                    value={regCountry}
+                    onChange={setRegCountry}
+                    options={guestRegionSelectOptions(uiLang)}
+                  />
+                </Stack>
+                <Stack gap={4}>
+                  <Text size="small" weight="medium">
+                    {t.emailAddr}
+                  </Text>
+                  <TextInput
+                    value={regEmail}
+                    onChange={setRegEmail}
+                    placeholder="name@company.com"
+                  />
+                </Stack>
+                <Stack gap={4}>
+                  <Text size="small" weight="medium">
+                    {t.phone}
+                  </Text>
+                  <TextInput value={regPhone} onChange={setRegPhone} placeholder={t.phonePh} />
+                </Stack>
+                <Row gap={8} wrap>
+                  <Button variant="primary" onClick={() => void sendRegisterCode()} disabled={regSending}>
+                    {regSending ? t.sending : t.sendCode}
+                  </Button>
+                  <Button variant="secondary" onClick={goLogin}>
+                    {t.memberLogin}
+                  </Button>
+                  <Button variant="ghost" onClick={() => setPanel("none")}>
+                    {t.close}
+                  </Button>
+                </Row>
+              </>
+            ) : (
+              <>
+                <Stack gap={4}>
+                  <Text size="small" weight="medium">
+                    {t.emailVerify}
+                  </Text>
+                  <Text size="small" tone="tertiary">
+                    {t.codeSentTo} {guestVerifyPending?.email ?? regEmail}
+                    {t.codeTtl}
+                  </Text>
+                </Stack>
+                <Stack gap={4}>
+                  <Text size="small" weight="medium">
+                    {t.verifyCode}
+                  </Text>
+                  <TextInput
+                    value={regCode}
+                    onChange={setRegCode}
+                    placeholder={t.codePh}
+                  />
+                </Stack>
+                <Row gap={8} wrap>
+                  <Button variant="primary" onClick={() => void confirmRegisterCode()}>
+                    {t.verifyUnlock}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => void sendRegisterCode()}
+                    disabled={regSending || resendLeftMs > 0}
+                  >
+                    {resendLeftMs > 0
+                      ? `${t.resend} (${Math.ceil(resendLeftMs / 1000)}s)`
+                      : regSending
+                        ? t.sending
+                        : t.resend}
+                  </Button>
+                  <Button variant="ghost" onClick={() => setRegStep("form")}>
+                    {t.editInfo}
+                  </Button>
+                </Row>
+              </>
+            )}
+          </Stack>
+        </div>
+      ) : null}
+
+      {panel === "password" && !guest ? (
         <div
           style={mergeStyle({
             padding: 12,
@@ -22591,24 +23609,24 @@ function SessionChrome({ trailing }: { trailing?: ReactNode }) {
         >
           <Stack gap={8}>
             <Text size="small" weight="medium">
-              更改密码
+              {t.changePassword}
             </Text>
-            <TextInput type="password" value={oldPw} onChange={setOldPw} placeholder="原密码" />
+            <TextInput type="password" value={oldPw} onChange={setOldPw} placeholder={t.oldPassword} />
             <TextInput
               type="password"
               value={newPw}
               onChange={setNewPw}
-              placeholder="新密码（至少 6 位）"
+              placeholder={t.newPassword}
             />
             <Row gap={8}>
               <Button variant="primary" onClick={changePassword}>
-                保存
+                {t.save}
               </Button>
               <Button variant="ghost" onClick={() => setPanel("none")}>
-                取消
+                {t.cancel}
               </Button>
               <Button variant="secondary" onClick={logout}>
-                退出登录
+                {t.logout}
               </Button>
             </Row>
           </Stack>
@@ -22702,6 +23720,8 @@ function SourceVerifyBlock({
   trafficRank: string;
   licenseReg: string;
 }) {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const [email] = useCanvasState("claimEmail1", "");
   const [session] = useCanvasState("authSession1", "");
   const [claims, setClaims] = useCanvasState<Record<string, ClaimRecord>>("claims1", {});
@@ -22714,10 +23734,27 @@ function SourceVerifyBlock({
     claimLocalPart(email) === session.trim().toLowerCase();
   const channels = inferSourceChannels(verify, trafficRank, licenseReg, Boolean(claim));
   const complete = verify === "双端通过";
+  const channelShort: Record<SourceChannel, string> = {
+    流量源: t.claimChTraffic,
+    监管源: t.claimChReg,
+    经办认领: t.claimChOwner,
+  };
+  const channelHint: Record<SourceChannel, string> = {
+    流量源: t.claimChTrafficHint,
+    监管源: t.claimChRegHint,
+    经办认领: t.claimChOwnerHint,
+  };
+  const verifyUi: Record<VerifyStatus, string> = {
+    双端通过: t.verifyDual,
+    仅流量: t.verifyTrafficOnly,
+    仅监管: t.verifyRegOnly,
+    待双端: t.verifyCite,
+    冲突观察: t.verifyConflict,
+  };
 
   function submitClaim() {
     if (!can) {
-      setStatus("无认领权限：请先登录有效账号");
+      setStatus(t.claimNoPerm);
       return;
     }
     const displayName = defaultClaimDisplayName(email);
@@ -22727,21 +23764,21 @@ function SourceVerifyBlock({
       [orgKey]: {
         email: normalizeClaimEmail(email),
         displayName,
-        note: note.trim() || "已联系确认；经办对信息质量负责",
+        note: note.trim() || t.claimDefaultNote,
         confirmedAt,
       },
     }));
     setNote("");
-    setStatus(`已认领 · ${displayName}`);
+    setStatus(t.claimOk(displayName));
   }
 
   function clearClaim() {
     if (!can) {
-      setStatus("无认领权限，无法撤销他人认领");
+      setStatus(t.claimNoRevokeOthers);
       return;
     }
     if (!claim || normalizeClaimEmail(claim.email) !== normalizeClaimEmail(email)) {
-      setStatus("仅本人可撤销自己的认领");
+      setStatus(t.claimOnlySelf);
       return;
     }
     setClaims((prev) => {
@@ -22749,88 +23786,84 @@ function SourceVerifyBlock({
       delete next[orgKey];
       return next;
     });
-    setStatus("已撤销认领");
+    setStatus(t.claimRevoked);
   }
 
   return (
     <Stack gap={8}>
       <Row gap={8} align="center" wrap>
         <Text size="small" weight="medium">
-          信源核实（非经营性征标签）
+          {t.claimVerifyTitle}
         </Text>
         {complete ? (
           <Pill tone="success" size="sm">
-            完整验证
+            {t.claimFullVerify}
           </Pill>
         ) : (
           <Pill tone={verifyTone(verify)} size="sm">
-            {VERIFY_LABEL[verify]}
+            {verifyUi[verify]}
           </Pill>
         )}
       </Row>
       <Text size="small" tone="secondary">
-        信源一般来自：流量源、监管源、经办认领；宏观对照 Trading Economics〔1〕；国内债券/ABN 交叉中国货币网〔9〕；研报见点点〔2〕/墨腾〔3〕。正文用〔n〕标注，点击跳转「信源编号」目录。
+        {t.claimIntro}
       </Text>
       <Row gap={6} wrap>
         {SOURCE_CHANNEL_ORDER.map((c) => (
           <Pill tone={channels.includes(c) ? "info" : "neutral"} size="sm">
-            {channels.includes(c) ? `已接入·${c}` : `未接入·${c}`}
+            {channels.includes(c)
+              ? t.claimChannelOn(channelShort[c])
+              : t.claimChannelOff(channelShort[c])}
           </Pill>
         ))}
       </Row>
       {complete ? (
-        <Callout tone="success">
-          多源已交叉核实。建议客户经理在更高质量信源（监管登记号补全、经办认领确认）下继续跟进，巩固机构主档。
-        </Callout>
+        <Callout tone="success">{t.claimCompleteCallout}</Callout>
       ) : (
-        <Callout tone="warning">
-          信源未齐或仅单侧时，在字段旁标注〔n〕出处编号（不再写「待双端」）；点编号打开信源/研报目录核对。
-        </Callout>
+        <Callout tone="warning">{t.claimIncompleteCallout}</Callout>
       )}
       <Grid columns={2} gap={10}>
-        <DetailField label={SOURCE_CHANNEL_LABEL.流量源} value={trafficRank} />
-        <DetailField label={SOURCE_CHANNEL_LABEL.监管源} value={licenseReg} />
+        <DetailField label={channelHint.流量源} value={trafficRank} />
+        <DetailField label={channelHint.监管源} value={licenseReg} />
       </Grid>
       <Stack gap={6}>
         <Text size="small" tone="tertiary" weight="medium">
-          {SOURCE_CHANNEL_LABEL.经办认领}
+          {channelHint.经办认领}
         </Text>
         {claim ? (
           <Stack gap={4}>
             <Text size="small">
-              已认领 · {claim.displayName}（{claim.email}）· {claim.confirmedAt}
+              {t.claimClaimed(claim.displayName, claim.email, claim.confirmedAt)}
             </Text>
             <Text size="small" tone="secondary">
               {claim.note}
             </Text>
             {can && normalizeClaimEmail(claim.email) === normalizeClaimEmail(email) ? (
               <Button variant="ghost" onClick={clearClaim}>
-                撤销我的认领
+                {t.claimRevoke}
               </Button>
             ) : null}
           </Stack>
         ) : (
           <Stack gap={6}>
             <Text size="small" tone="secondary">
-              待有权限客户经理认领回填（联系确认后对信息质量负责）
+              {t.claimPending}
             </Text>
             {can ? (
               <>
                 <TextInput
                   value={note}
                   onChange={setNote}
-                  placeholder="确认摘要（可选）：联系人/要点…"
+                  placeholder={t.claimNotePh}
                 />
                 <Row gap={8}>
                   <Button variant="primary" onClick={submitClaim}>
-                    确认认领（{defaultClaimDisplayName(email)}）
+                    {t.claimConfirm(defaultClaimDisplayName(email))}
                   </Button>
                 </Row>
               </>
             ) : (
-              <Callout tone="neutral">
-                当前未登录或无认领权限。请先登录后再认领。
-              </Callout>
+              <Callout tone="neutral">{t.claimNeedLogin}</Callout>
             )}
           </Stack>
         )}
@@ -22852,6 +23885,8 @@ function CompactDetails({
   id: string;
   children: ReactNode;
 }) {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   return (
     <details style={{ margin: 0 }}>
       <summary
@@ -22865,7 +23900,7 @@ function CompactDetails({
         }}
       >
         <Text size="small" tone="tertiary" as="span">
-          详情
+          {t.detailsFold}
         </Text>
       </summary>
       <Stack gap={6} style={{ marginTop: 6 }}>
@@ -22876,15 +23911,16 @@ function CompactDetails({
 }
 
 function ScenePlayer({ r, iosFinanceRank }: { r: SceneRow; iosFinanceRank?: number }) {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
   const complete = r.verify === "双端通过";
   const kpi = resolveSceneKpi(r);
   const ticker = kpi.ticker || resolveListedTicker(r.group, r.equity);
-  const depthLine = formatSceneTagDepthLine(r.group, r.tags, r.trafficRank);
+  const depthLine = formatSceneTagDepthLine(r.group, r.tags, r.trafficRank, uiLang);
   const { title: listTitle, full: fullName } = cardListTitle(r.group);
   const trailingBits = [
-    complete ? "完整验证" : null,
+    complete ? (uiLang === "en" ? "Fully verified" : "完整验证") : null,
     kpi.archetype ?? null,
-    REGION_LABEL[r.region],
+    regionLabelUi(r.region, uiLang, REGION_LABEL[r.region]),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -22914,9 +23950,11 @@ function ScenePlayer({ r, iosFinanceRank }: { r: SceneRow; iosFinanceRank?: numb
               </Text>
             ) : null}
             <Text size="small" tone="secondary">
-              业务深度：●核心 ○扩展
+              {uiLang === "en" ? "Business depth: ● core ○ extend" : "业务深度：●核心 ○扩展"}
             </Text>
-            <Text size="small">{depthLine || r.sceneType}</Text>
+            <Text size="small">
+              {depthLine || formatSceneTags(r.tags, r.subTags, uiLang) || r.sceneType}
+            </Text>
             <ThreeMetrics kpi={kpi} />
             <ResearchPlayerBrief group={r.group} />
             <ListedDisclosureBrief group={r.group} ticker={ticker} />
@@ -22936,7 +23974,7 @@ function ScenePlayer({ r, iosFinanceRank }: { r: SceneRow; iosFinanceRank?: numb
                 <Row gap={6} wrap>
                   {r.institutionTypes.map((t) => (
                     <Pill tone="neutral" size="sm">
-                      {INSTITUTION_TYPE_LABEL[t]}
+                      {institutionTypeLabel(t, uiLang, INSTITUTION_TYPE_LABEL[t])}
                     </Pill>
                   ))}
                 </Row>
@@ -22950,14 +23988,14 @@ function ScenePlayer({ r, iosFinanceRank }: { r: SceneRow; iosFinanceRank?: numb
                   涉足场景（一级）
                 </Text>
                 <Row gap={6} wrap>
-                  {r.tags.map((t) => (
+                  {r.tags.map((tag) => (
                     <Pill tone="neutral" size="sm">
-                      {SCENE_TAG_LABEL[t]}
+                      {sceneTagLabelUi(tag, uiLang)}
                     </Pill>
                   ))}
-                  {r.subTags.map((t) => (
+                  {r.subTags.map((sub) => (
                     <Pill tone="neutral" size="sm">
-                      {SCENE_TAG_LABEL[SCENE_SUB_PARENT[t]]}/{SCENE_SUB_LABEL[t]}
+                      {sceneTagLabelUi(SCENE_SUB_PARENT[sub], uiLang)}/{sceneSubLabelUi(sub, uiLang)}
                     </Pill>
                   ))}
                 </Row>
@@ -22970,12 +24008,12 @@ function ScenePlayer({ r, iosFinanceRank }: { r: SceneRow; iosFinanceRank?: numb
                   {r.licenseKinds.length ? (
                     r.licenseKinds.map((k) => (
                       <Pill tone="neutral" size="sm">
-                        {LICENSE_KIND_LABEL[k]}
+                        {licenseKindLabelUi(k, uiLang)}
                       </Pill>
                     ))
                   ) : (
                     <Text size="small" tone="tertiary">
-                      待从牌照信源归类
+                      {uiCopy(uiLang).licensePendingClass}
                     </Text>
                   )}
                 </Row>
@@ -23058,6 +24096,7 @@ function coopStateKey(group: string): string {
 }
 
 function CreditPlayer({ r, iosFinanceRank }: { r: CreditRow; iosFinanceRank?: number }) {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
   const complete = r.verify === "双端通过";
   const isPlayer = r.institutionTypes.includes("玩家");
   const coopKey = coopStateKey(r.group);
@@ -23075,9 +24114,9 @@ function CreditPlayer({ r, iosFinanceRank }: { r: CreditRow; iosFinanceRank?: nu
   const kpi = resolveCreditKpi(r);
   const ticker = resolveListedTicker(r.group, r.equity);
   const regulatorUrl = isRegulator ? resolveRegulatorUrl(r.group, r.traffic) : undefined;
-  const depthLine = isPlayer ? formatCreditProductDepthLine(r) : formatEcoRoleDepthLine(r);
+  const depthLine = isPlayer ? formatCreditProductDepthLine(r) : formatEcoRoleDepthLine(r, uiLang);
   const { title: listTitle, full: fullName } = cardListTitle(r.group, r.brands);
-  const trailingBits = [complete ? "完整验证" : null, REGION_LABEL[r.region]].filter(Boolean).join(" · ");
+  const trailingBits = [complete ? (uiLang === "en" ? "Fully verified" : "完整验证") : null, regionLabelUi(r.region, uiLang, REGION_LABEL[r.region])].filter(Boolean).join(" · ");
   const trafficPolicy = TRAFFIC_CORE_POLICY[r.group];
   const regCashPolicy = REGULATOR_CASH_LENDING_POLICY[r.group];
   const isTrafficVendor = r.institutionTypes.includes("流量服务商");
@@ -23124,7 +24163,7 @@ function CreditPlayer({ r, iosFinanceRank }: { r: CreditRow; iosFinanceRank?: nu
             ) : (
               <Row gap={8} wrap>
                 <Text size="small" tone="secondary">
-                  {INST_BUCKET_LABEL[bucket]}
+                  {instBucketLabel(bucket, uiLang)}
                 </Text>
                 <Text size="small">{depthLine}</Text>
                 {r.tier && r.tier !== "腰部" ? (
@@ -23138,7 +24177,7 @@ function CreditPlayer({ r, iosFinanceRank }: { r: CreditRow; iosFinanceRank?: nu
               <Row gap={6} wrap>
                 {r.trafficKinds.map((k) => (
                   <Pill tone="neutral" size="sm">
-                    {TRAFFIC_KIND_LABEL[k]}
+                    {trafficKindLabelUi(TRAFFIC_KIND_LABEL[k], uiLang)}
                   </Pill>
                 ))}
               </Row>
@@ -23156,7 +24195,8 @@ function CreditPlayer({ r, iosFinanceRank }: { r: CreditRow; iosFinanceRank?: nu
               <Row gap={6} wrap>
                 {r.equityKinds.map((k) => (
                   <Pill tone="info" size="sm">
-                    股权·{EQUITY_KIND_LABEL[k]}
+                    {uiLang === "en" ? "Equity · " : "股权·"}
+                    {equityKindLabelUi(EQUITY_KIND_LABEL[k], uiLang)}
                   </Pill>
                 ))}
               </Row>
@@ -23197,12 +24237,12 @@ function CreditPlayer({ r, iosFinanceRank }: { r: CreditRow; iosFinanceRank?: nu
                 <Row gap={6} wrap>
                   {r.institutionTypes.map((t) => (
                     <Pill tone="neutral" size="sm">
-                      {INSTITUTION_TYPE_LABEL[t]}
+                      {institutionTypeLabel(t, uiLang, INSTITUTION_TYPE_LABEL[t])}
                     </Pill>
                   ))}
                   {r.fundKinds.map((k) => (
                     <Pill tone="neutral" size="sm">
-                      {FUND_KIND_LABEL[k]}
+                      {fundKindLabelUi(FUND_KIND_LABEL[k], uiLang)}
                     </Pill>
                   ))}
                   {r.paymentKinds.map((k) => (
@@ -23334,7 +24374,7 @@ function CreditPlayer({ r, iosFinanceRank }: { r: CreditRow; iosFinanceRank?: nu
                   </Pill>
                   {r.ecoRoles.map((role) => (
                     <Pill tone="neutral" size="sm">
-                      {ECO_ROLE_LABEL[role]}
+                      {institutionTypeLabel(role, uiLang, ECO_ROLE_LABEL[role])}
                     </Pill>
                   ))}
                   {r.tags.map((t) => (
@@ -23410,12 +24450,12 @@ function CreditPlayer({ r, iosFinanceRank }: { r: CreditRow; iosFinanceRank?: nu
                   {r.licenseKinds.length ? (
                     r.licenseKinds.map((k) => (
                       <Pill tone="neutral" size="sm">
-                        {LICENSE_KIND_LABEL[k]}
+                        {licenseKindLabelUi(k, uiLang)}
                       </Pill>
                     ))
                   ) : (
                     <Text size="small" tone="tertiary">
-                      待从牌照信源归类
+                      {uiCopy(uiLang).licensePendingClass}
                     </Text>
                   )}
                 </Row>
@@ -23652,13 +24692,12 @@ function AtlasStickyChrome({ children }: { children?: ReactNode }) {
     <div
       ref={ref}
       style={{
-        position: "sticky",
-        top: 0,
         flexShrink: 0,
         zIndex: 40,
-        padding: "0 0 8px",
+        margin: "0 -16px",
+        padding: "0 16px 8px",
         background: theme.bg.elevated,
-        borderBottom: "none",
+        borderBottom: `1px solid ${theme.stroke.tertiary}`,
       }}
     >
       {children}
@@ -23680,11 +24719,49 @@ function AtlasStickySub({
     <div
       style={{
         position: "sticky",
-        top: "var(--atlas-sticky-h, 0px)",
+        top: 0,
         zIndex: 35,
-        padding: compact ? "6px 0" : "8px 0",
+        margin: "0 -16px",
+        padding: compact ? "6px 16px 6px" : "8px 16px 8px",
         background: theme.bg.elevated,
-        borderBottom: "none",
+        borderBottom: `1px solid ${theme.stroke.tertiary}`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** 主内容滚动区：顶栏以下滚动；信源/快讯/研报等共用 */
+function AtlasScrollBody({ children }: { children?: ReactNode }) {
+  return (
+    <div
+      data-atlas-scroll-body="1"
+      style={{
+        flex: 1,
+        minHeight: 0,
+        overflow: "auto",
+        overflowAnchor: "none",
+        scrollbarGutter: "stable",
+        paddingTop: 0,
+      }}
+      ref={(node) => {
+        if (!node || typeof window === "undefined") return;
+        const mem = getAtlasScrollMem();
+        mem.shell = node;
+        const mark = node as unknown as { __crmScrollInit?: boolean };
+        if (mark.__crmScrollInit) return;
+        mark.__crmScrollInit = true;
+        const y = mem.y;
+        if (y <= 8) return;
+        const cur = node.scrollTop;
+        if (cur >= 8) return;
+        mem.restoring = true;
+        node.scrollTop = y;
+        requestAnimationFrame(() => {
+          node.scrollTop = mem.y > 8 ? mem.y : y;
+          mem.restoring = false;
+        });
       }}
     >
       {children}
@@ -23709,6 +24786,8 @@ function SoftFold({
   children?: ReactNode;
 }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const [open, setOpen] = useState(defaultOpen);
   return (
     <Stack gap={2}>
@@ -23735,7 +24814,7 @@ function SoftFold({
         <Text size="small" weight="medium" as="span" style={{ flex: 1, minWidth: 0 }}>
           {title}
           <span style={{ marginLeft: 6, color: theme.text.tertiary, fontWeight: 400 }}>
-            {open ? "收起" : "展开"}
+            {open ? t.collapse : t.expand}
           </span>
           {!open && summary ? (
             <span style={{ marginLeft: 6, color: theme.text.secondary, fontWeight: 400 }}>
@@ -23780,6 +24859,8 @@ function AtlasFold({
   useEffect(() => {
     setOpen(defaultOpen);
   }, [remountKey, defaultOpen]);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   return (
     <div style={{ margin: 0 }}>
       <button
@@ -23804,7 +24885,7 @@ function AtlasFold({
       >
         <Text size="small" weight="medium" as="span" style={{ flex: 1, minWidth: 0 }}>
           {title}
-          <span style={{ marginLeft: 8, opacity: 0.55, fontWeight: 400 }}>{open ? "收起" : "展开"}</span>
+          <span style={{ marginLeft: 8, opacity: 0.55, fontWeight: 400 }}>{open ? t.collapse : t.expand}</span>
         </Text>
         {count != null ? (
           <Pill size="sm" tone="neutral">
@@ -23905,6 +24986,113 @@ function ensureAtlasScrollMem() {
   );
 }
 
+function PersistScrollShell({ children }: { children?: ReactNode }) {
+  ensureAtlasScrollMem();
+  const theme = useHostTheme();
+  const [tail, setTail] = useState<"idle" | "spin" | "empty">("idle");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let spinTimer: ReturnType<typeof setTimeout> | undefined;
+    let emptyTimer: ReturnType<typeof setTimeout> | undefined;
+    const onScroll = () => {
+      const mem = getAtlasScrollMem();
+      if (mem.restoring) return;
+      const scroller = findAtlasScroller(mem.shell);
+      const el =
+        scroller instanceof Window
+          ? document.documentElement
+          : (scroller as HTMLElement | null);
+      if (!el) return;
+      const top = scroller instanceof Window ? window.scrollY : (scroller as HTMLElement).scrollTop;
+      const view =
+        scroller instanceof Window ? window.innerHeight : (scroller as HTMLElement).clientHeight;
+      const height =
+        scroller instanceof Window
+          ? document.documentElement.scrollHeight
+          : (scroller as HTMLElement).scrollHeight;
+      const nearBottom = top + view >= height - 48;
+      if (!nearBottom) {
+        if (spinTimer) clearTimeout(spinTimer);
+        if (emptyTimer) clearTimeout(emptyTimer);
+        setTail("idle");
+        return;
+      }
+      setTail((prev) => (prev === "idle" ? "spin" : prev));
+      if (spinTimer) clearTimeout(spinTimer);
+      spinTimer = setTimeout(() => {
+        setTail("empty");
+        emptyTimer = setTimeout(() => setTail("idle"), 1600);
+      }, 700);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      if (spinTimer) clearTimeout(spinTimer);
+      if (emptyTimer) clearTimeout(emptyTimer);
+    };
+  }, []);
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100dvh - 68px)",
+        maxHeight: "calc(100dvh - 68px)",
+        minHeight: 0,
+        overflow: "hidden",
+        overflowAnchor: "none",
+      }}
+      ref={(node) => {
+        if (!node || typeof window === "undefined") return;
+        const mem = getAtlasScrollMem();
+        // 优先用内部滚动体；尚无滚动体时先挂壳
+        if (!mem.shell || !node.contains(mem.shell)) {
+          const body = node.querySelector("[data-atlas-scroll-body='1']");
+          if (body instanceof HTMLElement) mem.shell = body;
+          else mem.shell = node;
+        }
+      }}
+    >
+      {children}
+      {tail !== "idle" ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            flexShrink: 0,
+            padding: "12px 0 16px",
+            color: theme.text.tertiary,
+            fontSize: 12,
+          }}
+          aria-live="polite"
+        >
+          {tail === "spin" ? (
+            <>
+              <span
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: 999,
+                  border: `2px solid ${theme.stroke.tertiary}`,
+                  borderTopColor: theme.text.secondary,
+                  animation: "atlasTailSpin 0.7s linear infinite",
+                  boxSizing: "border-box",
+                }}
+              />
+              加载中
+            </>
+          ) : (
+            "没有更多了"
+          )}
+          <style>{`@keyframes atlasTailSpin{to{transform:rotate(360deg)}}`}</style>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /** 词条玩家名单过长时压成卡片可读行 */
 function clipScenePlayerLine(line: string, max = 160): string {
   const t = line.trim();
@@ -24001,11 +25189,11 @@ function SceneIndustryCard({
   );
 }
 
-function renderSceneEntryGrid(leaves: SceneAtlasLeaf[]) {
+function renderSceneEntryGrid(leaves: SceneAtlasLeaf[], emptyLabel = "暂无条目") {
   if (!leaves.length) {
     return (
       <Text size="small" tone="tertiary">
-        暂无条目
+        {emptyLabel}
       </Text>
     );
   }
@@ -24022,6 +25210,9 @@ function renderSceneEntryGrid(leaves: SceneAtlasLeaf[]) {
 
 /** 线上数字经济场景：Web2 / Web3 / Agent；信贷+理财在 Web2→金融 下 */
 function DigitalSceneAtlasBrowse() {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
+  const emptyItems = t.emptyItems;
   const [layer, setLayer] = useCanvasState<SceneAtlasLayer>("atlasLayer3", "web2");
   const [web2Focus, setWeb2Focus] = useCanvasState<string>("atlasW2f2", "all");
   const [web3Focus, setWeb3Focus] = useCanvasState<string>("atlasW3f1", "all");
@@ -24090,6 +25281,7 @@ function DigitalSceneAtlasBrowse() {
             : "玩家名单见「玩家 → 信贷原生」同口径筛选",
         };
       }),
+      emptyItems,
     );
   }
 
@@ -24106,7 +25298,7 @@ function DigitalSceneAtlasBrowse() {
           <Text size="small" tone="tertiary" style={{ fontSize: 11, lineHeight: 1.35 }}>
             To C 场景以征信查询等为主。信用评分/画像、反欺诈为 B 端能力，见机构类型「风控服务方」。
           </Text>
-          {renderSceneEntryGrid(creditMgmtRows)}
+          {renderSceneEntryGrid(creditMgmtRows, emptyItems)}
         </Stack>
       ),
     },
@@ -24126,6 +25318,7 @@ function DigitalSceneAtlasBrowse() {
           hint: item.hint,
           line: item.line,
         })),
+        emptyItems,
       ),
     })),
   ];
@@ -24153,9 +25346,9 @@ function DigitalSceneAtlasBrowse() {
       <AtlasStickySub>
         <Stack gap={10}>
           <Stack gap={6}>
-            <H2>数字经济场景</H2>
+            <H2>{t.scenesStickyTitle}</H2>
             <Text size="small" tone="tertiary">
-              Web2 / Web3 / Agent · 词条：名称 → 行为/目的 → 玩家名单
+              {t.scenesStickyHint}
             </Text>
           </Stack>
           <Row gap={6} wrap>
@@ -24181,22 +25374,22 @@ function DigitalSceneAtlasBrowse() {
           {layer === "web2" ? (
             <Row gap={6} wrap>
               <FilterChip
-                label="全部业态"
+                label={t.scenesAllIndustries}
                 active={web2Focus === "all"}
                 onClick={() => setWeb2Focus("all")}
               />
               <FilterChip
-                label="金融"
+                label={sceneTagLabelUi("金融", uiLang)}
                 active={web2Focus === "金融"}
                 clearable
                 onClick={() => setWeb2Focus(web2Focus === "金融" ? "all" : "金融")}
               />
-              {web2IndustryTags.map((t) => (
+              {web2IndustryTags.map((tag) => (
                 <FilterChip
-                  label={SCENE_TAG_LABEL[t]}
-                  active={web2Focus === t}
+                  label={sceneTagLabelUi(tag, uiLang)}
+                  active={web2Focus === tag}
                   clearable
-                  onClick={() => setWeb2Focus(web2Focus === t ? "all" : t)}
+                  onClick={() => setWeb2Focus(web2Focus === tag ? "all" : tag)}
                 />
               ))}
             </Row>
@@ -24205,13 +25398,13 @@ function DigitalSceneAtlasBrowse() {
           {layer === "web3" ? (
             <Row gap={6} wrap>
               <FilterChip
-                label="全部子域"
+                label={t.scenesAllBuckets}
                 active={web3Focus === "all"}
                 onClick={() => setWeb3Focus("all")}
               />
               {(["金融", "游戏", "艺术", "社交"] as const).map((bucket) => (
                 <FilterChip
-                  label={bucket}
+                  label={sceneTagLabelUi(bucket, uiLang)}
                   active={web3Focus === bucket}
                   clearable
                   onClick={() => setWeb3Focus(web3Focus === bucket ? "all" : bucket)}
@@ -24242,9 +25435,9 @@ function DigitalSceneAtlasBrowse() {
                 }}
               >
                 <Text size="small" weight="medium" as="span">
-                  日常业态
+                  {t.scenesDaily}
                   <span style={{ marginLeft: 8, opacity: 0.55, fontWeight: 400 }}>
-                    {catalogOpen ? "收起" : "展开"}
+                    {catalogOpen ? t.collapse : t.expand}
                   </span>
                 </Text>
               </button>
@@ -24259,7 +25452,7 @@ function DigitalSceneAtlasBrowse() {
                   {Array.from(industryGrouped.entries()).map(([l1, list]) => (
                     <SceneIndustryCard
                       key={l1}
-                      title={SCENE_TAG_LABEL[l1]}
+                      title={sceneTagLabelUi(l1, uiLang)}
                       count={list.length}
                       preview={list
                         .slice(0, 4)
@@ -24271,7 +25464,7 @@ function DigitalSceneAtlasBrowse() {
                 </Grid>
               ) : (
                 <Text size="small" tone="tertiary">
-                  已收起业态一览；点上方展开，或点筛选芯片直达某一业态
+                  {t.scenesCatalogCollapsed}
                 </Text>
               )}
             </Stack>
@@ -24302,13 +25495,13 @@ function DigitalSceneAtlasBrowse() {
                 <Stack gap={10}>
                   <Row gap={8} align="center">
                     <Text size="small" weight="medium">
-                      {SCENE_TAG_LABEL[web2Focus as SceneTag] ?? web2Focus}
+                      {web2Focus === "all" ? web2Focus : sceneTagLabelUi(web2Focus as SceneTag, uiLang)}
                     </Text>
                     <Pill size="sm" tone="neutral">
                       {String(list.length)}
                     </Pill>
                   </Row>
-                  {renderSceneEntryGrid(leaves)}
+                  {renderSceneEntryGrid(leaves, emptyItems)}
                 </Stack>
               );
             })()
@@ -24345,6 +25538,7 @@ function DigitalSceneAtlasBrowse() {
               </Row>
               {renderSceneEntryGrid(
                 web3ByBucket[web3Focus as keyof typeof web3ByBucket] ?? [],
+                emptyItems,
               )}
             </Stack>
           )}
@@ -24365,7 +25559,7 @@ function DigitalSceneAtlasBrowse() {
               ；名称 → 行为/目的 → 玩家名单
             </Text>
           </Row>
-          {renderSceneEntryGrid(AGENT_SCENE_LEAVES)}
+          {renderSceneEntryGrid(AGENT_SCENE_LEAVES, emptyItems)}
         </Stack>
       ) : null}
       </Stack>
@@ -24429,11 +25623,13 @@ function MapScreenButton({
   fillHeight?: boolean;
 }) {
   const theme = useHostTheme();
-  const label = active ? "返回总览" : "地图";
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
+  const label = active ? t.mapBack : t.mapOpen;
   return (
     <button
       type="button"
-      title={active ? "返回总览" : "打开地图大屏"}
+      title={active ? t.mapBackTitle : t.mapOpenTitle}
       aria-label={label}
       aria-pressed={active}
       onClick={onClick}
@@ -24623,23 +25819,43 @@ function readableWatchSentence(country: string, raw: string): string {
 
 function BossWatchBar({
   verdict,
+  verdictEn,
   onOpenCountry,
 }: {
   verdict: string;
+  /** EN 长句；缺省时对中文电报做短语映射 */
+  verdictEn?: string;
   /** 点某一句 → 打开该国快讯内容 */
   onOpenCountry?: (countryNameZh: string) => void;
 }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
+  const en = uiLang === "en";
   const stripBg = solidOverBase(theme.bg.elevated, theme.fill.tertiary);
+  // 结构解析始终用中文 overallVerdict（展业国/热点国）；EN 仅映射展示文案
   const bullets = parseWatchVerdictSections(verdict)
     .flatMap((s) => s.bullets)
-    .map((b) => ({
-      country: b.country,
-      line: readableWatchSentence(b.country, b.text),
-      short: b.text
-        ? readableWatchSentence("", b.text).replace(/[。！？]$/, "")
-        : "",
-    }))
+    .map((b) => {
+      const code = briefCountryCode(b.country);
+      const countryLabel = en
+        ? countryLabelUi(code || "", "en", b.country) || b.country
+        : b.country;
+      const textUi = en ? briefPhraseToEn(b.text) : b.text;
+      const line = en
+        ? softenBriefDecorations(
+            countryLabel
+              ? `${countryLabel}: ${textUi.replace(/[。.!?]+$/, "")}.`
+              : textUi,
+          )
+        : readableWatchSentence(b.country, b.text);
+      const short = en
+        ? softenBriefDecorations(textUi).replace(/[。.!?]+$/, "")
+        : b.text
+          ? readableWatchSentence("", b.text).replace(/[。！？]$/, "")
+          : "";
+      return { country: b.country, countryLabel, line, short };
+    })
     .filter((b) => b.line);
 
   if (!bullets.length) return null;
@@ -24654,7 +25870,7 @@ function BossWatchBar({
         onClick={() => {
           if (clickable && b.country) onOpenCountry?.(b.country);
         }}
-        title={clickable ? `查看${b.country}快讯` : b.line}
+        title={clickable ? t.countryBriefingOpen(b.countryLabel || b.country) : b.line}
         style={{
           flexShrink: 0,
           display: "inline-flex",
@@ -24671,8 +25887,8 @@ function BossWatchBar({
           color: theme.text.primary,
         }}
       >
-        {b.country ? (
-          <span style={{ fontWeight: 700, color: theme.text.secondary }}>{b.country}</span>
+        {b.countryLabel ? (
+          <span style={{ fontWeight: 700, color: theme.text.secondary }}>{b.countryLabel}</span>
         ) : null}
         <span style={{ fontWeight: 500 }}>
           <GlossedText text={b.short || b.line} />
@@ -24683,7 +25899,7 @@ function BossWatchBar({
 
   return (
     <div
-      aria-label="国别速览"
+      aria-label={t.countryBriefing}
       style={{
         display: "flex",
         alignItems: "center",
@@ -24698,7 +25914,7 @@ function BossWatchBar({
       }}
     >
       <Text weight="medium" size="small" style={{ flexShrink: 0, minWidth: 56 }}>
-        国别速览
+        {t.countryBriefing}
       </Text>
       <div className="fintech-ticker-viewport">
         <div className="fintech-ticker-track fintech-ticker-track--slow" aria-live="off">
@@ -24748,6 +25964,12 @@ function useFintechStockMonitor() {
   return { ids, has, toggle, count: ids.length, userKey };
 }
 
+
+/** 股价条展示名：去掉全角/半角括号备注，避免裁切后只剩「）」贴在访客标签旁 */
+function stockStripDisplayName(nameZh: string, symbol?: string, lang: UiLang = "zh"): string {
+  return stockDisplayNameUi(nameZh, lang, symbol);
+}
+
 /** 快讯旁横条：个别重点标的股价监控（非全市场涨跌幅/市值榜） */
 function FintechStockMonitorStrip({
   onOpenAll,
@@ -24758,12 +25980,15 @@ function FintechStockMonitorStrip({
   onOpenStock?: (id: string) => void;
 }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const quotes = FINTECH_STOCK_QUOTES;
   const { ids, count, userKey } = useFintechStockMonitor();
-  const upColor = "#2f6b3a";
-  const downColor = "#b42318";
+  const upColor = theme.diff.stripAdded;
+  const downColor = theme.diff.stripRemoved;
   const stripBg = solidOverBase(theme.bg.elevated, theme.fill.tertiary);
-  const ownerLabel = userKey === "guest" ? "访客" : userKey;
+  // 隔离信息只放 title；勿把「访客」拼进行情条，避免与 Grab（含金融）裁切成「访客 ）」
+  const ownerTitle = userKey === "guest" ? (uiLang === "en" ? "Guest" : "访客") : userKey;
 
   const rows = fintechStockMonitorQuotes(ids);
   const total = (quotes.items || []).length;
@@ -24777,7 +26002,7 @@ function FintechStockMonitorStrip({
       <button
         key={`${it.id || it.symbol}-${keySuffix}`}
         type="button"
-        title={`${it.nameZh} · ${formatQuotePrice(it.price, it.currency)} · 点击查看详情`}
+        title={`${stockDisplayNameUi(it.nameZh, uiLang, it.symbol)} · ${formatQuotePrice(it.price, it.currency)} · ${uiLang === "en" ? "Open details" : "点击查看详情"}`}
         onClick={() => {
           if (it.id && onOpenStock) onOpenStock(it.id);
         }}
@@ -24799,7 +26024,7 @@ function FintechStockMonitorStrip({
           color: "inherit",
         }}
       >
-        <span style={{ fontWeight: 600, color: theme.text.primary }}>{it.nameZh}</span>
+        <span style={{ fontWeight: 600, color: theme.text.primary }}>{stockStripDisplayName(it.nameZh, it.symbol, uiLang)}</span>
         <span style={{ fontWeight: 600, color: tone }}>{formatChangePct(pct)}</span>
       </button>
     );
@@ -24807,7 +26032,7 @@ function FintechStockMonitorStrip({
 
   return (
     <div
-      aria-label={`股价监控 · ${ownerLabel}`}
+      aria-label={`${t.stockWatch} · ${count}`}
       style={{
         display: "flex",
         alignItems: "center",
@@ -24816,17 +26041,15 @@ function FintechStockMonitorStrip({
         maxHeight: 44,
         padding: "6px 10px",
         border: `1px solid ${theme.stroke.tertiary}`,
-        borderRadius: 10,
+        borderRadius: 8,
         background: stripBg,
         overflow: "hidden",
       }}
     >
-      <Text weight="medium" size="small" style={{ flexShrink: 0, minWidth: 56 }} title={`按登录用户隔离 · ${ownerLabel}`}>
-        股价监控
+      <Text weight="medium" size="small" style={{ flexShrink: 0, minWidth: 56 }} title={`${uiLang === "en" ? "Isolated by account" : "按登录用户隔离"} · ${ownerTitle}`}>
+        {t.stockWatch}
       </Text>
-      <HomeMeta>
-        {count} · {ownerLabel}
-      </HomeMeta>
+      <HomeMeta>{t.stockWatchCount(count)}</HomeMeta>
 
       <div className="fintech-ticker-viewport">
         {rows.length ? (
@@ -24835,7 +26058,7 @@ function FintechStockMonitorStrip({
             {rows.map((it) => renderTick(it, "b"))}
           </div>
         ) : (
-          <HomeMeta>暂无监控 · 去上市公司添加（仅本账号）</HomeMeta>
+          <HomeMeta>{t.stockWatchEmpty}</HomeMeta>
         )}
       </div>
 
@@ -24857,7 +26080,7 @@ function FintechStockMonitorStrip({
           whiteSpace: "nowrap",
         }}
       >
-        全部 {total}
+        {t.stockWatchAll(total)}
       </button>
     </div>
   );
@@ -24868,31 +26091,53 @@ function downloadFintechStockCsv(
   rows: FintechStockQuote[],
   fundCols: { key: FintechFundSortKey; label: string }[],
   asOf: string,
+  lang: UiLang = "zh",
 ) {
   const esc = (v: string | number | null | undefined) => {
     const s = v == null ? "" : String(v);
     if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
     return s;
   };
-  const headers = [
-    "名称",
-    "代码",
-    "交易所",
-    "国家",
-    "展业国",
-    "地区",
-    "业务",
-    "现价",
-    "币种",
-    "涨跌幅%",
-    "市值USD",
-    "市值标签",
-    "市盈率TTM",
-    ...fundCols.map((c) => c.label),
-    "财报期",
-    "IR链接",
-    "Yahoo",
-  ];
+  const headers =
+    lang === "en"
+      ? [
+          "Name",
+          "Ticker",
+          "Exchange",
+          "Country",
+          "Markets",
+          "Region",
+          "Business",
+          "Price",
+          "Currency",
+          "Change%",
+          "MktCapUSD",
+          "MktCapLabel",
+          "PE_TTM",
+          ...fundCols.map((c) => c.label),
+          "FilingPeriod",
+          "IR",
+          "Yahoo",
+        ]
+      : [
+          "名称",
+          "代码",
+          "交易所",
+          "国家",
+          "展业国",
+          "地区",
+          "业务",
+          "现价",
+          "币种",
+          "涨跌幅%",
+          "市值USD",
+          "市值标签",
+          "市盈率TTM",
+          ...fundCols.map((c) => c.label),
+          "财报期",
+          "IR链接",
+          "Yahoo",
+        ];
   const lines = [headers.map(esc).join(",")];
   for (const it of rows) {
     const earn = resolveFintechStockEarning(it.id);
@@ -24939,8 +26184,10 @@ function FintechStockFocusPanel({
   onClose: () => void;
 }) {
   const theme = useHostTheme();
-  const upColor = "#2f6b3a";
-  const downColor = "#b42318";
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
+  const upColor = theme.diff.stripAdded;
+  const downColor = theme.diff.stripRemoved;
   const pct = it.changePct;
   const tone =
     pct == null || Number.isNaN(pct) ? theme.text.tertiary : pct >= 0 ? upColor : downColor;
@@ -24949,12 +26196,13 @@ function FintechStockFocusPanel({
     it.url || `https://finance.yahoo.com/quote/${encodeURIComponent(it.yahoo || it.symbol)}`;
   const group = it.groupKey || "";
   const ticker = it.symbol;
+  const nameUi = stockDisplayNameUi(it.nameZh, uiLang, it.symbol);
 
   return (
     <div
       style={{
         border: `1px solid ${theme.stroke.secondary}`,
-        borderRadius: 12,
+        borderRadius: 8,
         background: theme.bg.elevated,
         padding: "12px 14px",
         display: "grid",
@@ -24964,7 +26212,7 @@ function FintechStockFocusPanel({
       <Row gap={10} align="start" justify="space-between" wrap>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 650, color: theme.text.primary, lineHeight: 1.35 }}>
-            {it.nameZh}
+            {nameUi}
           </div>
           <Row gap={8} align="center" wrap style={{ marginTop: 4 }}>
             <a
@@ -24976,8 +26224,12 @@ function FintechStockFocusPanel({
               {it.symbol}
               {it.exchange ? ` · ${it.exchange}` : ""}
             </a>
-            <HomeMeta>{fintechStockCountryLine(it.country, it.markets)}</HomeMeta>
-            {it.origin ? <HomeMeta>{fintechStockOriginLabel(it.origin)}</HomeMeta> : null}
+            <HomeMeta>
+              {countryLabelUi(it.country || "", uiLang, fintechStockCountryLabel(it.country))}
+            </HomeMeta>
+            {it.origin ? (
+              <HomeMeta>{listedOriginLabelUi(fintechStockOriginLabel(it.origin), uiLang)}</HomeMeta>
+            ) : null}
           </Row>
         </div>
         <Row gap={10} align="start">
@@ -24987,14 +26239,14 @@ function FintechStockFocusPanel({
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: tone }}>{formatChangePct(pct)}</div>
             <HomeMeta>
-              市值 {formatMarketCap(it.marketCapUsd, it.marketCapLabel)}
+              {uiLang === "en" ? "Mkt cap" : "市值"} {formatMarketCap(it.marketCapUsd, it.marketCapLabel)}
               {it.peRatio != null ? ` · PE ${formatPeRatio(it.peRatio)}` : ""}
             </HomeMeta>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="关闭详情"
+            aria-label={t.close}
             style={{
               height: 28,
               padding: "0 10px",
@@ -25007,7 +26259,7 @@ function FintechStockFocusPanel({
               fontSize: 12,
             }}
           >
-            关闭
+            {t.close}
           </button>
         </Row>
       </Row>
@@ -25016,7 +26268,7 @@ function FintechStockFocusPanel({
         <div style={{ display: "grid", gap: 6 }}>
           <Row gap={8} align="center" justify="space-between">
             <HomeMeta>
-              最近财报
+              {uiLang === "en" ? "Latest filings" : "最近财报"}
               {earn.period ? ` · ${earn.period}` : ""}
             </HomeMeta>
             {earn.irUrl ? (
@@ -25026,7 +26278,7 @@ function FintechStockFocusPanel({
                 rel="noreferrer"
                 style={{ fontSize: 12, color: theme.text.secondary, textDecoration: "underline" }}
               >
-                IR / 原文
+                {uiLang === "en" ? "IR / source" : "IR / 原文"}
               </a>
             ) : null}
           </Row>
@@ -25039,15 +26291,21 @@ function FintechStockFocusPanel({
           >
             {earn.kpis.slice(0, 6).map((k) => (
               <div key={k.id} style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: theme.text.tertiary }}>{k.label}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: theme.text.primary }}>{k.value}</div>
+                <div style={{ fontSize: 11, color: theme.text.tertiary }}>{fintechKpiLabelUi(k.label, uiLang)}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: theme.text.primary }}>
+                  {formatFintechFundamentalUi(k.value, uiLang)}
+                </div>
                 {k.yoy ? <div style={{ fontSize: 11, color: theme.text.tertiary }}>{k.yoy}</div> : null}
               </div>
             ))}
           </div>
         </div>
       ) : (
-        <HomeMeta>最近财报 KPI 待缓存；可先看行情链接</HomeMeta>
+        <HomeMeta>
+          {uiLang === "en"
+            ? "Latest filing KPIs not cached yet — use the quote link for now"
+            : "最近财报 KPI 待缓存；可先看行情链接"}
+        </HomeMeta>
       )}
 
       {group ? (
@@ -25056,7 +26314,11 @@ function FintechStockFocusPanel({
           <CompetitiveIntelBrief group={group} ticker={ticker} />
         </Stack>
       ) : (
-        <HomeMeta>尚未挂靠 Atlas 玩家档（groupKey）；详情以行情与 IR 为准</HomeMeta>
+        <HomeMeta>
+          {uiLang === "en"
+            ? "No Atlas player dossier linked (groupKey); details follow quote/IR"
+            : "尚未挂靠 Atlas 玩家档（groupKey）；详情以行情与 IR 为准"}
+        </HomeMeta>
       )}
     </div>
   );
@@ -25065,6 +26327,11 @@ function FintechStockFocusPanel({
 /** 顶栏「上市公司」页：全球金融科技上市观察池（股价+市值+最近财报缓存） */
 function FintechStockWatchPanel() {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
+  const [authSession] = useCanvasState("authSession1", "");
+  const [guestAccess] = useCanvasState<GuestAccessProfile | null>("guestAccess1", null);
+  const showCiteMarks = canViewSourceCite(authSession, guestAccess);
   const quotes = FINTECH_STOCK_QUOTES;
   const tableBase = theme.bg.elevated;
   const tableHeadBg = solidOverBase(tableBase, theme.fill.secondary);
@@ -25103,7 +26370,7 @@ function FintechStockWatchPanel() {
           e.stopPropagation();
           monitor.toggle(id);
         }}
-        title={on ? "移出股价监控" : "加入股价监控"}
+        title={on ? (uiLang === "en" ? "Remove from watchlist" : "移出股价监控") : (uiLang === "en" ? "Add to watchlist" : "加入股价监控")}
         style={{
           height: 22,
           padding: "0 8px",
@@ -25120,7 +26387,7 @@ function FintechStockWatchPanel() {
           flexShrink: 0,
         }}
       >
-        {on ? "监控中" : "加入监控"}
+        {on ? t.listedWatching : t.listedAddWatch}
       </button>
     );
   };
@@ -25146,9 +26413,42 @@ function FintechStockWatchPanel() {
 
   const fundCols = FINTECH_FUNDAMENTAL_COLS.filter((c) =>
     filtered.some((it) => pickFintechFundamental(resolveFintechStockEarning(it.id), c.key) !== "—"),
-  );
+  ).map((c) => fintechFundamentalColUi(c, uiLang));
 
   const fundSortKeys = new Set<string>(FINTECH_FUNDAMENTAL_COLS.map((c) => c.key));
+
+  const listedTh =
+    uiLang === "en"
+      ? {
+          name: "Name",
+          country: "Country",
+          countryTitle: "Primary market / HQ — not exchange domicile",
+          symbol: "Ticker",
+          origin: "Business",
+          price: "Price",
+          change: "Change",
+          mktCap: "Mkt cap",
+          pe: "P/E",
+          earn: "Filings",
+          monitor: "Watch",
+          rowTitle: "Open company details",
+          earnYes: "Yes",
+        }
+      : {
+          name: "名称",
+          country: "国家",
+          countryTitle: "主市场/总部；≠上市交易所所在国",
+          symbol: "代码",
+          origin: "业务",
+          price: "现价",
+          change: "涨跌",
+          mktCap: "市值",
+          pe: "市盈率",
+          earn: "财报",
+          monitor: "监控",
+          rowTitle: "点击查看该公司详情",
+          earnYes: "有",
+        };
 
   const items = [...filtered].sort((a, b) => {
     const dir = sortDir === "asc" ? 1 : -1;
@@ -25171,8 +26471,8 @@ function FintechStockWatchPanel() {
     return nullLast(a.marketCapUsd, b.marketCapUsd);
   });
 
-  const upColor = "#2f6b3a";
-  const downColor = "#b42318";
+  const upColor = theme.diff.stripAdded;
+  const downColor = theme.diff.stripRemoved;
   const withChange = items.filter((x) => x.changePct != null).length;
   const withEarn = items.filter((x) => resolveFintechStockEarning(x.id)?.kpis?.length).length;
   const withFund = items.filter((x) => {
@@ -25230,24 +26530,28 @@ function FintechStockWatchPanel() {
       >
       <Stack gap={10}>
       <Row gap={8} align="center" justify="space-between" wrap>
-        <Text weight="medium">上市公司</Text>
+        <Text weight="medium">{t.listedStickyTitle}</Text>
         <Row gap={6} align="center" wrap>
-          <span title={`股价监控名单按登录账号隔离 · ${monitor.userKey === "guest" ? "访客" : monitor.userKey}`}>
+          <span
+            title={`${uiLang === "en" ? "Watchlist isolated by account" : "股价监控名单按登录账号隔离"} · ${
+              monitor.userKey === "guest" ? (uiLang === "en" ? "Guest" : "访客") : monitor.userKey
+            }`}
+          >
             <HomeMeta>
-              监控 {monitor.count} · {monitor.userKey === "guest" ? "访客" : monitor.userKey}
+              {uiLang === "en" ? "Watch" : "监控"} {monitor.count}
             </HomeMeta>
           </span>
           <Pill
             tone="neutral"
             size="sm"
-            onClick={() => downloadFintechStockCsv(items, fundCols, marketDate)}
-            title={`导出当前筛选 ${items.length} 家（CSV，Excel 可开）`}
+            onClick={() => downloadFintechStockCsv(items, fundCols, marketDate, uiLang)}
+            title={t.listedExportTitle(items.length)}
           >
-            导出 CSV
+            {t.listedExportCsv}
           </Pill>
           <div
             role="group"
-            aria-label="显示模式"
+            aria-label={t.listedViewMode}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -25264,8 +26568,8 @@ function FintechStockWatchPanel() {
           >
             <button
               type="button"
-              title="卡片"
-              aria-label="卡片"
+              title={t.listedViewCards}
+              aria-label={t.listedViewCards}
               aria-pressed={viewMode === "cards"}
               onClick={() => setViewMode("cards")}
               style={{
@@ -25288,8 +26592,8 @@ function FintechStockWatchPanel() {
             <span aria-hidden style={{ width: 1, height: 14, background: theme.stroke.tertiary, margin: "0 1px" }} />
             <button
               type="button"
-              title="一览"
-              aria-label="一览"
+              title={t.listedViewList}
+              aria-label={t.listedViewList}
               aria-pressed={viewMode === "read"}
               onClick={() => setViewMode("read")}
               style={{
@@ -25316,22 +26620,22 @@ function FintechStockWatchPanel() {
 
       {viewMode === "cards" ? (
         <Row gap={6} wrap>
-          <HomeMeta>排序</HomeMeta>
+          <HomeMeta>{t.listedSort}</HomeMeta>
           <button type="button" onClick={() => toggleSort("marketCap")} style={chipStyle(sortBy === "marketCap")}>
-            市值{sortArrow("marketCap")}
+            {t.listedMktCap}{sortArrow("marketCap")}
           </button>
           <button type="button" onClick={() => toggleSort("changePct")} style={chipStyle(sortBy === "changePct")}>
-            涨跌幅{sortArrow("changePct")}
+            {t.listedChangePct}{sortArrow("changePct")}
           </button>
           <button type="button" onClick={() => toggleSort("peRatio")} style={chipStyle(sortBy === "peRatio")}>
-            市盈率{sortArrow("peRatio")}
+            {t.listedPe}{sortArrow("peRatio")}
           </button>
         </Row>
       ) : null}
 
       <Row gap={6} wrap>
         <button type="button" onClick={() => setOrigin("")} style={chipStyle(!origin)}>
-          全部业务
+          {t.listedAllBiz}
         </button>
         {FINTECH_STOCK_ORIGIN_ORDER.map((o) => {
           const active = origin === o;
@@ -25342,7 +26646,7 @@ function FintechStockWatchPanel() {
               onClick={() => setOrigin(active ? "" : o)}
               style={chipStyle(active)}
             >
-              {fintechStockOriginLabel(o)}
+              {listedOriginLabelUi(fintechStockOriginLabel(o), uiLang)}
             </button>
           );
         })}
@@ -25350,7 +26654,7 @@ function FintechStockWatchPanel() {
 
       <Row gap={6} wrap>
         <button type="button" onClick={() => setRegion("")} style={chipStyle(!region)}>
-          全部地区
+          {t.listedAllRegions}
         </button>
         {FINTECH_STOCK_REGION_ORDER.map((r) => {
           const active = region === r;
@@ -25364,7 +26668,7 @@ function FintechStockWatchPanel() {
               }}
               style={chipStyle(active)}
             >
-              {fintechStockRegionLabel(r)}
+              {listedRegionLabelUi(fintechStockRegionLabel(r), uiLang)}
             </button>
           );
         })}
@@ -25377,18 +26681,18 @@ function FintechStockWatchPanel() {
           style={chipStyle(!!country || countryOpen)}
           aria-expanded={countryOpen}
         >
-          {country ? `国家 · ${fintechStockCountryLabel(country)}` : "国家"}
+          {country ? t.listedCountryOf(countryLabelUi(country, uiLang, fintechStockCountryLabel(country))) : t.listedCountry}
           <span style={{ color: theme.text.tertiary, fontWeight: 500 }}>{countryOpen ? " ▴" : " ▾"}</span>
         </button>
         {country && !countryOpen ? (
           <button type="button" onClick={() => setCountry("")} style={chipStyle(false)}>
-            清除
+            {t.listedClear}
           </button>
         ) : null}
         {countryOpen ? (
           <>
             <button type="button" onClick={() => setCountry("")} style={chipStyle(!country)}>
-              全部
+              {t.filterAll}
             </button>
             {countryOptions.map(({ code, n }) => {
               const active = country === code;
@@ -25398,9 +26702,13 @@ function FintechStockWatchPanel() {
                   type="button"
                   onClick={() => setCountry(active ? "" : code)}
                   style={chipStyle(active)}
-                  title={`主市场或展业含 ${fintechStockCountryLabel(code)}`}
+                  title={
+                    uiLang === "en"
+                      ? `Primary or operating markets include ${countryLabelUi(code, uiLang, fintechStockCountryLabel(code))}`
+                      : `主市场或展业含 ${countryLabelUi(code, uiLang, fintechStockCountryLabel(code))}`
+                  }
                 >
-                  {fintechStockCountryLabel(code)}
+                  {countryLabelUi(code, uiLang, fintechStockCountryLabel(code))}
                   <span style={{ color: theme.text.tertiary, fontWeight: 500 }}>{` ${n}`}</span>
                 </button>
               );
@@ -25420,7 +26728,10 @@ function FintechStockWatchPanel() {
       {viewMode === "read" ? (
         <div
           style={{
-            overflowX: "auto",
+            maxHeight: "calc(100dvh - 220px)",
+            overflow: "auto",
+            border: `1px solid ${theme.stroke.tertiary}`,
+            borderRadius: 10,
             WebkitOverflowScrolling: "touch",
             background: tableBase,
           }}
@@ -25439,14 +26750,14 @@ function FintechStockWatchPanel() {
             <thead>
               <tr style={{ color: theme.text.tertiary, textAlign: "left" }}>
                 {[
-                  { key: "name", label: "名称", align: "left" as const },
-                  { key: "country", label: "国家", align: "left" as const, title: "主市场/总部；≠上市交易所所在国" },
-                  { key: "symbol", label: "代码", align: "left" as const },
-                  { key: "origin", label: "业务", align: "left" as const },
-                  { key: "price", label: "现价", align: "right" as const },
-                  { key: "changePct", label: `涨跌${sortArrow("changePct") || ""}`, align: "right" as const, sort: "changePct" as const },
-                  { key: "marketCap", label: `市值${sortArrow("marketCap") || ""}`, align: "right" as const, sort: "marketCap" as const },
-                  { key: "peRatio", label: `市盈率${sortArrow("peRatio") || ""}`, align: "right" as const, sort: "peRatio" as const },
+                  { key: "name", label: listedTh.name, align: "left" as const },
+                  { key: "country", label: listedTh.country, align: "left" as const, title: listedTh.countryTitle },
+                  { key: "symbol", label: listedTh.symbol, align: "left" as const },
+                  { key: "origin", label: listedTh.origin, align: "left" as const },
+                  { key: "price", label: listedTh.price, align: "right" as const },
+                  { key: "changePct", label: `${listedTh.change}${sortArrow("changePct") || ""}`, align: "right" as const, sort: "changePct" as const },
+                  { key: "marketCap", label: `${listedTh.mktCap}${sortArrow("marketCap") || ""}`, align: "right" as const, sort: "marketCap" as const },
+                  { key: "peRatio", label: `${listedTh.pe}${sortArrow("peRatio") || ""}`, align: "right" as const, sort: "peRatio" as const },
                   ...fundCols.map((c) => ({
                     key: c.key,
                     label: `${c.label}${sortArrow(c.key)}`,
@@ -25454,8 +26765,8 @@ function FintechStockWatchPanel() {
                     title: c.title,
                     sort: c.key as FintechFundSortKey,
                   })),
-                  { key: "earn", label: "财报", align: "left" as const },
-                  { key: "monitor", label: "监控", align: "center" as const },
+                  { key: "earn", label: listedTh.earn, align: "left" as const },
+                  { key: "monitor", label: listedTh.monitor, align: "center" as const },
                 ].map((col) => (
                   <th
                     key={col.key}
@@ -25495,7 +26806,7 @@ function FintechStockWatchPanel() {
                     pct == null || Number.isNaN(pct) ? theme.text.tertiary : pct >= 0 ? upColor : downColor;
                   const earn = resolveFintechStockEarning(it.id);
                   const earnHint = earn?.kpis?.length
-                    ? earn.period || "有"
+                    ? earn.period || listedTh.earnYes
                     : "—";
                   const rowBg = idx % 2 ? tableRowOdd : tableRowEven;
                   const cellPad: CSSProperties = {
@@ -25503,6 +26814,16 @@ function FintechStockWatchPanel() {
                     borderBottom: `1px solid ${theme.stroke.tertiary}`,
                     background: rowBg,
                   };
+                  const nameUi = stockDisplayNameUi(it.nameZh, uiLang, it.symbol);
+                  const countryUi = countryLabelUi(
+                    it.country || "",
+                    uiLang,
+                    fintechStockCountryLabel(it.country),
+                  );
+                  const marketsTitle = (it.markets || [])
+                    .map((c) => countryLabelUi(c, uiLang, fintechStockCountryLabel(c)))
+                    .join(" · ");
+                  const originUi = listedOriginLabelUi(fintechStockOriginLabel(it.origin), uiLang);
                   return (
                     <tr
                       key={it.id || it.symbol}
@@ -25515,7 +26836,7 @@ function FintechStockWatchPanel() {
                         color: theme.text.primary,
                         cursor: "pointer",
                       }}
-                      title="点击查看该公司详情"
+                      title={listedTh.rowTitle}
                     >
                       <td
                         style={{
@@ -25531,9 +26852,9 @@ function FintechStockWatchPanel() {
                           whiteSpace: "nowrap",
                           boxShadow: `1px 0 0 ${theme.stroke.tertiary}`,
                         }}
-                        title={it.nameZh}
+                        title={nameUi}
                       >
-                        {it.nameZh}
+                        {nameUi}
                       </td>
                       <td
                         style={{
@@ -25542,9 +26863,9 @@ function FintechStockWatchPanel() {
                           color: theme.text.secondary,
                           fontWeight: 600,
                         }}
-                        title={(it.markets || []).map(fintechStockCountryLabel).join(" · ") || undefined}
+                        title={marketsTitle || undefined}
                       >
-                        {fintechStockCountryLine(it.country, it.markets)}
+                        {countryUi}
                       </td>
                       <td style={{ ...cellPad, whiteSpace: "nowrap" }}>
                         <a
@@ -25564,7 +26885,7 @@ function FintechStockWatchPanel() {
                         ) : null}
                       </td>
                       <td style={{ ...cellPad, color: theme.text.secondary, whiteSpace: "nowrap" }}>
-                        {fintechStockOriginLabel(it.origin)}
+                        {originUi}
                       </td>
                       <td style={{ ...cellPad, textAlign: "right", whiteSpace: "nowrap" }}>
                         {formatQuotePrice(it.price, it.currency)}
@@ -25579,7 +26900,8 @@ function FintechStockWatchPanel() {
                         {formatPeRatio(it.peRatio)}
                       </td>
                       {fundCols.map((c) => {
-                        const v = pickFintechFundamental(earn, c.key);
+                        const raw = pickFintechFundamental(earn, c.key);
+                        const v = formatFintechFundamentalUi(raw, uiLang);
                         return (
                           <td
                             key={c.key}
@@ -25622,7 +26944,7 @@ function FintechStockWatchPanel() {
               ) : (
                 <tr>
                   <td colSpan={10 + fundCols.length} style={{ padding: "12px 10px", color: theme.text.tertiary, background: tableBase }}>
-                    暂无符合筛选的标的
+                    {t.stockNoMatch}
                   </td>
                 </tr>
               )}
@@ -25630,7 +26952,13 @@ function FintechStockWatchPanel() {
           </table>
         </div>
       ) : (
-      <div>
+      <div
+        style={{
+          maxHeight: "calc(100dvh - 220px)",
+          overflow: "auto",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
       <div
         style={{
           display: "grid",
@@ -25657,7 +26985,7 @@ function FintechStockWatchPanel() {
                     openFocus(it.id);
                   }
                 }}
-                title="点击查看该公司详情"
+                title={listedTh.rowTitle}
                 style={{
                   border: `1px solid ${
                     focusId === it.id ? theme.stroke.secondary : theme.stroke.tertiary
@@ -25686,7 +27014,7 @@ function FintechStockWatchPanel() {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {it.nameZh}
+                      {stockDisplayNameUi(it.nameZh, uiLang, it.symbol)}
                     </div>
                     <a
                       href={
@@ -25706,8 +27034,10 @@ function FintechStockWatchPanel() {
                       {it.exchange ? ` · ${it.exchange}` : ""}
                     </a>
                     <div style={{ fontSize: 11, color: theme.text.tertiary, marginTop: 2 }}>
-                      {fintechStockCountryLine(it.country, it.markets)}
-                      {it.origin ? ` · ${fintechStockOriginLabel(it.origin)}` : ""}
+                      {countryLabelUi(it.country || "", uiLang, fintechStockCountryLabel(it.country))}
+                      {it.origin
+                        ? ` · ${listedOriginLabelUi(fintechStockOriginLabel(it.origin), uiLang)}`
+                        : ""}
                     </div>
                   </div>
                   <div style={{ display: "grid", gap: 6, justifyItems: "end", flexShrink: 0 }}>
@@ -25728,7 +27058,7 @@ function FintechStockWatchPanel() {
                     gap: 8,
                   }}
                 >
-                  <HomeMeta>市值</HomeMeta>
+                  <HomeMeta>{listedTh.mktCap}</HomeMeta>
                   <div
                     style={{
                       fontSize: 12,
@@ -25748,7 +27078,7 @@ function FintechStockWatchPanel() {
                     gap: 8,
                   }}
                 >
-                  <HomeMeta>市盈率 TTM</HomeMeta>
+                  <HomeMeta>{uiLang === "en" ? "P/E TTM" : "市盈率 TTM"}</HomeMeta>
                   <div
                     style={{
                       fontSize: 12,
@@ -25771,7 +27101,7 @@ function FintechStockWatchPanel() {
                   >
                     <Row gap={8} align="center" justify="space-between">
                       <HomeMeta>
-                        最近财报
+                        {uiLang === "en" ? "Latest filings" : "最近财报"}
                         {earn?.period ? ` · ${earn.period}` : ""}
                       </HomeMeta>
                       {earn?.irUrl ? (
@@ -25782,7 +27112,7 @@ function FintechStockWatchPanel() {
                           onClick={(e) => e.stopPropagation()}
                           style={{ fontSize: 11, color: theme.text.tertiary, textDecoration: "none" }}
                         >
-                          原文
+                          {uiLang === "en" ? "Source" : "原文"}
                         </a>
                       ) : null}
                     </Row>
@@ -25804,7 +27134,7 @@ function FintechStockWatchPanel() {
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {k.label}
+                            {fintechKpiLabelUi(k.label, uiLang)}
                           </div>
                           <div
                             style={{
@@ -25814,7 +27144,7 @@ function FintechStockWatchPanel() {
                               lineHeight: 1.3,
                             }}
                           >
-                            {k.value}
+                            {formatFintechFundamentalUi(k.value, uiLang)}
                           </div>
                           {k.yoy ? (
                             <div style={{ fontSize: 10, color: theme.text.tertiary }}>{k.yoy}</div>
@@ -25824,32 +27154,39 @@ function FintechStockWatchPanel() {
                     </div>
                   </div>
                 ) : (
-                  <HomeMeta>最近财报 · 待缓存</HomeMeta>
+                  <HomeMeta>
+                    {uiLang === "en" ? "Latest filings · pending cache" : "最近财报 · 待缓存"}
+                  </HomeMeta>
                 )}
               </div>
             );
           })
         ) : (
-          <HomeMeta>暂无符合筛选的标的</HomeMeta>
+          <HomeMeta>{t.stockNoMatch}</HomeMeta>
         )}
       </div>
       </div>
       )}
 
       <HomeMeta>
-        当前 {items.length} 家
-        {quotes.stats?.withMarketCap != null ? ` · 市值 ${quotes.stats.withMarketCap}` : ""}
-        {` · 涨跌幅 ${withChange}`}
-        {` · 市盈率 ${withPe}`}
-        {` · 财报缓存 ${withEarn}`}
-        {` · 财务列 ${withFund}`}
-        {` · 信源 ${citeMark(16)}${citeMark(17)}${citeMark(18)}${citeMark(20)}`}
+        {uiLang === "en"
+          ? `Showing ${items.length}`
+          : `当前 ${items.length} 家`}
+        {quotes.stats?.withMarketCap != null
+          ? uiLang === "en"
+            ? ` · mkt cap ${quotes.stats.withMarketCap}`
+            : ` · 市值 ${quotes.stats.withMarketCap}`
+          : ""}
+        {uiLang === "en"
+          ? ` · change ${withChange} · P/E ${withPe} · filings ${withEarn} · fund cols ${withFund}`
+          : ` · 涨跌幅 ${withChange} · 市盈率 ${withPe} · 财报缓存 ${withEarn} · 财务列 ${withFund}`}
+        {showCiteMarks
+          ? ` · ${uiLang === "en" ? "Sources" : "信源"} ${citeMark(16)}${citeMark(17)}${citeMark(18)}${citeMark(20)}`
+          : ""}
         {quotes.source ? ` · ${quotes.source}` : ""}
       </HomeMeta>
       {viewMode === "read" ? (
-        <HomeMeta>
-          市值/财务列统一美元（现价保留本币）；负债率为百分比。准现金/信贷余额仅在口径对齐时展示
-        </HomeMeta>
+        <HomeMeta>{t.listedFundNote}</HomeMeta>
       ) : null}
       <HomeMeta>
         数据链落库：fintech-stock-source-links（Yahoo/交易所/IR）· T2 listed-player-disclosure
@@ -25892,15 +27229,52 @@ type FlashFeedItem = {
   source?: string;
   marketCode?: string;
   marketName?: string;
-  /** credit=消费贷/监管；disaster=天灾人祸 */
-  topic?: "credit" | "disaster";
+  /** credit=消费贷/监管；disaster=天灾人祸；store=商店在架/下架 */
+  topic?: "credit" | "disaster" | "store";
   kindZh?: string;
   lane: "watch" | "media";
   sortKey: string;
 };
 
 /** 对齐 36氪快讯：左时间 · 国别·标题 · 正文 · 原文链接 */
-function flashDisplayTitle(item: FlashFeedItem): string {
+function flashDisplayTitle(item: FlashFeedItem, lang: UiLang = "zh"): string {
+  if (item.topic === "store") {
+    const raw =
+      lang === "en" && item.titleEn && !/[\u4e00-\u9fff]/.test(item.titleEn)
+        ? item.titleEn
+        : item.title;
+    let title = softenBriefDecorations(raw || "");
+    const mkt = (item.marketName || "").trim();
+    if (!mkt || title.includes(mkt)) return title;
+    return `${mkt} · ${title}`;
+  }
+  if (lang === "en") {
+    let title = "";
+    const rawEn = (item.titleEn || "").trim();
+    if (rawEn && !/[\u4e00-\u9fff]/.test(rawEn)) {
+      title = softenBriefDecorations(rawEn);
+    } else if (rawEn) {
+      // 半中文 titleEn：尽量清洗壳，勿再压成中文钩子
+      title = softenBriefDecorations(flashShellToEn(rawEn) === rawEn ? rawEn : flashShellToEn(rawEn));
+    }
+    if (!title && item.topic === "disaster") {
+      title = disasterTitleToEn(item.title, item.kindZh);
+    }
+    if (!title) {
+      const zh = softenBriefDecorations(item.title || "");
+      title = flashShellToEn(zh);
+      if (title === zh && /[\u4e00-\u9fff]/.test(zh) && item.topic === "disaster") {
+        title = disasterTitleToEn(zh, item.kindZh);
+      }
+    }
+    // 仍是中文壳 → 英文化
+    title = flashShellToEn(title);
+    const mkt = (item.marketName || "").trim();
+    if (!mkt) return title;
+    if (title.includes(mkt)) return title;
+    return `${mkt} · ${title}`;
+  }
+
   // 有外文原题时优先走具体钩子，避免列表仍显示「OJK：金融素养与普惠」这类空壳
   const fromEn = (item.titleEn || "").trim()
     ? flashConcreteTitle(item.titleEn!, item.source)
@@ -25945,6 +27319,8 @@ function NewsflashRow({
   onToggle: () => void;
 }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   return (
     <div
       style={{
@@ -25987,27 +27363,38 @@ function NewsflashRow({
           <div
             style={{
               fontSize: 14,
-              fontWeight: 600,
+              fontWeight: unread ? 600 : 500,
               lineHeight: 1.45,
               color: theme.text.primary,
             }}
           >
-            <GlossedText text={flashDisplayTitle(item)} />
+            <GlossedText text={flashDisplayTitle(item, uiLang)} />
           </div>
         </button>
         {expanded ? (
           <Stack gap={8} style={{ marginTop: 8 }}>
             <HomeProse muted>
               <GlossedText
-                text={
-                  softenBriefDecorations(item.body || "").trim() ||
-                  "暂无展开摘要（未达「一段话说清」标准）。"
-                }
+                text={(() => {
+                  const body = softenBriefDecorations(item.body || "").trim();
+                  if (uiLang !== "en") return body || t.noSummary;
+                  if (!body) return t.noSummary;
+                  const cjk = (body.match(/[\u4e00-\u9fff]/g) || []).length;
+                  const latin = (body.match(/[A-Za-z]/g) || []).length;
+                  if (cjk > 12 && cjk >= latin) {
+                    const enTitle = (item.titleEn || "").trim();
+                    if (enTitle && !/[\u4e00-\u9fff]/.test(enTitle)) {
+                      return softenBriefDecorations(enTitle);
+                    }
+                    return t.noSummary;
+                  }
+                  return body;
+                })()}
               />
             </HomeProse>
             <Row gap={10} wrap align="center">
               <HomeMeta>
-                {[item.marketName, item.source].filter(Boolean).join(" · ") || "快讯"}
+                {[item.marketName, item.source].filter(Boolean).join(" · ") || t.flashMeta}
               </HomeMeta>
               {item.url ? (
                 <a
@@ -26020,7 +27407,7 @@ function NewsflashRow({
                     textDecoration: "underline",
                   }}
                 >
-                  原文链接
+                  {uiLang === "en" ? "Source link" : "原文链接"}
                 </a>
               ) : null}
               <button
@@ -26036,7 +27423,7 @@ function NewsflashRow({
                   color: theme.text.tertiary,
                 }}
               >
-                收起
+                {t.collapse}
               </button>
             </Row>
           </Stack>
@@ -26055,7 +27442,7 @@ function NewsflashRow({
               color: theme.text.tertiary,
             }}
           >
-            展开
+            {t.expand}
           </button>
         )}
       </div>
@@ -26075,6 +27462,8 @@ function MorningBriefHome({
   const watch = CC_WATCH_DIGEST;
   const brief = MORNING_BRIEF_36KR;
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const dayKey = watch.displayDate || brief.displayDate || brief.coverageDate || "na";
   const [filterMkt, setFilterMkt] = useCanvasState<string>(`ccWatchMkt_${dayKey}`, "");
   const [filterTopic, setFilterTopic] = useCanvasState<string>(`ccWatchTopic_${dayKey}`, "");
@@ -26089,14 +27478,21 @@ function MorningBriefHome({
   const focusMkts = [...investedMkts, ...hotMkts];
   const disasterItems = DISASTER_WATCH_DIGEST.items || [];
   const disasterTotal = disasterItems.length;
-  const watchTotal = focusMkts.reduce((n, m) => n + (m.count || 0), 0) + disasterTotal;
+  const storeEvents = storeListingFlashEvents();
+  const storeTotal = storeEvents.length;
+  const watchTotal = focusMkts.reduce((n, m) => n + (m.count || 0), 0) + disasterTotal + storeTotal;
   const unreadMktTotal = focusMkts.reduce(
     (n, m) => n + (readMktSet.has(m.code) ? 0 : m.count || 0),
     0,
   );
   const bossVerdict = watch.overallVerdict || brief.overallVerdict || "";
+  const bossVerdictEn = watch.overallVerdictEn || "";
   const dateLabel =
-    watch.displayDate || brief.displayDate || DISASTER_WATCH_DIGEST.displayDate || "";
+    watch.displayDate ||
+    brief.displayDate ||
+    STORE_LISTING_STATUS.displayDate ||
+    DISASTER_WATCH_DIGEST.displayDate ||
+    "";
 
   /** 本周读法 → 挂到国别 chip 的 title，避免再铺一套展业国/热点国卡片 */
   const verdictTipByCode = (() => {
@@ -26131,7 +27527,7 @@ function MorningBriefHome({
           url: s.url,
           source: s.source,
           marketCode: m.code,
-          marketName: m.nameZh,
+          marketName: countryLabelUi(m.code, uiLang, m.nameZh),
           topic: "credit" as const,
           lane: "watch" as const,
           sortKey: `${flashSortKey(s.published)}|${m.code}|${String(i).padStart(2, "0")}`,
@@ -26156,13 +27552,37 @@ function MorningBriefHome({
       url: s.url,
       source: s.source,
       marketCode: s.country,
-      marketName: s.nameZh,
+      marketName: countryLabelUi(s.country, uiLang, s.nameZh),
       topic: "disaster" as const,
       kindZh: s.kindZh || disasterKindLabel(s.kind),
       lane: "watch" as const,
       sortKey: `${flashSortKey(s.published)}|d|${s.country}|${String(i).padStart(2, "0")}`,
     }));
-    const rows = [...creditRows, ...disasterRows];
+    const storeRows: FlashFeedItem[] = storeEvents.map((s, i) => ({
+      id: `s:${s.id || i}`,
+      timeLabel: flashClock(s.published || s.checkedAt || ""),
+      title: s.title,
+      titleEn: s.titleEn,
+      body: storyToProse({
+        what: s.what,
+        how: s.how,
+        result: s.result || s.cashLoanHint,
+        title: s.title,
+        titleEn: s.titleEn,
+        source: s.source,
+        published: s.published,
+        cashLoanHint: s.cashLoanHint,
+      }),
+      url: s.url,
+      source: s.source,
+      marketCode: s.country,
+      marketName: countryLabelUi(s.country, uiLang, s.nameZhCountry),
+      topic: "store" as const,
+      kindZh: s.to === "gone" ? "下架" : "在架",
+      lane: "watch" as const,
+      sortKey: `${flashSortKey(s.published || s.checkedAt)}|s|${s.country}|${String(i).padStart(2, "0")}`,
+    }));
+    const rows = [...creditRows, ...disasterRows, ...storeRows];
     // 同国同标题去重（保留最新一条）；有原文标题时按原文区分
     const seen = new Set<string>();
     const deduped: FlashFeedItem[] = [];
@@ -26179,8 +27599,7 @@ function MorningBriefHome({
 
   const visibleWatch = watchFeed.filter((x) => {
     if (filterMkt && x.marketCode !== filterMkt) return false;
-    if (filterTopic === "disaster" && x.topic !== "disaster") return false;
-    if (filterTopic === "credit" && x.topic === "disaster") return false;
+    if (filterTopic && x.topic !== filterTopic) return false;
     return true;
   });
 
@@ -26212,11 +27631,12 @@ function MorningBriefHome({
     const active = filterMkt === m.code;
     const tip = verdictTipByCode.get(m.code);
     const dCount = disasterCountForCountry(m.code);
+    const sCount = storeDelistCountForCountry(m.code);
     return (
       <button
         key={m.code}
         type="button"
-        title={[tip, dCount ? `灾害 ${dCount} 条` : ""].filter(Boolean).join(" · ") || undefined}
+        title={[tip, dCount ? t.disasterTitle(dCount) : "", sCount ? t.storeTitle(sCount) : ""].filter(Boolean).join(" · ") || undefined}
         onClick={() => selectMarket(m.code)}
         style={{
           position: "relative",
@@ -26238,13 +27658,13 @@ function MorningBriefHome({
         }}
       >
         <UnreadBadge count={unread} />
-        {m.nameZh}
+        {countryLabelUi(m.code, uiLang, m.nameZh)}
         {!unread ? (
           <span style={{ color: theme.text.tertiary, fontWeight: 400 }}>{m.count}</span>
         ) : null}
         {dCount ? (
           <span
-            title={`灾害 ${dCount}`}
+            title={t.disasterBadge(dCount)}
             style={{
               marginLeft: 2,
               minWidth: 14,
@@ -26259,7 +27679,27 @@ function MorningBriefHome({
               textAlign: "center",
             }}
           >
-            灾{dCount}
+            {t.disasterBadge(dCount)}
+          </span>
+        ) : null}
+        {sCount ? (
+          <span
+            title={t.storeBadge(sCount)}
+            style={{
+              marginLeft: 2,
+              minWidth: 14,
+              height: 14,
+              padding: "0 4px",
+              borderRadius: 4,
+              background: "rgba(185, 28, 28, 0.12)",
+              color: "#991b1b",
+              fontSize: 10,
+              fontWeight: 600,
+              lineHeight: "14px",
+              textAlign: "center",
+            }}
+          >
+            {t.storeBadge(sCount)}
           </span>
         ) : null}
       </button>
@@ -26297,17 +27737,16 @@ function MorningBriefHome({
     );
   };
 
-  const briefMeta = softenBriefText(
-    [
-      "本周关注",
-      watchTotal ? `${watchTotal} 条` : "",
-      disasterTotal ? `灾害 ${disasterTotal}` : "",
-      unreadMktTotal ? `未读 ${unreadMktTotal}` : "",
-      dateLabel ? `更新至 ${dateLabel}` : "",
-    ]
-      .filter(Boolean)
-      .join(" · "),
-  );
+  const briefMeta = [
+    t.weekFocus,
+    watchTotal ? t.itemsN(watchTotal) : "",
+    disasterTotal ? t.disasterN(disasterTotal) : "",
+    storeTotal ? t.storeN(storeTotal) : "",
+    unreadMktTotal ? t.unreadN(unreadMktTotal) : "",
+    dateLabel ? t.updatedTo(dateLabel) : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <Stack gap={0}>
@@ -26319,6 +27758,7 @@ function MorningBriefHome({
             {(role === "boss" || role === "am") && bossVerdict ? (
               <BossWatchBar
                 verdict={bossVerdict}
+                verdictEn={bossVerdictEn}
                 onOpenCountry={(nameZh) => {
                   const aliases: Record<string, string[]> = {
                     香港: ["中国香港", "香港"],
@@ -26347,9 +27787,10 @@ function MorningBriefHome({
 
           <Row gap={10} align="center" wrap>
             <Row gap={5} align="center" wrap>
-              <HomeMeta>主题</HomeMeta>
-              {topicChip("credit", "信贷/监管", watchFeed.filter((x) => x.topic !== "disaster").length)}
-              {topicChip("disaster", "灾害", disasterTotal)}
+              <HomeMeta>{t.topic}</HomeMeta>
+              {topicChip("credit", t.topicCredit, watchFeed.filter((x) => x.topic === "credit").length)}
+              {topicChip("disaster", t.topicDisaster, disasterTotal)}
+              {topicChip("store", t.topicStore, storeTotal)}
             </Row>
             {investedMkts.length ? (
               <span
@@ -26365,7 +27806,7 @@ function MorningBriefHome({
             ) : null}
             {investedMkts.length ? (
               <Row gap={5} align="center" wrap>
-                <HomeMeta>展业国</HomeMeta>
+                <HomeMeta>{t.investedMkts}</HomeMeta>
                 {investedMkts.map(countryChip)}
               </Row>
             ) : null}
@@ -26383,7 +27824,7 @@ function MorningBriefHome({
             ) : null}
             {hotMkts.length ? (
               <Row gap={5} align="center" wrap>
-                <HomeMeta>热点国</HomeMeta>
+                <HomeMeta>{t.hotMkts}</HomeMeta>
                 {hotMkts.map(countryChip)}
               </Row>
             ) : null}
@@ -26397,10 +27838,16 @@ function MorningBriefHome({
             <HomeMeta>
               {[
                 filterMkt
-                  ? focusMkts.find((m) => m.code === filterMkt)?.nameZh || filterMkt
+                  ? countryLabelUi(filterMkt, uiLang, focusMkts.find((m) => m.code === filterMkt)?.nameZh || filterMkt)
                   : "",
-                filterTopic === "disaster" ? "灾害" : filterTopic === "credit" ? "信贷/监管" : "",
-                visibleWatch.length ? `${visibleWatch.length} 条` : "",
+                filterTopic === "disaster"
+                  ? t.topicDisaster
+                  : filterTopic === "store"
+                    ? t.topicStore
+                    : filterTopic === "credit"
+                      ? t.topicCredit
+                      : "",
+                visibleWatch.length ? t.itemsN(visibleWatch.length) : "",
                 filterMkt ? verdictTipByCode.get(filterMkt) || "" : "",
               ]
                 .filter(Boolean)
@@ -26419,7 +27866,13 @@ function MorningBriefHome({
             />
           ))
         ) : (
-          <HomeMeta>{filterTopic === "disaster" ? "暂无灾害快讯" : "该国暂无快讯条目"}</HomeMeta>
+          <HomeMeta>
+            {filterTopic === "disaster"
+              ? t.noDisasterFlash
+              : filterTopic === "store"
+                ? t.noStoreFlash
+                : t.noFlashForCountry}
+          </HomeMeta>
         )}
       </Stack>
     </Stack>
@@ -26579,6 +28032,8 @@ function NbfcOtherCell({
   notes: string;
 }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
   const [open, setOpen] = useState(false);
   const hasOther = Boolean(otherInfo.trim());
   const hasNotes = Boolean(notes.trim());
@@ -26620,12 +28075,15 @@ function NbfcOtherCell({
   };
   return (
     <div style={{ minWidth: 0 }}>
-      {block("摘要", otherInfo)}
-      {block("备注", notes, true)}
+      {block(uiLang === "en" ? "Summary" : "摘要", otherInfo)}
+      {block(uiLang === "en" ? "Notes" : "备注", notes, true)}
       {joinedLen > 96 ? (
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen((v) => !v);
+          }}
           style={{
             marginTop: 4,
             padding: 0,
@@ -26637,220 +28095,852 @@ function NbfcOtherCell({
             fontWeight: 500,
           }}
         >
-          {open ? "收起" : "展开全部"}
+          {open ? t.collapse : t.expandAll}
         </button>
       ) : null}
     </div>
   );
 }
 
-function NbfcStatsSubpage() {
+/** 非银监管名单详情条：对齐上市公司 FocusPanel 信息密度 */
+function NbfcFocusPanel({
+  row,
+  onClose,
+}: {
+  row: NbfcCountryStatRow;
+  onClose: () => void;
+}) {
   const theme = useHostTheme();
-  const rows = NBFC_STATS.rows;
-  const withCount = rows.filter((r) => r.nbfc_count.trim()).length;
-  const official = rows.filter((r) => r.data_quality === "official").length;
-
-  const th: CSSProperties = {
-    position: "sticky",
-    top: 0,
-    zIndex: 1,
-    textAlign: "left",
-    padding: "10px 12px",
-    fontSize: 12,
-    fontWeight: 600,
-    whiteSpace: "nowrap",
-    background: theme.bg.elevated,
-    borderBottom: `1px solid ${theme.stroke.secondary}`,
-    color: theme.text.secondary,
-  };
-  const td: CSSProperties = {
-    padding: "10px 12px",
-    fontSize: 12,
-    verticalAlign: "top",
-    borderBottom: `1px solid ${theme.stroke.tertiary}`,
-    color: theme.text.primary,
-  };
-  const tdCountry: CSSProperties = {
-    ...td,
-    position: "sticky",
-    left: 0,
-    zIndex: 2,
-    background: theme.bg.elevated,
-    whiteSpace: "nowrap",
-    width: 96,
-    minWidth: 96,
-    boxShadow: `1px 0 0 ${theme.stroke.tertiary}`,
-  };
-  const thCountry: CSSProperties = {
-    ...th,
-    left: 0,
-    zIndex: 3,
-    width: 96,
-    minWidth: 96,
-    boxShadow: `1px 0 0 ${theme.stroke.tertiary}`,
-  };
-  const tdQuality: CSSProperties = {
-    ...td,
-    whiteSpace: "nowrap",
-    width: 76,
-    minWidth: 76,
-  };
-  const tdNum: CSSProperties = {
-    ...td,
-    maxWidth: 120,
-    overflow: "hidden",
-    overflowWrap: "anywhere",
-    wordBreak: "break-word",
-    whiteSpace: "normal",
-  };
-  const tdClamp: CSSProperties = {
-    ...td,
-    maxWidth: 148,
-    overflow: "hidden",
-    overflowWrap: "anywhere",
-    wordBreak: "break-word",
-    whiteSpace: "normal",
-  };
-  const tdOther: CSSProperties = {
-    ...td,
-    width: "32%",
-    minWidth: 420,
-  };
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
+  const countryName = countryLabelUi(row.country_code, uiLang, row.country_name_zh);
+  const kpis: { id: string; label: string; value: string }[] = [
+    { id: "count", label: en ? "Institutions" : "机构数量", value: nbfcFieldTextUi(row.nbfc_count || "—", uiLang) },
+    { id: "loan", label: en ? "Loan book" : "放贷总量", value: nbfcFieldTextUi(row.loan_book_total || "—", uiLang) },
+    { id: "usd", label: en ? "Loan book (USD)" : "放贷(USD)", value: nbfcFieldTextUi(row.loan_book_usd || "—", uiLang) },
+    { id: "borrowers", label: en ? "Borrowers" : "覆盖人数", value: nbfcFieldTextUi(row.borrowers_covered || "—", uiLang) },
+    { id: "avg", label: en ? "Avg loan size" : "平均放贷额", value: nbfcFieldTextUi(row.avg_loan_size || "—", uiLang) },
+    { id: "npl", label: "Default/NPL", value: nbfcFieldTextUi(row.default_rate || "—", uiLang) },
+  ];
 
   return (
-    <Stack gap={14}>
-      <Row gap={8} align="center" justify="space-between" wrap>
-        <Stack gap={4}>
-          <H2>非银玩家统计信息（监管名单）</H2>
-          <Text size="small" tone="secondary">
-            {NBFC_STATS.meta.title} · 更新 {NBFC_STATS.meta.updated} · {rows.length} 行 · 有机构数{" "}
-            {withCount} · 官方口径 {official}
-          </Text>
-        </Stack>
-        <Pill
-          tone="neutral"
-          size="sm"
-          onClick={downloadNbfcXlsx}
-          title="导出非银玩家统计信息（监管名单）.xlsx"
+    <div
+      style={{
+        border: `1px solid ${theme.stroke.secondary}`,
+        borderRadius: 8,
+        background: theme.bg.elevated,
+        padding: "12px 14px",
+        display: "grid",
+        gap: 10,
+      }}
+    >
+      <Row gap={10} align="start" justify="space-between" wrap>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 650, color: theme.text.primary, lineHeight: 1.35 }}>
+            {nbfcEquivNameUi(row.nbfc_equivalent_name, uiLang) || (en ? "NBFI equivalent" : "非银等效")}
+          </div>
+          <Row gap={8} align="center" wrap style={{ marginTop: 4 }}>
+            <HomeMeta>
+              {countryName} · {row.country_code}
+            </HomeMeta>
+            {row.regulator ? <HomeMeta>{row.regulator}</HomeMeta> : null}
+            <Pill size="sm" tone={qualityTone(row.data_quality)}>
+              {dataQualityLabelUi(row.data_quality, uiLang)}
+            </Pill>
+            {row.as_of ? <HomeMeta>{en ? "As of" : "时点"} {row.as_of}</HomeMeta> : null}
+          </Row>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={en ? "Close detail" : "关闭详情"}
+          style={{
+            height: 28,
+            padding: "0 10px",
+            borderRadius: 8,
+            border: `1px solid ${theme.stroke.tertiary}`,
+            background: theme.bg.elevated,
+            color: theme.text.secondary,
+            cursor: "pointer",
+            font: "inherit",
+            fontSize: 12,
+          }}
         >
-          导出 Excel
-        </Pill>
+          {en ? "Close" : "关闭"}
+        </button>
       </Row>
-
-      <Callout tone="info">
-        {NBFC_STATS.meta.note}
-        {NBFC_STATS.meta.fx_note ? ` ${NBFC_STATS.meta.fx_note}` : ""}
-      </Callout>
 
       <div
         style={{
-          width: "100%",
-          overflowX: "auto",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+          gap: 8,
         }}
       >
-        <table
-          style={{
-            borderCollapse: "separate",
-            borderSpacing: 0,
-            width: "100%",
-            minWidth: 1680,
-            tableLayout: "fixed",
-          }}
-        >
-          <colgroup>
-            <col style={{ width: 96 }} />
-            <col style={{ width: 132 }} />
-            <col style={{ width: 132 }} />
-            <col style={{ width: 88 }} />
-            <col style={{ width: 120 }} />
-            <col style={{ width: 108 }} />
-            <col style={{ width: 100 }} />
-            <col style={{ width: 100 }} />
-            <col style={{ width: 96 }} />
-            <col style={{ width: 88 }} />
-            <col style={{ width: 140 }} />
-            <col style={{ width: 76 }} />
-            <col />
-          </colgroup>
-          <thead>
-            <tr>
-              <th style={thCountry}>国家</th>
-              <th style={th}>NBFC/等效</th>
-              <th style={th}>监管机构</th>
-              <th style={th}>机构数量</th>
-              <th style={th}>放贷总量</th>
-              <th style={th}>放贷总量(USD)</th>
-              <th style={th}>覆盖人数</th>
-              <th style={th}>平均放贷额</th>
-              <th style={th}>Default/NPL</th>
-              <th style={th}>时点</th>
-              <th style={th}>信源</th>
-              <th style={{ ...th, width: 76 }}>质量</th>
-              <th style={th}>其他</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => {
-              const zebra = i % 2 === 1 ? theme.fill.tertiary : theme.bg.elevated;
+        {kpis.map((k) => (
+          <div key={k.id} style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 11, color: theme.text.tertiary }}>{k.label}</div>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: theme.text.primary,
+                lineHeight: 1.35,
+                wordBreak: "break-word",
+              }}
+            >
+              {k.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {row.source_url || row.source_title ? (
+        <Row gap={8} align="center" justify="space-between" wrap>
+          <HomeMeta>{en ? "Source" : "信源"}</HomeMeta>
+          {row.source_url ? (
+            <a
+              href={row.source_url}
+              target="_blank"
+              rel="noreferrer"
+              style={{ fontSize: 12, color: theme.text.secondary, textDecoration: "underline" }}
+            >
+              {row.source_title || (en ? "Original" : "原文")}
+            </a>
+          ) : (
+            <span style={{ fontSize: 12, color: theme.text.secondary }}>{row.source_title}</span>
+          )}
+        </Row>
+      ) : null}
+
+      {row.other_info || row.notes ? (
+        <div style={{ borderTop: `1px solid ${theme.stroke.tertiary}`, paddingTop: 8 }}>
+          <NbfcOtherCell otherInfo={row.other_info || ""} notes={row.notes || ""} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** 非银玩家统计：布局对齐「上市公司」（筛选条 / 卡片·一览 / 详情 / CSV） */
+function NbfcStatsSubpage() {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const t = uiCopy(uiLang);
+  const theme = useHostTheme();
+  const tableBase = theme.bg.elevated;
+  const tableHeadBg = solidOverBase(tableBase, theme.fill.secondary);
+  const tableRowEven = tableBase;
+  const tableRowOdd = solidOverBase(tableBase, theme.fill.tertiary);
+
+  const [quality, setQuality] = useCanvasState<string>("nbfcQuality1", "");
+  const [region, setRegion] = useCanvasState<string>("nbfcRegion1", "");
+  const [country, setCountry] = useCanvasState<string>("nbfcCountry1", "");
+  const [countryOpen, setCountryOpen] = useCanvasState<boolean>("nbfcCountryOpen1", false);
+  const [sortBy, setSortBy] = useCanvasState<string>("nbfcSortBy1", "loanUsd");
+  const [sortDir, setSortDir] = useCanvasState<string>("nbfcSortDir1", "desc");
+  const [viewMode, setViewMode] = useCanvasState<"cards" | "read">("nbfcViewMode1", "cards");
+  const [focusId, setFocusId] = useCanvasState<string>("nbfcFocus1", "");
+  const focusRef = useRef<HTMLDivElement | null>(null);
+
+  const allRows = NBFC_STATS.rows;
+
+  const filtered = allRows.filter((r) => {
+    if (quality && r.data_quality !== quality) return false;
+    const reg = nbfcCountryRegion(r.country_code);
+    if (region && reg !== region) return false;
+    if (country && r.country_code !== country) return false;
+    return true;
+  });
+
+  const countryOptions = (() => {
+    const pool = allRows.filter((r) => {
+      if (quality && r.data_quality !== quality) return false;
+      const reg = nbfcCountryRegion(r.country_code);
+      if (region && reg !== region) return false;
+      return true;
+    });
+    const counts = new Map<string, number>();
+    for (const r of pool) {
+      counts.set(r.country_code, (counts.get(r.country_code) || 0) + 1);
+    }
+    return [...counts.entries()]
+      .sort(
+        (a, b) =>
+          b[1] - a[1] ||
+          (COUNTRY_LABEL_ZH[a[0]] || a[0]).localeCompare(COUNTRY_LABEL_ZH[b[0]] || b[0], "zh"),
+      )
+      .map(([code, n]) => ({ code, n }));
+  })();
+
+  const items = [...filtered].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    const nullLast = (av: number | null | undefined, bv: number | null | undefined) => {
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return (av - bv) * dir;
+    };
+    if (sortBy === "count") return nullLast(nbfcCountSortValue(a.nbfc_count), nbfcCountSortValue(b.nbfc_count));
+    if (sortBy === "asOf") {
+      const av = a.as_of || "";
+      const bv = b.as_of || "";
+      if (!av && !bv) return 0;
+      if (!av) return 1;
+      if (!bv) return -1;
+      return av.localeCompare(bv) * dir;
+    }
+    return nullLast(a.loan_book_usd_bn, b.loan_book_usd_bn);
+  });
+
+  const focusItem = (() => {
+    if (!focusId) return null;
+    const idx = items.findIndex((r, i) => nbfcRowId(r, i) === focusId);
+    if (idx >= 0) return items[idx]!;
+    const byBase = items.find((r) => focusId.startsWith(nbfcRowId(r)));
+    return byBase || allRows.find((r, i) => nbfcRowId(r, i) === focusId) || null;
+  })();
+
+  useEffect(() => {
+    if (!focusId || !focusRef.current) return;
+    focusRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [focusId, viewMode]);
+
+  const openFocus = (id: string) => {
+    if (!id) return;
+    setFocusId(id);
+  };
+
+  const withCount = items.filter((r) => r.nbfc_count.trim()).length;
+  const official = items.filter((r) => r.data_quality === "official").length;
+  const withLoan = items.filter((r) => r.loan_book_usd_bn != null || r.loan_book_usd.trim()).length;
+
+  const chipStyle = (active: boolean) => ({
+    height: 28,
+    padding: "0 10px",
+    borderRadius: 8,
+    border: `1px solid ${active ? theme.stroke.secondary : theme.stroke.tertiary}`,
+    background: active ? theme.fill.secondary : theme.bg.elevated,
+    color: theme.text.primary,
+    cursor: "pointer" as const,
+    font: "inherit",
+    fontSize: 12,
+    fontWeight: active ? 600 : 500,
+  });
+
+  const toggleSort = (key: "loanUsd" | "count" | "asOf") => {
+    if (sortBy === key) {
+      setSortDir(sortDir === "desc" ? "asc" : "desc");
+    } else {
+      setSortBy(key);
+      setSortDir(key === "asOf" ? "desc" : "desc");
+    }
+  };
+
+  const sortArrow = (key: string) => {
+    if (sortBy !== key) return "";
+    return sortDir === "desc" ? " ↓" : " ↑";
+  };
+
+  const asOf = NBFC_STATS.meta.updated || "—";
+
+  return (
+    <Stack gap={16}>
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 8,
+          background: theme.bg.elevated,
+          padding: "4px 0 10px",
+          borderBottom: `1px solid ${theme.stroke.tertiary}`,
+        }}
+      >
+        <Stack gap={10}>
+          <Row gap={8} align="center" justify="space-between" wrap>
+            <Text weight="medium">{uiLang === "en" ? "NBFI players" : "非银玩家"}</Text>
+            <Row gap={6} align="center" wrap>
+              <HomeMeta>
+                {uiLang === "en"
+                  ? `${items.length} rows · with count ${withCount} · with lending ${withLoan} · official ${official}`
+                  : `${items.length} 行 · 有机构数 ${withCount} · 有放贷 ${withLoan} · 官方 ${official}`}
+              </HomeMeta>
+              <Pill
+                tone="neutral"
+                size="sm"
+                onClick={() => downloadNbfcCsv(items, asOf, uiLang)}
+                title={
+                  uiLang === "en"
+                    ? `Export ${items.length} filtered rows (CSV)`
+                    : `导出当前筛选 ${items.length} 行（CSV，Excel 可开）`
+                }
+              >
+                {uiLang === "en" ? "Export CSV" : "导出 CSV"}
+              </Pill>
+              <Pill
+                tone="neutral"
+                size="sm"
+                onClick={downloadNbfcXlsx}
+                title={uiLang === "en" ? "Download full Excel workbook" : "导出完整 Excel 工作簿"}
+              >
+                {uiLang === "en" ? "Export Excel" : "导出 Excel"}
+              </Pill>
+              <div
+                role="group"
+                aria-label={t.listedViewMode}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 0,
+                  height: 28,
+                  padding: "0 2px",
+                  borderRadius: 8,
+                  border: `1px solid ${theme.stroke.tertiary}`,
+                  background: theme.bg.elevated,
+                  color: theme.text.tertiary,
+                  fontSize: 13,
+                  lineHeight: 1,
+                }}
+              >
+                <button
+                  type="button"
+                  title={uiLang === "en" ? "Cards" : "卡片"}
+                  aria-label={uiLang === "en" ? "Cards" : "卡片"}
+                  aria-pressed={viewMode === "cards"}
+                  onClick={() => setViewMode("cards")}
+                  style={{
+                    width: 28,
+                    height: 24,
+                    margin: 0,
+                    padding: 0,
+                    border: "none",
+                    borderRadius: 6,
+                    background: viewMode === "cards" ? theme.fill.secondary : "transparent",
+                    color: viewMode === "cards" ? theme.text.primary : theme.text.tertiary,
+                    cursor: "pointer",
+                    font: "inherit",
+                    fontSize: 14,
+                    fontWeight: viewMode === "cards" ? 600 : 400,
+                  }}
+                >
+                  ▦
+                </button>
+                <span aria-hidden style={{ width: 1, height: 14, background: theme.stroke.tertiary, margin: "0 1px" }} />
+                <button
+                  type="button"
+                  title={uiLang === "en" ? "Table" : "一览"}
+                  aria-label={uiLang === "en" ? "Table" : "一览"}
+                  aria-pressed={viewMode === "read"}
+                  onClick={() => setViewMode("read")}
+                  style={{
+                    width: 28,
+                    height: 24,
+                    margin: 0,
+                    padding: 0,
+                    border: "none",
+                    borderRadius: 6,
+                    background: viewMode === "read" ? theme.fill.secondary : "transparent",
+                    color: viewMode === "read" ? theme.text.primary : theme.text.tertiary,
+                    cursor: "pointer",
+                    font: "inherit",
+                    fontSize: 14,
+                    fontWeight: viewMode === "read" ? 600 : 400,
+                  }}
+                >
+                  ☰
+                </button>
+              </div>
+              <HomeMeta>{asOf}</HomeMeta>
+            </Row>
+          </Row>
+
+          {viewMode === "cards" ? (
+            <Row gap={6} wrap>
+              <HomeMeta>{t.listedSort}</HomeMeta>
+              <button type="button" onClick={() => toggleSort("loanUsd")} style={chipStyle(sortBy === "loanUsd")}>
+                {uiLang === "en" ? "Lending USD" : "放贷USD"}
+                {sortArrow("loanUsd")}
+              </button>
+              <button type="button" onClick={() => toggleSort("count")} style={chipStyle(sortBy === "count")}>
+                {uiLang === "en" ? "Institutions" : "机构数"}
+                {sortArrow("count")}
+              </button>
+              <button type="button" onClick={() => toggleSort("asOf")} style={chipStyle(sortBy === "asOf")}>
+                {uiLang === "en" ? "As of" : "时点"}
+                {sortArrow("asOf")}
+              </button>
+            </Row>
+          ) : null}
+
+          <Row gap={6} wrap>
+            <button type="button" onClick={() => setQuality("")} style={chipStyle(!quality)}>
+              {uiLang === "en" ? "All quality" : "全部质量"}
+            </button>
+            {NBFC_QUALITY_ORDER.map((q) => {
+              const active = quality === q;
               return (
-                <tr key={`${r.country_code}-${r.nbfc_equivalent_name}-${i}`} style={{ background: zebra }}>
-                  <td style={{ ...tdCountry, background: zebra }}>
-                    <Text size="small" weight="medium" as="span">
-                      {r.country_name_zh}
-                    </Text>
-                    <Text size="small" tone="tertiary" as="span">
-                      {" "}
-                      {r.country_code}
-                    </Text>
-                  </td>
-                  <td style={tdClamp} title={r.nbfc_equivalent_name || undefined}>
-                    {r.nbfc_equivalent_name || "—"}
-                  </td>
-                  <td style={tdClamp} title={r.regulator || undefined}>
-                    {r.regulator || "—"}
-                  </td>
-                  <td style={tdNum}>{r.nbfc_count || "—"}</td>
-                  <td style={tdClamp} title={r.loan_book_total || undefined}>
-                    {r.loan_book_total || "—"}
-                  </td>
-                  <td style={tdNum}>{r.loan_book_usd || "—"}</td>
-                  <td style={tdClamp} title={r.borrowers_covered || undefined}>
-                    {r.borrowers_covered || "—"}
-                  </td>
-                  <td style={tdClamp} title={r.avg_loan_size || undefined}>
-                    {r.avg_loan_size || "—"}
-                  </td>
-                  <td style={tdClamp} title={r.default_rate || undefined}>
-                    {r.default_rate || "—"}
-                  </td>
-                  <td style={tdNum}>{r.as_of || "—"}</td>
-                  <td style={tdClamp}>
-                    {r.source_url ? (
-                      <Link href={r.source_url}>{r.source_title || r.source_url}</Link>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td style={tdQuality}>
-                    <Pill size="sm" tone={qualityTone(r.data_quality)}>
-                      {DATA_QUALITY_LABEL[r.data_quality]}
-                    </Pill>
-                  </td>
-                  <td style={tdOther}>
-                    <NbfcOtherCell otherInfo={r.other_info || ""} notes={r.notes || ""} />
-                  </td>
-                </tr>
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => setQuality(active ? "" : q)}
+                  style={chipStyle(active)}
+                >
+                  {dataQualityLabelUi(q, uiLang)}
+                </button>
               );
             })}
-          </tbody>
-        </table>
+          </Row>
+
+          <Row gap={6} wrap>
+            <button type="button" onClick={() => setRegion("")} style={chipStyle(!region)}>
+              {uiLang === "en" ? "All regions" : "全部地区"}
+            </button>
+            {NBFC_REGION_ORDER.map((r) => {
+              const active = region === r;
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => {
+                    setRegion(active ? "" : r);
+                    setCountry("");
+                  }}
+                  style={chipStyle(active)}
+                >
+                  {listedRegionLabelUi(fintechStockRegionLabel(r), uiLang)}
+                </button>
+              );
+            })}
+          </Row>
+
+          <Row gap={6} wrap align="center">
+            <button
+              type="button"
+              onClick={() => setCountryOpen(!countryOpen)}
+              style={chipStyle(!!country || countryOpen)}
+              aria-expanded={countryOpen}
+            >
+              {country
+                ? `${uiLang === "en" ? "Country" : "国家"} · ${countryLabelUi(country, uiLang, COUNTRY_LABEL_ZH[country] || fintechStockCountryLabel(country) || country)}`
+                : uiLang === "en"
+                  ? "Country"
+                  : "国家"}
+              <span style={{ color: theme.text.tertiary, fontWeight: 500 }}>{countryOpen ? " ▴" : " ▾"}</span>
+            </button>
+            {country && !countryOpen ? (
+              <button type="button" onClick={() => setCountry("")} style={chipStyle(false)}>
+                {uiLang === "en" ? "Clear" : "清除"}
+              </button>
+            ) : null}
+            {countryOpen ? (
+              <>
+                <button type="button" onClick={() => setCountry("")} style={chipStyle(!country)}>
+                  {uiLang === "en" ? "All" : "全部"}
+                </button>
+                {countryOptions.map(({ code, n }) => {
+                  const active = country === code;
+                  const label = countryLabelUi(code, uiLang, COUNTRY_LABEL_ZH[code] || fintechStockCountryLabel(code) || code);
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => setCountry(active ? "" : code)}
+                      style={chipStyle(active)}
+                    >
+                      {label}
+                      <span style={{ color: theme.text.tertiary, fontWeight: 500 }}>{` ${n}`}</span>
+                    </button>
+                  );
+                })}
+              </>
+            ) : null}
+          </Row>
+        </Stack>
+      </div>
+
+      {focusItem ? (
+        <div ref={focusRef}>
+          <NbfcFocusPanel row={focusItem} onClose={() => setFocusId("")} />
+        </div>
+      ) : null}
+
+      {viewMode === "read" ? (
+        <div
+          style={{
+            maxHeight: "calc(100dvh - 220px)",
+            overflow: "auto",
+            border: `1px solid ${theme.stroke.tertiary}`,
+            borderRadius: 10,
+            WebkitOverflowScrolling: "touch",
+            background: tableBase,
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              minWidth: 1100,
+              borderCollapse: "separate",
+              borderSpacing: 0,
+              fontSize: 12,
+              fontVariantNumeric: "tabular-nums",
+              background: tableBase,
+            }}
+          >
+            <thead>
+              <tr style={{ color: theme.text.tertiary, textAlign: "left" }}>
+                {(
+                  [
+                    { key: "country", label: uiLang === "en" ? "Country" : "国家", align: "left" as const },
+                    { key: "name", label: uiLang === "en" ? "NBFC / equiv." : "NBFC/等效", align: "left" as const },
+                    { key: "regulator", label: uiLang === "en" ? "Regulator" : "监管", align: "left" as const },
+                    {
+                      key: "count",
+                      label: `${uiLang === "en" ? "Institutions" : "机构数"}${sortArrow("count")}`,
+                      align: "right" as const,
+                      sort: "count" as const,
+                    },
+                    {
+                      key: "loanUsd",
+                      label: `${uiLang === "en" ? "Lending USD" : "放贷USD"}${sortArrow("loanUsd")}`,
+                      align: "right" as const,
+                      sort: "loanUsd" as const,
+                    },
+                    { key: "npl", label: "NPL", align: "right" as const },
+                    {
+                      key: "asOf",
+                      label: `${uiLang === "en" ? "As of" : "时点"}${sortArrow("asOf")}`,
+                      align: "left" as const,
+                      sort: "asOf" as const,
+                    },
+                    { key: "quality", label: uiLang === "en" ? "Quality" : "质量", align: "left" as const },
+                  ] as const
+                ).map((col) => (
+                  <th
+                    key={col.key}
+                    style={{
+                      position: "sticky",
+                      top: 0,
+                      left: col.key === "country" ? 0 : undefined,
+                      zIndex: col.key === "country" ? 5 : 3,
+                      padding: "8px 10px",
+                      fontWeight: 500,
+                      whiteSpace: "nowrap",
+                      borderBottom: `1px solid ${theme.stroke.tertiary}`,
+                      textAlign: col.align,
+                      cursor: "sort" in col && col.sort ? "pointer" : "default",
+                      userSelect: "none",
+                      background: tableHeadBg,
+                      boxShadow:
+                        col.key === "country"
+                          ? `1px 0 0 ${theme.stroke.tertiary}, 0 1px 0 ${theme.stroke.tertiary}`
+                          : `0 1px 0 ${theme.stroke.tertiary}`,
+                    }}
+                    onClick={"sort" in col && col.sort ? () => toggleSort(col.sort) : undefined}
+                  >
+                    {col.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {items.length ? (
+                items.map((r, idx) => {
+                  const id = nbfcRowId(r, idx);
+                  const rowBg = idx % 2 ? tableRowOdd : tableRowEven;
+                  const active = focusId === id;
+                  const cellPad: CSSProperties = {
+                    padding: "7px 10px",
+                    borderBottom: `1px solid ${theme.stroke.tertiary}`,
+                    background: active ? solidOverBase(rowBg, theme.fill.secondary) : rowBg,
+                  };
+                  return (
+                    <tr
+                      key={id}
+                      onClick={() => openFocus(id)}
+                      style={{ cursor: "pointer" }}
+                      title={uiLang === "en" ? "Click for detail" : "点击查看详情"}
+                    >
+                      <td
+                        style={{
+                          ...cellPad,
+                          position: "sticky",
+                          left: 0,
+                          zIndex: 2,
+                          boxShadow: `1px 0 0 ${theme.stroke.tertiary}`,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {countryLabelUi(r.country_code, uiLang, r.country_name_zh)}
+                        <span style={{ color: theme.text.tertiary }}> {r.country_code}</span>
+                      </td>
+                      <td
+                        style={{ ...cellPad, maxWidth: 200 }}
+                        title={nbfcEquivNameUi(r.nbfc_equivalent_name, uiLang)}
+                      >
+                        <div
+                          style={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {nbfcEquivNameUi(r.nbfc_equivalent_name, uiLang) || "—"}
+                        </div>
+                      </td>
+                      <td style={{ ...cellPad, maxWidth: 120, color: theme.text.secondary }}>
+                        {r.regulator || "—"}
+                      </td>
+                      <td style={{ ...cellPad, textAlign: "right" }}>
+                        {nbfcFieldTextUi(r.nbfc_count || "—", uiLang)}
+                      </td>
+                      <td style={{ ...cellPad, textAlign: "right" }}>
+                        {nbfcFieldTextUi(r.loan_book_usd || "—", uiLang)}
+                      </td>
+                      <td
+                        style={{ ...cellPad, textAlign: "right", maxWidth: 120 }}
+                        title={nbfcFieldTextUi(r.default_rate, uiLang)}
+                      >
+                        {nbfcFieldTextUi(r.default_rate || "—", uiLang).slice(0, 28)}
+                        {(r.default_rate || "").length > 28 ? "…" : ""}
+                      </td>
+                      <td style={cellPad}>{r.as_of || "—"}</td>
+                      <td style={cellPad}>
+                        <Pill size="sm" tone={qualityTone(r.data_quality)}>
+                          {dataQualityLabelUi(r.data_quality, uiLang)}
+                        </Pill>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={8} style={{ padding: 24, color: theme.text.tertiary, textAlign: "center" }}>
+                    {uiLang === "en" ? "No results for current filters" : "当前筛选无结果"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div
+          style={{
+            maxHeight: "calc(100dvh - 220px)",
+            overflow: "auto",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+              gap: 10,
+              alignItems: "stretch",
+            }}
+          >
+            {items.length ? (
+              items.map((r, idx) => {
+                const id = nbfcRowId(r, idx);
+                const active = focusId === id;
+                return (
+                  <div
+                    key={id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openFocus(id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openFocus(id);
+                      }
+                    }}
+                    title={uiLang === "en" ? "Click for detail" : "点击查看详情"}
+                    style={{
+                      border: `1px solid ${active ? theme.stroke.secondary : theme.stroke.tertiary}`,
+                      borderRadius: 10,
+                      background: active
+                        ? solidOverBase(theme.bg.elevated, theme.fill.secondary)
+                        : theme.bg.elevated,
+                      padding: "12px 14px",
+                      display: "grid",
+                      gap: 10,
+                      cursor: "pointer",
+                      minWidth: 0,
+                      boxSizing: "border-box",
+                      height: "100%",
+                      alignContent: "start",
+                    }}
+                  >
+                    <Row gap={8} align="start" justify="space-between">
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: theme.text.primary,
+                            lineHeight: 1.35,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={nbfcEquivNameUi(r.nbfc_equivalent_name, uiLang) || undefined}
+                        >
+                          {nbfcEquivNameUi(r.nbfc_equivalent_name, uiLang) || "—"}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: theme.text.tertiary,
+                            marginTop: 2,
+                            lineHeight: 1.35,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={`${countryLabelUi(r.country_code, uiLang, r.country_name_zh)}${r.regulator ? ` · ${r.regulator}` : ""}`}
+                        >
+                          {countryLabelUi(r.country_code, uiLang, r.country_name_zh)}
+                          {r.regulator ? ` · ${r.regulator}` : ""}
+                        </div>
+                      </div>
+                      <div style={{ flexShrink: 0 }}>
+                        <Pill size="sm" tone={qualityTone(r.data_quality)}>
+                          {dataQualityLabelUi(r.data_quality, uiLang)}
+                        </Pill>
+                      </div>
+                    </Row>
+                    {(() => {
+                      const loan = nbfcFieldTextUi((r.loan_book_usd || "").trim() || "—", uiLang);
+                      const countRaw = (r.nbfc_count || "").trim();
+                      const countM = countRaw.match(/^(\d[\d,]*)\s*[（(]([\s\S]+)[）)]\s*$/);
+                      const countMain = countM ? countM[1] : nbfcFieldTextUi(countRaw || "—", uiLang);
+                      const countNote = countM ? nbfcFieldTextUi(countM[2]?.trim() || "", uiLang) : "";
+                      const metricBlock = (label: string, main: string, note?: string) => (
+                        <div style={{ minWidth: 0, display: "grid", gap: 2 }}>
+                          <div style={{ fontSize: 10, color: theme.text.tertiary, letterSpacing: "0.04em" }}>
+                            {label}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: theme.text.primary,
+                              fontVariantNumeric: "tabular-nums",
+                              lineHeight: 1.35,
+                              wordBreak: "break-word",
+                            }}
+                            title={note ? (uiLang === "en" ? `${main} (${note})` : `${main}（${note}）`) : main === "—" ? undefined : main}
+                          >
+                            {main}
+                          </div>
+                          {note ? (
+                            <div
+                              style={{
+                                fontSize: 10,
+                                color: theme.text.tertiary,
+                                lineHeight: 1.35,
+                                overflow: "hidden",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                              }}
+                              title={note}
+                            >
+                              {note}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                      return (
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1fr)",
+                            gap: 10,
+                            alignItems: "start",
+                          }}
+                        >
+                          {metricBlock(uiLang === "en" ? "Lending USD" : "放贷 USD", loan)}
+                          {metricBlock(uiLang === "en" ? "Institutions" : "机构数", countMain, countNote)}
+                        </div>
+                      );
+                    })()}
+                    <div
+                      style={{
+                        borderTop: `1px solid ${theme.stroke.tertiary}`,
+                        paddingTop: 8,
+                        display: "grid",
+                        gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+                        gap: 10,
+                        alignItems: "start",
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 10, color: theme.text.tertiary, letterSpacing: "0.04em" }}>
+                          NPL
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: theme.text.primary,
+                            lineHeight: 1.35,
+                            wordBreak: "break-word",
+                          }}
+                          title={nbfcFieldTextUi(r.default_rate, uiLang) || undefined}
+                        >
+                          {nbfcFieldTextUi(r.default_rate || "—", uiLang)}
+                        </div>
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 10, color: theme.text.tertiary, letterSpacing: "0.04em" }}>
+                          {uiLang === "en" ? "As of" : "时点"}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: theme.text.primary,
+                            lineHeight: 1.35,
+                            fontVariantNumeric: "tabular-nums",
+                          }}
+                        >
+                          {r.as_of || "—"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div style={{ padding: 24, color: theme.text.tertiary }}>
+                {uiLang === "en" ? "No results for current filters" : "当前筛选无结果"}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div style={{ fontSize: 10, color: theme.text.tertiary, lineHeight: 1.45 }}>
+        {uiLang === "en"
+          ? "Definitions differ by country: India is true NBFC; elsewhere closest non-bank lending class. Figures cite sources; blanks are unverified — not audit grade. Refreshed 2026-08-13 from VERIFIED workbook (indicative loan USD / institution counts)."
+          : NBFC_STATS.meta.note}
+        {NBFC_STATS.meta.fx_note
+          ? uiLang === "en"
+            ? " Loan book (USD) uses indicative FX near the stats date from the VERIFIED workbook — for cross-country comparison only, not audit grade."
+            : ` ${NBFC_STATS.meta.fx_note}`
+          : ""}
       </div>
     </Stack>
   );
 }
 
 function MapPanel({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  return (
+    <Card>
+      <CardBody>{children}</CardBody>
+    </Card>
+  );
 }
 
 /** 地图右上角：线框图标钮 · 全屏 / 退出 */
@@ -26943,6 +29033,8 @@ function MapStage({
   /** 大屏：全屏按钮放在地图框右上角 */
   showCornerToggle?: boolean;
 }) {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   return (
     <div
       style={{
@@ -26965,11 +29057,11 @@ function MapStage({
           }}
         >
           {present && onExit ? (
-            <MapChromeIconBtn title="退出全屏" onClick={onExit}>
+            <MapChromeIconBtn title={en ? "Exit fullscreen" : "退出全屏"} onClick={onExit}>
               <IconCollapse />
             </MapChromeIconBtn>
           ) : !present ? (
-            <MapChromeIconBtn title="全屏" onClick={onPresent}>
+            <MapChromeIconBtn title={en ? "Fullscreen" : "全屏"} onClick={onPresent}>
               <IconExpand />
             </MapChromeIconBtn>
           ) : null}
@@ -27049,34 +29141,63 @@ function aggregateEcoCountsByCountry(type: InstitutionType): Record<string, numb
   return out;
 }
 
-function mapFullscreenCorner(
-  present: boolean,
-  onPresent?: () => void,
-  onExit?: () => void,
-): ReactNode {
+function MapFullscreenCorner({
+  present,
+  onPresent,
+  onExit,
+}: {
+  present: boolean;
+  onPresent?: () => void;
+  onExit?: () => void;
+}): ReactNode {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   if (onPresent == null) return null;
   return present && onExit ? (
-    <MapChromeIconBtn title="退出全屏" onClick={onExit}>
+    <MapChromeIconBtn title={en ? "Exit fullscreen" : "退出全屏"} onClick={onExit}>
       <IconCollapse />
     </MapChromeIconBtn>
   ) : !present ? (
-    <MapChromeIconBtn title="全屏" onClick={onPresent}>
+    <MapChromeIconBtn title={en ? "Fullscreen" : "全屏"} onClick={onPresent}>
       <IconExpand />
     </MapChromeIconBtn>
   ) : null;
 }
 
 /** 大屏地图区域芯片（对齐 CRM 洲际名册） */
-const BIG_SCREEN_MAP_REGIONS: { id: Exclude<Region, "all">; label: string }[] = [
-  { id: "east-asia", label: "东亚" },
-  { id: "se-asia", label: "东南亚" },
-  { id: "south-asia", label: "南亚" },
-  { id: "central-asia", label: "中亚" },
-  { id: "mena", label: "中东与北非" },
-  { id: "africa", label: "非洲" },
-  { id: "latam", label: "拉丁美洲" },
-  { id: "west", label: "欧美" },
+const BIG_SCREEN_MAP_REGION_IDS: Exclude<Region, "all">[] = [
+  "east-asia",
+  "se-asia",
+  "south-asia",
+  "central-asia",
+  "mena",
+  "africa",
+  "latam",
+  "west",
 ];
+
+function bigScreenRegionLabel(id: Exclude<Region, "all">, t: ReturnType<typeof uiCopy>): string {
+  switch (id) {
+    case "east-asia":
+      return t.regionEastAsia;
+    case "se-asia":
+      return t.regionSeAsia;
+    case "south-asia":
+      return t.regionSouthAsia;
+    case "central-asia":
+      return t.regionCentralAsia;
+    case "mena":
+      return t.regionMena;
+    case "africa":
+      return t.regionAfrica;
+    case "latam":
+      return t.regionLatam;
+    case "west":
+      return t.regionWest;
+    default:
+      return id;
+  }
+}
 
 type ScreenMacroSub = "loanBook" | MacroMapFactorId;
 type ScreenTab = "macro" | "eco" | "roster";
@@ -27092,6 +29213,7 @@ function BigScreenOverlay({
   showInvested = true,
   ecoType,
   mapRegion = "",
+  mapClickLocked = false,
 }: {
   height?: number;
   bare?: boolean;
@@ -27102,7 +29224,9 @@ function BigScreenOverlay({
   showInvested?: boolean;
   ecoType?: InstitutionType | "";
   mapRegion?: "" | Exclude<Region, "all">;
+  mapClickLocked?: boolean;
 }) {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
   const ecoOn = Boolean(ecoType);
   const ecoCounts = useMemo(
     () => (ecoType ? aggregateEcoCountsByCountry(ecoType) : undefined),
@@ -27118,8 +29242,10 @@ function BigScreenOverlay({
   }, [ecoType]);
   const regionZoomCodes = mapRegion ? COUNTRIES_BY_REGION[mapRegion] : null;
 
-  const corner = mapFullscreenCorner(present, onPresent, onExit);
-  return (
+  const corner = (
+    <MapFullscreenCorner present={present} onPresent={onPresent} onExit={onExit} />
+  );
+  const globe = (
     <FullMarketChoropleth
       height={height}
       fill={bare}
@@ -27129,11 +29255,34 @@ function BigScreenOverlay({
       showEco={ecoOn}
       ecoCounts={ecoCounts}
       ecoTotalUnique={ecoTotalUnique}
-      ecoLabel={ecoType ? INSTITUTION_TYPE_LABEL[ecoType] : undefined}
+      ecoLabel={
+        ecoType ? institutionTypeLabel(ecoType, uiLang, INSTITUTION_TYPE_LABEL[ecoType]) : undefined
+      }
       mapCorner={corner}
       regionZoomCodes={regionZoomCodes}
+      mapClickLocked={mapClickLocked}
     />
   );
+
+  const frame = bare ? (
+    <div style={{ position: "relative", width: "100%", height: "100%", minHeight: 0 }}>{globe}</div>
+  ) : (
+    <div style={{ width: "100%" }}>{globe}</div>
+  );
+
+  const staged =
+    onPresent != null ? (
+      <MapStage present={present} onPresent={onPresent ?? (() => undefined)} onExit={onExit} showCornerToggle={false}>
+        {bare ? frame : <MapPanel>{frame}</MapPanel>}
+      </MapStage>
+    ) : bare ? (
+      frame
+    ) : (
+      <MapPanel>{frame}</MapPanel>
+    );
+
+  if (bare) return staged;
+  return staged;
 }
 
 /** 大屏：宏观因子地域分布（可叠展业徽章 + 区域缩放） */
@@ -27146,6 +29295,7 @@ function BigScreenMacro({
   onPresent,
   onExit,
   mapRegion = "",
+  mapClickLocked = false,
 }: {
   height?: number;
   bare?: boolean;
@@ -27155,25 +29305,55 @@ function BigScreenMacro({
   onPresent?: () => void;
   onExit?: () => void;
   mapRegion?: "" | Exclude<Region, "all">;
+  mapClickLocked?: boolean;
 }) {
-  const corner = mapFullscreenCorner(present, onPresent, onExit);
+  const corner = (
+    <MapFullscreenCorner present={present} onPresent={onPresent} onExit={onExit} />
+  );
   const regionZoomCodes = mapRegion ? COUNTRIES_BY_REGION[mapRegion] : null;
-  return (
+  const map = bare ? (
     <MacroHeatGlobe
       height={height}
       factor={factor}
-      fill={bare}
+      fill
       legendPlacement="bottom"
       showInvested={showInvested}
       mapCorner={corner}
       regionZoomCodes={regionZoomCodes}
+      mapClickLocked={mapClickLocked}
     />
+  ) : (
+    <MapPanel>
+      <MacroHeatGlobe
+        height={height}
+        factor={factor}
+        legendPlacement="bottom"
+        showInvested={showInvested}
+        mapCorner={corner}
+        regionZoomCodes={regionZoomCodes}
+        mapClickLocked={mapClickLocked}
+      />
+    </MapPanel>
   );
+  const staged =
+    onPresent != null ? (
+      <MapStage present={present} onPresent={onPresent} onExit={onExit} showCornerToggle={false}>
+        {map}
+      </MapStage>
+    ) : (
+      map
+    );
+  return staged;
 }
 
 /** 大屏主控：宏观（在贷余额/因子）· 机构 · 非银名单 — 对齐 gh-pages */
 function BigScreen() {
   const theme = useHostTheme();
+  const [authSession] = useCanvasState("authSession1", "");
+  const [guestAccess] = useCanvasState<GuestAccessProfile | null>("guestAccess1", null);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const ui = uiCopy(uiLang);
+  const guestLimited = isLimitedGuest(authSession, guestAccess);
   const [screenTab, setScreenTab] = useCanvasState<ScreenTab>("screenTab4", "macro");
   const [macroSub, setMacroSub] = useCanvasState<ScreenMacroSub>("screenMacroSub2", "loanBook");
   const [ecoType, setEcoType] = useCanvasState<InstitutionType | "">("screenEcoType2", "");
@@ -27198,16 +29378,22 @@ function BigScreen() {
     return nCredit + scenes.filter((r) => r.institutionTypes.includes("玩家")).length;
   };
 
-  // 进入大屏默认：宏观 · 在贷余额 × 展业 · 全球（与 Pages 一致）
+  // 进入大屏默认：宏观 · 在贷余额 × 展业 · 全球（未验证访客固定居民杠杆）
   useEffect(() => {
     setScreenTab("macro");
-    setMacroSub("loanBook");
+    setMacroSub(guestLimited ? "hhDebt" : "loanBook");
     setMapRegion("");
     setEcoType("");
     setEcoPickerOpen(false);
     setImfFilter("all");
     setWbFilter("all");
-  }, [setScreenTab, setMacroSub, setMapRegion, setEcoType, setEcoPickerOpen, setImfFilter, setWbFilter]);
+  }, [setScreenTab, setMacroSub, setMapRegion, setEcoType, setEcoPickerOpen, setImfFilter, setWbFilter, guestLimited]);
+
+  useEffect(() => {
+    if (!guestLimited) return;
+    if (screenTab !== "macro") setScreenTab("macro");
+    if (macroSub !== "hhDebt") setMacroSub("hhDebt");
+  }, [guestLimited, screenTab, macroSub, setScreenTab, setMacroSub]);
 
   useEffect(() => {
     const sync = () => {
@@ -27317,20 +29503,22 @@ function BigScreen() {
   const showMacroFactor = isMacro && macroSub !== "loanBook";
   const factorLabel =
     macroSub === "loanBook"
-      ? "在贷余额"
-      : (MACRO_MAP_FACTORS.find((f) => f.id === macroSub)?.label ?? "");
-  const regionLabel =
-    mapRegion
-      ? (BIG_SCREEN_MAP_REGIONS.find((r) => r.id === mapRegion)?.label ?? "")
-      : "全球";
+      ? ui.loanBook
+      : macroMapFactorLabel(macroSub, uiLang);
+  const regionLabel = mapRegion
+    ? bigScreenRegionLabel(mapRegion, ui)
+    : ui.regionGlobal;
 
   const modeStatus = isRoster
-    ? "非银名单"
+    ? ui.screenRoster
     : isMacro
-      ? `宏观 · ${factorLabel} × 展业 · ${regionLabel}`
+      ? ui.screenModeMacro(factorLabel, regionLabel)
       : isEco
-        ? `机构 · ${ecoType ? INSTITUTION_TYPE_LABEL[ecoType] : "选类型"} · ${regionLabel}`
-        : "地图";
+        ? ui.screenModeEco(
+            ecoType ? institutionTypeLabel(ecoType, uiLang, INSTITUTION_TYPE_LABEL[ecoType]) : ui.screenPickType,
+            regionLabel,
+          )
+        : ui.mapOpen;
 
   const layerTabs = (
     <div
@@ -27344,14 +29532,22 @@ function BigScreen() {
       }}
     >
       <ScreenSegTrack>
-        <ScreenSegChip label="宏观" active={isMacro} onClick={goMacro} />
+        <ScreenSegChip label={ui.screenMacro} active={isMacro} onClick={goMacro} />
         <ScreenSegChip
-          label={ecoType ? INSTITUTION_TYPE_LABEL[ecoType] : "机构"}
+          label={
+            ecoType ? institutionTypeLabel(ecoType, uiLang, INSTITUTION_TYPE_LABEL[ecoType]) : ui.screenEco
+          }
           active={ecoMode}
           clearable={ecoMode}
+          disabled={guestLimited}
           onClick={toggleEcoMode}
         />
-        <ScreenSegChip label="非银名单" active={isRoster} onClick={goRoster} />
+        <ScreenSegChip
+          label={ui.screenRoster}
+          active={isRoster}
+          disabled={guestLimited}
+          onClick={goRoster}
+        />
       </ScreenSegTrack>
       <ScreenStatusPills
         items={[
@@ -27365,14 +29561,18 @@ function BigScreen() {
 
   const regionChips = (
     <ScreenSegTrack>
-      <ScreenSegChip label="全球" active={mapRegion === ""} onClick={() => setMapRegion("")} />
-      {BIG_SCREEN_MAP_REGIONS.map((r) => (
+      <ScreenSegChip
+        label={ui.regionGlobal}
+        active={mapRegion === ""}
+        onClick={() => setMapRegion("")}
+      />
+      {BIG_SCREEN_MAP_REGION_IDS.map((id) => (
         <ScreenSegChip
-          key={r.id}
-          label={r.label}
-          active={mapRegion === r.id}
-          clearable={mapRegion === r.id}
-          onClick={() => setMapRegion(mapRegion === r.id ? "" : r.id)}
+          key={id}
+          label={bigScreenRegionLabel(id, ui)}
+          active={mapRegion === id}
+          clearable={mapRegion === id}
+          onClick={() => setMapRegion(mapRegion === id ? "" : id)}
         />
       ))}
     </ScreenSegTrack>
@@ -27393,17 +29593,24 @@ function BigScreen() {
       {regionChips}
       {isMacro ? (
         <>
+          {guestLimited ? (
+            <Callout tone="warning">
+              {ui.screenLimited}
+            </Callout>
+          ) : null}
           <ScreenSegTrack>
             <ScreenSegChip
-              label="在贷余额"
+              label={ui.loanBook}
               active={macroSub === "loanBook"}
+              disabled={guestLimited}
               onClick={() => setMacroSub("loanBook")}
             />
             {MACRO_MAP_FACTORS.map((f) => (
               <ScreenSegChip
                 key={f.id}
-                label={f.label}
+                label={macroMapFactorLabel(f.id, uiLang)}
                 active={macroSub === f.id}
+                disabled={guestLimited && !canGuestUseMapLayer(authSession, guestAccess, f.id)}
                 onClick={() => setMacroSub(f.id)}
               />
             ))}
@@ -27411,19 +29618,21 @@ function BigScreen() {
           <ScreenImfWbFilterBar />
         </>
       ) : isEco ? (
-        <ScreenSegTrack style={{ width: "100%" }}>
-          {INST_BUCKET_ORDER.flatMap((bucket) =>
-            INST_BUCKET_TYPES[bucket].map((t) => (
-              <ScreenSegChip
-                key={t}
-                label={`${INSTITUTION_TYPE_LABEL[t]} · ${countEcoType(t)}`}
-                active={ecoType === t}
-                clearable
-                onClick={() => selectEcoType(t)}
-              />
-            )),
-          )}
-        </ScreenSegTrack>
+        <div style={{ width: "100%", maxHeight: 96, overflow: "auto" }}>
+          <ScreenSegTrack style={{ width: "100%", overflow: "visible" }}>
+            {INST_BUCKET_ORDER.flatMap((bucket) =>
+              INST_BUCKET_TYPES[bucket].map((t) => (
+                <ScreenSegChip
+                  key={t}
+                  label={`${institutionTypeLabel(t, uiLang, INSTITUTION_TYPE_LABEL[t])} · ${countEcoType(t)}`}
+                  active={ecoType === t}
+                  clearable
+                  onClick={() => selectEcoType(t)}
+                />
+              )),
+            )}
+          </ScreenSegTrack>
+        </div>
       ) : null}
     </div>
   ) : null;
@@ -27435,6 +29644,7 @@ function BigScreen() {
       bare={present}
       factor={macroSub as MacroMapFactorId}
       showInvested
+      mapClickLocked={!canGuestClickMapCountry(authSession, guestAccess, macroSub as MacroMapFactorId)}
       present={present}
       onPresent={enterPresent}
       onExit={exitPresent}
@@ -27445,6 +29655,7 @@ function BigScreen() {
       key={`mkt-${showLoanBook ? 1 : 0}-1-${isEco ? ecoType || "eco" : "none"}-${mapRegion || "world"}`}
       height={mapH}
       bare={present}
+      mapClickLocked={!canGuestClickMapCountry(authSession, guestAccess, "market")}
       present={present}
       onPresent={enterPresent}
       onExit={exitPresent}
@@ -27527,8 +29738,16 @@ function BigScreen() {
   }
 
   return (
-    <Stack gap={16} style={{ flexShrink: 0 }}>
-      <Stack gap={10} style={{ flexShrink: 0 }}>
+    <Stack gap={16}>
+      <Stack
+        gap={10}
+        style={{
+          padding: "12px 14px",
+          borderRadius: 4,
+          border: `1px solid ${theme.stroke.secondary}`,
+          background: theme.bg.elevated,
+        }}
+      >
         {layerTabs}
         {mapSubChrome}
       </Stack>
@@ -27538,7 +29757,7 @@ function BigScreen() {
         <div
           style={{
             width: "100%",
-            flexShrink: 0,
+            minHeight: compactMap ? Math.round(Math.min(vh * 0.52, 640)) : undefined,
           }}
         >
           {mapPane}
@@ -27583,6 +29802,8 @@ export default function Canvas() {
   const [creditL1, setCreditL1] = useCanvasState<CreditProdL1>("credL1a", "all");
   const [creditL2, setCreditL2] = useCanvasState<CreditProdL2>("credL2a", "all");
   const [creditL3, setCreditL3] = useCanvasState<CreditProdL3>("credL3a", "all");
+  /** 须早于 creditProdLabel 等依赖，避免 TDZ：Cannot access 'uiLang' before initialization */
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
   const [sceneTag, setSceneTag] = useCanvasState<SceneTag | "all">("sceneTag4", "all");
   const [sceneSub, setSceneSub] = useCanvasState<SceneSubTag | "all">("sceneSub3", "all");
   const [licenseKind, setLicenseKind] = useCanvasState<LicenseKind | "all">("license4", "all");
@@ -27597,7 +29818,10 @@ export default function Canvas() {
   const searchDraft = getSearchDraft();
   // 重建后回填 draft；受控展示取两侧较长者（与登录框同口径）
   if (keywordSaved && !searchDraft.q) searchDraft.q = keywordSaved;
-  const keyword = pickLoginValue(keywordSaved, searchDraft.q);
+  // 清除误持久化的注册表单校验文案（勿当搜索框内容）
+  if (searchDraft.q === "请填写公司名称") searchDraft.q = "";
+  const keywordRaw = pickLoginValue(keywordSaved, searchDraft.q);
+  const keyword = keywordRaw === "请填写公司名称" ? "" : keywordRaw;
   function setKeyword(v: string) {
     searchDraft.q = v;
     // 必须即时 setState：仅写 draft 不重渲染，受控 Composer 会吞字（「录不进去」）
@@ -27651,7 +29875,7 @@ export default function Canvas() {
         }),
       ])
     : [];
-  const creditProdLabel = creditProductFilterLabel(creditL1, creditL2, creditL3);
+  const creditProdLabel = creditProductFilterLabel(creditL1, creditL2, creditL3, uiLang);
 
   const storeRankCountry = countryFilterSingle(country);
   const sceneRowsSorted =
@@ -27719,7 +29943,7 @@ export default function Canvas() {
 
   function countInstitutionType(t: InstitutionType): number {
     if (t === "玩家") return nSceneNative + nFinanceNative;
-    return credits.filter((r) => r.institutionTypes.includes(t)).length;
+    return liveCredits.filter((r) => r.institutionTypes.includes(t)).length;
   }
 
   const regLicenseOptions = licensesForGeo(region, country, licenseKind);
@@ -27728,7 +29952,7 @@ export default function Canvas() {
 
   const ecoRows =
     isInstHub && hub !== "玩家"
-      ? credits
+      ? liveCredits
           .filter((r) => {
             const inst = hub as InstitutionType;
             if (!r.institutionTypes.includes(inst)) return false;
@@ -27857,7 +30081,7 @@ export default function Canvas() {
       ).slice(0, 40)
     : [];
   const searchEcoHits = kw
-    ? credits
+    ? liveCredits
         .filter((r) => !r.institutionTypes.includes("玩家") && creditMatchesKeyword(r, kw))
         .slice()
         .sort(
@@ -27902,18 +30126,26 @@ export default function Canvas() {
     : [];
 
   function countFundKind(k: FundParticipationKind): number {
-    return credits.filter(
-      (r) => r.institutionTypes.includes("资金参与机构") && r.fundKinds.includes(k),
-    ).length;
+    return liveCredits.filter((r) => {
+      if (!r.institutionTypes.includes("资金参与机构") || !r.fundKinds.includes(k)) return false;
+      if (region !== "all" && r.region !== region && !hasWorldwideCoverage(r.countries)) return false;
+      if (!matchesLanguageZoneFilter(r.group, r.countries, langZone)) return false;
+      if (!matchesCountryFilter(r.group, r.countries, country)) return false;
+      return true;
+    }).length;
   }
   function countEquityKind(k: EquityInvestorKind): number {
-    return credits.filter(
-      (r) => r.institutionTypes.includes("股权投资人") && r.equityKinds.includes(k),
-    ).length;
+    return liveCredits.filter((r) => {
+      if (!r.institutionTypes.includes("股权投资人") || !r.equityKinds.includes(k)) return false;
+      if (region !== "all" && r.region !== region && !hasWorldwideCoverage(r.countries)) return false;
+      if (!matchesLanguageZoneFilter(r.group, r.countries, langZone)) return false;
+      if (!matchesCountryFilter(r.group, r.countries, country)) return false;
+      return true;
+    }).length;
   }
 
   function countTrafficKind(k: TrafficServiceKind): number {
-    return credits.filter((r) => {
+    return liveCredits.filter((r) => {
       if (!r.institutionTypes.includes("流量服务商") || !r.trafficKinds.includes(k)) return false;
       if (region !== "all" && r.region !== region && !hasWorldwideCoverage(r.countries)) return false;
       if (!matchesLanguageZoneFilter(r.group, r.countries, langZone)) return false;
@@ -27923,7 +30155,7 @@ export default function Canvas() {
   }
 
   function countPaymentKind(k: PaymentKind): number {
-    return credits.filter((r) => {
+    return liveCredits.filter((r) => {
       if (!r.institutionTypes.includes("支付服务机构") || !r.paymentKinds.includes(k)) return false;
       if (region !== "all" && r.region !== region && !hasWorldwideCoverage(r.countries)) return false;
       if (!matchesLanguageZoneFilter(r.group, r.countries, langZone)) return false;
@@ -27933,12 +30165,11 @@ export default function Canvas() {
   }
 
   const [authSession] = useCanvasState("authSession1", "");
-  const guestNoCite = !canViewSourceCite(authSession);
-
-  useEffect(() => {
-    ensureAtlasScrollMem();
-    getAtlasScrollMem().shell = null;
-  }, []);
+  const [guestAccess] = useCanvasState<GuestAccessProfile | null>("guestAccess1", null);
+  const ui = uiCopy(uiLang);
+  const guestNoCite = !canViewSourceCite(authSession, guestAccess);
+  const guestLimited = isLimitedGuest(authSession, guestAccess);
+  const memberCanCreateCrm = canCreateCrmInstitution(authSession);
 
   useEffect(() => {
     if (!guestNoCite) return;
@@ -27949,30 +30180,44 @@ export default function Canvas() {
     }
   }, [guestNoCite, hub, setHub, setSourceReturnHub, setSourceFocus]);
 
+  useEffect(() => {
+    if (!guestLimited) return;
+    if (hub === "compare") setHub("home");
+  }, [guestLimited, hub, setHub]);
+
   if (!authSession) {
-    return <LoginPage />;
+    return (
+      <PersistScrollShell>
+        <LoginPage />
+      </PersistScrollShell>
+    );
   }
 
   if (appTab === "screen") {
     return (
-      <AtlasSideRail>
-        <Stack gap={16} style={{ flexShrink: 0, overflow: "visible" }}>
-          <SessionChrome
-            trailing={<MapScreenButton active onClick={() => setAppTab("crm")} />}
-          />
+      <PersistScrollShell>
+        <Stack gap={16} style={{ scrollbarGutter: "stable", overflowAnchor: "none" }}>
+          <SessionChrome />
+          <Row gap={8} align="center" justify="end">
+            <MapScreenButton active onClick={() => setAppTab("crm")} />
+          </Row>
           <BigScreen />
         </Stack>
-      </AtlasSideRail>
+      </PersistScrollShell>
     );
   }
 
   return (
-    <AtlasSideRail>
+    <PersistScrollShell>
       <AtlasStickyChrome>
       <Stack gap={16}>
-      <SessionChrome
-        trailing={<MapScreenButton active={false} onClick={() => setAppTab("screen")} />}
-      />
+      <SessionChrome />
+
+      {guestLimited ? (
+        <Callout tone="warning">
+          {ui.limitedCallout}
+        </Callout>
+      ) : null}
 
       <Row gap={8} align="start">
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -27981,18 +30226,21 @@ export default function Canvas() {
             onChange={setKeyword}
             sideSlot={
               <>
-                <SideHubButton
-                  active={hub === "compare"}
-                  title="对照"
-                  label="对照"
-                  icon={<IconCompare />}
-                  onClick={() => setHub(hub === "compare" ? "home" : "compare")}
-                />
+                <MapScreenButton fillHeight active={false} onClick={() => setAppTab("screen")} />
+                {!guestLimited ? (
+                  <SideHubButton
+                    active={hub === "compare"}
+                    title={ui.hubCompare}
+                    label={ui.hubCompare}
+                    icon={<IconCompare />}
+                    onClick={() => setHub(hub === "compare" ? "home" : "compare")}
+                  />
+                ) : null}
                 {!guestNoCite ? (
                   <SideHubButton
                     active={hub === "sources"}
-                    title="信源"
-                    label="信源"
+                    title={ui.hubSources}
+                    label={ui.hubSources}
                     icon={<IconSourceCite />}
                     onClick={() => {
                       if (hub === "sources") {
@@ -28012,34 +30260,61 @@ export default function Canvas() {
                 ) : null}
               </>
             }
+            canCreateCrm={memberCanCreateCrm}
             onSubmit={({ text, attachments }) => {
+              const wantsCreate =
+                Boolean(draftFromComposerCreate(text, attachments)) ||
+                looksLikeCreatePlayerIntent(text) ||
+                (attachments.length > 0 && !text.trim());
+              if (wantsCreate && !memberCanCreateCrm) {
+                return ui.composerGuestNoCreate;
+              }
               const draft = draftFromComposerCreate(text, attachments);
               if (draft) {
-                const key = creditBrandKey(draft.group);
+                const stamped = {
+                  ...draft,
+                  note: `${draft.note || ""}；经办：${authSession}`.trim(),
+                };
+                const key = creditBrandKey(stamped.group);
                 const exists =
                   liveCredits.some((r) => creditBrandKey(r.group) === key) ||
                   createdPlayers.some((d) => creditBrandKey(d.group) === key);
+                const types = stamped.institutionTypes?.length
+                  ? stamped.institutionTypes
+                  : (["玩家"] as InstitutionType[]);
+                const targetHub = (types.includes("资金参与机构")
+                  ? "资金参与机构"
+                  : types.includes("风险参与机构")
+                    ? "风险参与机构"
+                    : types.includes("股权投资人")
+                      ? "股权投资人"
+                      : "玩家") as AtlasHub;
                 if (exists) {
-                  setKeyword(draft.brands);
-                  setHub("玩家");
+                  setKeyword(stamped.brands);
+                  setHub(targetHub);
                   setPrimary("credit");
-                  return `已存在相近玩家「${draft.brands}」，已跳转名单并检索`;
+                  return uiLang === "en"
+                    ? `Similar org “${stamped.brands}” already exists — jumped to search`
+                    : `已存在相近机构「${stamped.brands}」，已跳转并检索`;
                 }
-                setCreatedPlayers((prev) => [draft, ...prev].slice(0, 50));
-                setKeyword(draft.brands);
-                setHub("玩家");
+                setCreatedPlayers((prev) => [stamped, ...prev].slice(0, 200));
+                setKeyword(stamped.brands);
+                setHub(targetHub);
                 setPrimary("credit");
-                return `已创设玩家「${draft.brands}」，已进入信贷原生名单`;
+                const typeLabel = types.join("/");
+                return uiLang === "en"
+                  ? `Created “${stamped.brands}” → ${typeLabel} from materials`
+                  : `已根据材料创设「${stamped.brands}」→ ${typeLabel}，已进入对应名单`;
               }
               const q = text.trim();
               if (!q && !attachments.length) {
-                return "输入关键词检索，或写「创设…玩家名」建档";
+                return memberCanCreateCrm ? ui.composerEmptyMember : ui.composerEmptyGuest;
               }
               if (!q && attachments.length) {
-                return `已附带 ${attachments.length} 项材料；请补充「创设…玩家名」后发送建档`;
+                return ui.composerNeedCompanyName;
               }
               setHub("home");
-              return `检索：${q}`;
+              return uiLang === "en" ? `Search: ${q}` : `检索：${q}`;
             }}
           />
         </div>
@@ -28048,7 +30323,7 @@ export default function Canvas() {
       <Stack gap={8}>
         <Row gap={6} wrap align="center">
           <FilterChip
-            label="快讯"
+            label={ui.chipFlash}
             active={hub === "home" && !ecoNavExpanded && intelLane === "flash"}
             onClick={() => {
               setEcoNavOpen("");
@@ -28057,7 +30332,7 @@ export default function Canvas() {
             }}
           />
           <FilterChip
-            label="研报"
+            label={ui.chipResearch}
             active={hub === "home" && !ecoNavExpanded && intelLane === "research"}
             onClick={() => {
               setEcoNavOpen("");
@@ -28066,8 +30341,9 @@ export default function Canvas() {
             }}
           />
           <FilterChip
-            label={`上市公司 ${FINTECH_STOCK_QUOTES.stats?.total ?? FINTECH_STOCK_QUOTES.items.length}`}
+            label={ui.chipStocks}
             active={hub === "home" && !ecoNavExpanded && intelLane === "stocks"}
+            title={ui.stocksTitle(FINTECH_STOCK_QUOTES.stats?.total ?? FINTECH_STOCK_QUOTES.items.length)}
             onClick={() => {
               setEcoNavOpen("");
               setIntelLane("stocks");
@@ -28075,24 +30351,27 @@ export default function Canvas() {
             }}
           />
           <FilterChip
-            label={`国别宏观 ${Object.keys(COUNTRY_MACRO).length}`}
+            label={ui.chipMacro}
             active={hub === "macro"}
             clearable
+            title={ui.macroTitle(Object.keys(COUNTRY_MACRO).length)}
             onClick={() => setHub(hub === "macro" ? "home" : "macro")}
           />
           <FilterChip
-            label={`数字经济 ${SCENE_WIDE_TABLE.length + WEB3_SCENE_WIDE_TABLE.length}`}
+            label={ui.chipScenes}
             active={hub === "scenes"}
             clearable
+            title={ui.scenesTitle(SCENE_WIDE_TABLE.length + WEB3_SCENE_WIDE_TABLE.length)}
             onClick={() => {
               setEcoNavOpen("");
               setHub(hub === "scenes" ? "home" : "scenes");
             }}
           />
           <FilterChip
-            label={`生态机构 ${ecoTypeCount}`}
+            label={ui.chipInstitutions}
             active={ecoNavExpanded}
             clearable
+            title={ui.ecoTitle(ecoTypeCount)}
             onClick={() => {
               if (isInstHub) {
                 setHub("home");
@@ -28123,13 +30402,13 @@ export default function Canvas() {
                     lineHeight: 1.2,
                   }}
                 >
-                  {INST_BUCKET_LABEL[bucket]}
+                  {instBucketLabel(bucket, uiLang)}
                 </Text>
                 <Row gap={6} wrap style={{ flex: 1, minWidth: 0 }}>
                   {INST_BUCKET_TYPES[bucket].map((t) => (
                     <FilterChip
                       key={t}
-                      label={`${INSTITUTION_TYPE_LABEL[t]} ${countInstitutionType(t)}`}
+                      label={`${institutionTypeLabel(t, uiLang, INSTITUTION_TYPE_LABEL[t])} ${countInstitutionType(t)}`}
                       active={hub === t}
                       clearable
                       onClick={() => setHub(hub === t ? "home" : t)}
@@ -28144,18 +30423,19 @@ export default function Canvas() {
       </Stack>
       </AtlasStickyChrome>
 
-      <Stack gap={0} style={{ overflowAnchor: "none", overflow: "visible", flexShrink: 0 }}>
+      <AtlasScrollBody>
+      <Stack gap={0} style={{ overflowAnchor: "none" }}>
 
       {hub === "home" ? (
         <Stack gap={16} style={{ paddingTop: kw || ecoNavExpanded ? 12 : 0 }}>
           {kw ? (
             <Stack gap={12}>
-              <H2>搜索结果 · {searchHitCount}</H2>
+              <H2>{uiLang === "en" ? `Search results · ${searchHitCount}` : `搜索结果 · ${searchHitCount}`}</H2>
               {searchCreditBeforeScene ? (
                 <>
                   {searchCreditHits.length ? (
                     <Stack gap={8}>
-                      <Text weight="medium">信贷原生</Text>
+                      <Text weight="medium">{ui.searchCreditNative}</Text>
                       {searchCreditHits.map((r) => (
                         <CreditPlayer r={r} />
                       ))}
@@ -28163,7 +30443,7 @@ export default function Canvas() {
                   ) : null}
                   {searchSceneHits.length ? (
                     <Stack gap={8}>
-                      <Text weight="medium">场景原生</Text>
+                      <Text weight="medium">{ui.searchSceneNative}</Text>
                       {searchSceneHits.map((r) => (
                         <ScenePlayer r={r} />
                       ))}
@@ -28174,7 +30454,7 @@ export default function Canvas() {
                 <>
                   {searchSceneHits.length ? (
                     <Stack gap={8}>
-                      <Text weight="medium">场景原生</Text>
+                      <Text weight="medium">{ui.searchSceneNative}</Text>
                       {searchSceneHits.map((r) => (
                         <ScenePlayer r={r} />
                       ))}
@@ -28182,7 +30462,7 @@ export default function Canvas() {
                   ) : null}
                   {searchCreditHits.length ? (
                     <Stack gap={8}>
-                      <Text weight="medium">信贷原生</Text>
+                      <Text weight="medium">{ui.searchCreditNative}</Text>
                       {searchCreditHits.map((r) => (
                         <CreditPlayer r={r} />
                       ))}
@@ -28192,7 +30472,7 @@ export default function Canvas() {
               )}
               {searchEcoHits.length ? (
                 <Stack gap={8}>
-                  <Text weight="medium">生态机构</Text>
+                  <Text weight="medium">{ui.searchEcoOrgs}</Text>
                   {searchEcoHits.map((r) => (
                     <CreditPlayer r={r} />
                   ))}
@@ -28200,12 +30480,12 @@ export default function Canvas() {
               ) : null}
               {searchMacroHits.length ? (
                 <Stack gap={8}>
-                  <Text weight="medium">国别宏观</Text>
+                  <Text weight="medium">{ui.macroCountryTitle}</Text>
                   <Row gap={6} wrap>
                     {searchMacroHits.map((code) => (
                       <FilterChip
                         key={code}
-                        label={COUNTRY_LABEL[code]}
+                        label={countryLabelUi(code, uiLang, COUNTRY_LABEL[code])}
                         active={false}
                         onClick={() => {
                           setHub("macro");
@@ -28219,7 +30499,7 @@ export default function Canvas() {
                 </Stack>
               ) : null}
               {!searchHitCount ? (
-                <Callout tone="neutral">未找到匹配机构或国别。可换关键词，或点 + 导入创设材料。</Callout>
+                <Callout tone="neutral">{ui.searchNoMatch}</Callout>
               ) : null}
               <Divider />
             </Stack>
@@ -28243,7 +30523,7 @@ export default function Canvas() {
             ) : atlasRole !== "roadshow" ? (
               <ResearchLibraryHomePanel />
             ) : (
-              <HomeMeta>路演视角不展示研报明细。</HomeMeta>
+              <HomeMeta>{ui.researchRoadshowHide}</HomeMeta>
             )
           ) : null}
         </Stack>
@@ -28263,12 +30543,12 @@ export default function Canvas() {
             <Stack gap={4}>
               <Row gap={6} align="center" wrap>
                 <Text size="small" weight="medium" style={{ flex: "0 0 auto" }}>
-                  国别宏观
+                  {ui.macroCountryTitle}
                 </Text>
                 <Row gap={4} wrap style={{ flex: 1, minWidth: 0 }}>
                   {(Object.keys(REGION_LABEL) as Region[]).map((k) => (
                     <FilterChip
-                      label={REGION_LABEL[k]}
+                      label={regionLabelUi(k, uiLang, REGION_LABEL[k])}
                       active={region === k}
                       clearable={k !== "all"}
                       onClick={() => {
@@ -28284,14 +30564,14 @@ export default function Canvas() {
               <Row gap={12} align="start" wrap>
                 <div style={{ flex: "1 1 140px", minWidth: 120 }}>
                   <SoftFold
-                    title="语言区"
+                    title={ui.foldLangZone}
                     summary={langZone === "all" ? undefined : langZone}
                     count={languageZonesForRegion(region).length}
                     defaultOpen={false}
                   >
                     <Row gap={4} wrap>
                       <FilterChip
-                        label="全部语言区"
+                        label={ui.filterAllLangZones}
                         active={langZone === "all"}
                         onClick={() => setLangZone("all")}
                       />
@@ -28315,15 +30595,17 @@ export default function Canvas() {
                 </div>
                 <div style={{ flex: "1 1 180px", minWidth: 140 }}>
                   <SoftFold
-                    title="国家/地区"
-                    summary={country === "all" ? undefined : COUNTRY_LABEL[country]}
+                    title={ui.foldCountriesShort}
+                    summary={
+                      country === "all" ? undefined : countryLabelUi(country, uiLang, COUNTRY_LABEL[country])
+                    }
                     count={Math.max(0, countriesForRegionAndLang(region, langZone).length - 1)}
                     defaultOpen={false}
                   >
                     <Row gap={4} wrap>
                       {countriesForRegionAndLang(region, langZone).map((k) => (
                         <FilterChip
-                          label={COUNTRY_LABEL[k]}
+                          label={countryLabelUi(k, uiLang, COUNTRY_LABEL[k])}
                           active={country === k}
                           clearable={k !== "all"}
                           onClick={() => setCountry(country === k && k !== "all" ? "all" : k)}
@@ -28344,9 +30626,11 @@ export default function Canvas() {
 
       {hub === "compare" ? (
         <Stack gap={16}>
-          <H2>对照</H2>
+          <H2>{ui.hubCompare}</H2>
           <Text size="small" tone="tertiary">
-            国别宏观、玩家及其它机构均可多选并排对照（最多 6 个）。
+            {uiLang === "en"
+              ? "Multi-select country macro, players, and other institutions side by side (up to 6)."
+              : "国别宏观、玩家及其它机构均可多选并排对照（最多 6 个）。"}
           </Text>
           <CompareHubPanel />
         </Stack>
@@ -28355,21 +30639,21 @@ export default function Canvas() {
 
       {hub === "玩家" ? (
         <Stack gap={16}>
-          <H2>玩家</H2>
+          <H2>{uiLang === "en" ? "Players" : "玩家"}</H2>
           <Grid columns={2} gap={12}>
-            <Stat value={String(nSceneNative)} label="场景原生" />
-            <Stat value={String(nFinanceNative)} label="信贷原生" />
+            <Stat value={String(nSceneNative)} label={uiLang === "en" ? "Scene-native" : "场景原生"} />
+            <Stat value={String(nFinanceNative)} label={uiLang === "en" ? "Credit-native" : "信贷原生"} />
           </Grid>
 
           <Stack gap={10}>
             <Stack gap={4}>
               <Text size="small" weight="medium">
-                涉足洲际
+                {ui.foldRegions}
               </Text>
               <Row gap={6} wrap>
                 {(Object.keys(REGION_LABEL) as Region[]).map((k) => (
                   <FilterChip
-                    label={REGION_LABEL[k]}
+                    label={regionLabelUi(k, uiLang, REGION_LABEL[k])}
                     active={region === k}
                     clearable={k !== "all"}
                     onClick={() => {
@@ -28384,17 +30668,27 @@ export default function Canvas() {
             </Stack>
 
             <SoftFold
-              title="语言区"
-              hint={langZone === "all" ? "按展业语言区收窄；选项随洲际变化" : `已选 ${langZone}`}
+              title={ui.foldLangZone}
+              hint={
+                langZone === "all"
+                  ? uiLang === "en"
+                    ? "Narrow by operating language zone; options follow region"
+                    : "按展业语言区收窄；选项随洲际变化"
+                  : uiLang === "en"
+                    ? `Selected ${langZone}`
+                    : `已选 ${langZone}`
+              }
               count={languageZonesForRegion(region).length}
               defaultOpen={langZone !== "all"}
             >
               <Text size="small" tone="tertiary">
-                按展业语言区收窄；选项随洲际变化
+                {uiLang === "en"
+                  ? "Narrow by operating language zone; options follow region"
+                  : "按展业语言区收窄；选项随洲际变化"}
               </Text>
               <Row gap={6} wrap>
                 <FilterChip
-                  label="全部语言区"
+                  label={ui.filterAllLangZones}
                   active={langZone === "all"}
                   onClick={() => setLangZone("all")}
                 />
@@ -28417,15 +30711,23 @@ export default function Canvas() {
             </SoftFold>
 
             <SoftFold
-              title="涉足国家/地区"
-              hint={country === "all" ? "点选收窄；再点同一国取消" : `已选 ${COUNTRY_LABEL[country]}`}
+              title={ui.foldCountries}
+              hint={
+                country === "all"
+                  ? uiLang === "en"
+                    ? "Tap to narrow; tap again to clear"
+                    : "点选收窄；再点同一国取消"
+                  : uiLang === "en"
+                    ? `Selected ${countryLabelUi(country, uiLang, COUNTRY_LABEL[country])}`
+                    : `已选 ${countryLabelUi(country, uiLang, COUNTRY_LABEL[country])}`
+              }
               count={countriesForRegionAndLang(region, langZone).length}
               defaultOpen={country !== "all"}
             >
               <Row gap={6} wrap>
                 {countriesForRegionAndLang(region, langZone).map((k) => (
                   <FilterChip
-                    label={COUNTRY_LABEL[k]}
+                    label={countryLabelUi(k, uiLang, COUNTRY_LABEL[k])}
                     active={country === k}
                     clearable={k !== "all"}
                     onClick={() => setCountry(country === k && k !== "all" ? "all" : k)}
@@ -28435,22 +30737,28 @@ export default function Canvas() {
             </SoftFold>
 
             <SoftFold
-              title="原生路径"
+              title={ui.foldPrimaryPath}
               hint={
                 primary === "all"
-                  ? "选择「场景原生」或「信贷原生」后展开对应筛选项"
+                  ? uiLang === "en"
+                    ? "Pick Scene-native or Credit-native to expand filters"
+                    : "选择「场景原生」或「信贷原生」后展开对应筛选项"
                   : primary === "scene"
-                    ? "已选 场景原生"
-                    : "已选 信贷原生"
+                    ? uiLang === "en"
+                      ? "Selected · Scene-native"
+                      : "已选 场景原生"
+                    : uiLang === "en"
+                      ? "Selected · Credit-native"
+                      : "已选 信贷原生"
               }
               defaultOpen={primary !== "all"}
             >
               <Row gap={6} wrap>
                 {(
                   [
-                    { value: "all" as Primary, label: "全部" },
-                    { value: "scene" as Primary, label: "场景原生" },
-                    { value: "credit" as Primary, label: "信贷原生" },
+                    { value: "all" as Primary, label: uiLang === "en" ? "All" : "全部" },
+                    { value: "scene" as Primary, label: uiLang === "en" ? "Scene-native" : "场景原生" },
+                    { value: "credit" as Primary, label: uiLang === "en" ? "Credit-native" : "信贷原生" },
                   ] as const
                 ).map((o) => (
                   <FilterChip
@@ -28477,7 +30785,9 @@ export default function Canvas() {
               </Row>
               {primary === "all" ? (
                 <Text size="small" tone="secondary">
-                  选择「场景原生」或「信贷原生」后，将展开对应的涉足场景 / 信贷产品筛选项
+                  {uiLang === "en"
+                    ? "After picking Scene-native or Credit-native, scene / credit product filters expand here."
+                    : "选择「场景原生」或「信贷原生」后，将展开对应的涉足场景 / 信贷产品筛选项"}
                 </Text>
               ) : null}
             </SoftFold>
@@ -28486,28 +30796,28 @@ export default function Canvas() {
               <Stack gap={4}>
                 <Stack gap={4}>
                   <Text size="small" weight="medium">
-                    涉足场景
+                    {uiLang === "en" ? "Scenes" : "涉足场景"}
                   </Text>
                   <Row gap={6} wrap>
                     <FilterChip
-                      label="全部场景"
+                      label={uiLang === "en" ? "All scenes" : "全部场景"}
                       active={sceneTag === "all"}
                       onClick={() => {
                         setSceneTag("all");
                         setSceneSub("all");
                       }}
                     />
-                    {SCENE_TAG_ORDER.map((t) => (
+                    {SCENE_TAG_ORDER.map((tag) => (
                       <FilterChip
-                        label={SCENE_TAG_LABEL[t]}
-                        active={sceneTag === t}
+                        label={sceneTagLabelUi(tag, uiLang)}
+                        active={sceneTag === tag}
                         clearable
                         onClick={() => {
-                          if (sceneTag === t) {
+                          if (sceneTag === tag) {
                             setSceneTag("all");
                             setSceneSub("all");
                           } else {
-                            setSceneTag(t);
+                            setSceneTag(tag);
                             setSceneSub("all");
                           }
                         }}
@@ -28519,17 +30829,17 @@ export default function Canvas() {
                 {sceneTag !== "all" && sceneSubsForTag(sceneTag).length > 0 ? (
                   <Stack gap={4}>
                     <Text size="small" weight="medium">
-                      {SCENE_TAG_LABEL[sceneTag]}·二级
+                      {uiLang === "en" ? `${sceneTagLabelUi(sceneTag, uiLang)} · L2` : `${SCENE_TAG_LABEL[sceneTag]}·二级`}
                     </Text>
                     <Row gap={6} wrap>
                       <FilterChip
-                        label="全部二级"
+                        label={uiLang === "en" ? "All L2" : "全部二级"}
                         active={sceneSub === "all"}
                         onClick={() => setSceneSub("all")}
                       />
                       {sceneSubsForTag(sceneTag).map((t) => (
                         <FilterChip
-                          label={SCENE_SUB_LABEL[t]}
+                          label={sceneSubLabelUi(t, uiLang)}
                           active={sceneSub === t}
                           clearable
                           onClick={() => setSceneSub(sceneSub === t ? "all" : t)}
@@ -28545,11 +30855,11 @@ export default function Canvas() {
               <Stack gap={10}>
                 <Stack gap={4}>
                   <Text size="small" weight="medium">
-                    涉足信贷产品
+                    {uiLang === "en" ? "Credit products" : "涉足信贷产品"}
                   </Text>
                   <Row gap={6} wrap>
                     <FilterChip
-                      label="全部信贷产品"
+                      label={uiLang === "en" ? "All credit products" : "全部信贷产品"}
                       active={creditL1 === "all"}
                       onClick={() => {
                         setCreditL1("all");
@@ -28559,7 +30869,7 @@ export default function Canvas() {
                     />
                     {CREDIT_PROD_L1_ORDER.map((k) => (
                       <FilterChip
-                        label={k}
+                        label={creditProdNodeLabelUi(k, uiLang)}
                         active={creditL1 === k}
                         clearable
                         onClick={() => {
@@ -28581,11 +30891,13 @@ export default function Canvas() {
                 {creditL1 !== "all" && CREDIT_PROD_L2_BY_L1[creditL1].length > 0 ? (
                   <Stack gap={4}>
                     <Text size="small" weight="medium">
-                      {creditL1}·二级
+                      {uiLang === "en"
+                        ? `${creditProdNodeLabelUi(creditL1, uiLang)} · L2`
+                        : `${creditL1}·二级`}
                     </Text>
                     <Row gap={6} wrap>
                       <FilterChip
-                        label="全部二级"
+                        label={uiLang === "en" ? "All L2" : "全部二级"}
                         active={creditL2 === "all"}
                         onClick={() => {
                           setCreditL2("all");
@@ -28594,7 +30906,7 @@ export default function Canvas() {
                       />
                       {CREDIT_PROD_L2_BY_L1[creditL1].map((k) => (
                         <FilterChip
-                          label={k}
+                          label={creditProdNodeLabelUi(k, uiLang)}
                           active={creditL2 === k}
                           clearable
                           onClick={() => {
@@ -28615,17 +30927,19 @@ export default function Canvas() {
                 {creditL2 !== "all" && (CREDIT_PROD_L3_BY_L2[creditL2]?.length ?? 0) > 0 ? (
                   <Stack gap={4}>
                     <Text size="small" weight="medium">
-                      {creditL2}·三级
+                      {uiLang === "en"
+                        ? `${creditProdNodeLabelUi(creditL2, uiLang)} · L3`
+                        : `${creditL2}·三级`}
                     </Text>
                     <Row gap={6} wrap>
                       <FilterChip
-                        label="全部三级"
+                        label={uiLang === "en" ? "All L3" : "全部三级"}
                         active={creditL3 === "all"}
                         onClick={() => setCreditL3("all")}
                       />
                       {(CREDIT_PROD_L3_BY_L2[creditL2] ?? []).map((k) => (
                         <FilterChip
-                          label={k}
+                          label={creditProdNodeLabelUi(k, uiLang)}
                           active={creditL3 === k}
                           clearable
                           onClick={() => setCreditL3(creditL3 === k ? "all" : k)}
@@ -28638,24 +30952,28 @@ export default function Canvas() {
             ) : null}
 
             <SoftFold
-              title="涉及金融牌照"
+              title={ui.foldLicenses}
               hint={
                 licenseKind === "all"
-                  ? "按银行/保险/支付/消金等粗类收窄"
-                  : `已选 ${LICENSE_KIND_LABEL[licenseKind]}`
+                  ? uiLang === "en"
+                    ? "Narrow by bank / insurance / payments / consumer-lending class"
+                    : "按银行/保险/支付/消金等粗类收窄"
+                  : uiLang === "en"
+                    ? `Selected ${licenseKindLabelUi(licenseKind, uiLang)}`
+                    : `已选 ${LICENSE_KIND_LABEL[licenseKind]}`
               }
               count={LICENSE_KIND_ORDER.length}
               defaultOpen={licenseKind !== "all"}
             >
               <Row gap={6} wrap>
                 <FilterChip
-                  label="全部牌照粗类"
+                  label={ui.filterAllLicenseKinds}
                   active={licenseKind === "all"}
                   onClick={() => setLicenseKind("all")}
                 />
                 {LICENSE_KIND_ORDER.map((k) => (
                   <FilterChip
-                    label={LICENSE_KIND_LABEL[k]}
+                    label={licenseKindLabelUi(k, uiLang)}
                     active={licenseKind === k}
                     clearable
                     onClick={() => setLicenseKind(licenseKind === k ? "all" : k)}
@@ -28667,16 +30985,21 @@ export default function Canvas() {
             {primary === "credit" && storeRankCountry ? (
               <Stack gap={6} style={{ minWidth: 240, maxWidth: 520 }}>
                 <Text size="small" weight="medium">
-                  商店榜排序 · Finance借贷
+                  {uiLang === "en" ? "Store rank · Finance lending" : "商店榜排序 · Finance借贷"}
                 </Text>
                 <Select
                   value={storeRankSort}
                   onChange={(v) => setStoreRankSort(v as StoreRankSortMode)}
-                  options={storeRankSortOptions()}
+                  options={storeRankSortOptions(uiLang)}
                 />
                 <Text size="small" tone="tertiary">
-                  已选 {COUNTRY_LABEL[storeRankCountry]} · iOS Finance 入库 {storeRankCoverage} 条。命中信贷{" "}
-                  {storeRankHitCredit} 家（未命中排末尾，不单独标注）。
+                  {uiLang === "en" ? "Selected" : "已选"}{" "}
+                  {countryLabelUi(storeRankCountry, uiLang, COUNTRY_LABEL[storeRankCountry])} · iOS
+                  Finance {uiLang === "en" ? "in library" : "入库"} {storeRankCoverage}{" "}
+                  {uiLang === "en" ? "rows. Credit hits" : "条。命中信贷"} {storeRankHitCredit}{" "}
+                  {uiLang === "en"
+                    ? "(non-hits sort last, not labeled separately)."
+                    : "家（未命中排末尾，不单独标注）。"}
                 </Text>
               </Stack>
             ) : null}
@@ -28688,20 +31011,24 @@ export default function Canvas() {
             const sceneBlock = showScene ? (
               <Stack gap={12}>
                 <Row gap={8} align="center" wrap>
-                  <H2>场景原生机构</H2>
-                  <Pill tone="info">{REGION_LABEL[region]}</Pill>
-                  {country !== "all" ? <Pill tone="info">{COUNTRY_LABEL[country]}</Pill> : null}
-                  {sceneTag !== "all" ? <Pill tone="info">{SCENE_TAG_LABEL[sceneTag]}</Pill> : null}
+                  <H2>{uiLang === "en" ? "Scene-native orgs" : "场景原生机构"}</H2>
+                  <Pill tone="info">{regionLabelUi(region, uiLang, REGION_LABEL[region])}</Pill>
+                  {country !== "all" ? <Pill tone="info">{countryLabelUi(country, uiLang, COUNTRY_LABEL[country])}</Pill> : null}
+                  {sceneTag !== "all" ? <Pill tone="info">{sceneTagLabelUi(sceneTag, uiLang)}</Pill> : null}
                   {sceneSub !== "all" ? (
                     <Pill tone="neutral">
-                      {SCENE_TAG_LABEL[SCENE_SUB_PARENT[sceneSub]]}/{SCENE_SUB_LABEL[sceneSub]}
+                      {sceneTagLabelUi(SCENE_SUB_PARENT[sceneSub], uiLang)}/{sceneSubLabelUi(sceneSub, uiLang)}
                     </Pill>
                   ) : null}
                   {licenseKind !== "all" ? (
-                    <Pill tone="success">{LICENSE_KIND_LABEL[licenseKind]}</Pill>
+                    <Pill tone="success">{licenseKindLabelUi(licenseKind, uiLang)}</Pill>
                   ) : null}
                   {primary === "credit" && storeRankSort !== "off" && storeRankCountry ? (
-                    <Pill tone="warning">{`商店榜排序 · 命中 ${storeRankHitScene}`}</Pill>
+                    <Pill tone="warning">
+                      {uiLang === "en"
+                        ? `Store rank · hits ${storeRankHitScene}`
+                        : `商店榜排序 · 命中 ${storeRankHitScene}`}
+                    </Pill>
                   ) : null}
                   <Text size="small" tone="secondary">
                     {sceneRowsSorted.length} 家 · 三项：规模(GMV) / 用户 / 增速(收入YoY)；点「详情」展开
@@ -28731,16 +31058,20 @@ export default function Canvas() {
             const creditBlock = showCredit ? (
               <Stack gap={12}>
                 <Row gap={8} align="center" wrap>
-                  <H2>信贷原生机构</H2>
+                  <H2>{uiLang === "en" ? "Credit-native orgs" : "信贷原生机构"}</H2>
                   <Pill tone="warning">{creditProdLabel}</Pill>
-                  {sceneTag !== "all" ? <Pill tone="info">{SCENE_TAG_LABEL[sceneTag]}</Pill> : null}
+                  {sceneTag !== "all" ? <Pill tone="info">{sceneTagLabelUi(sceneTag, uiLang)}</Pill> : null}
                   {licenseKind !== "all" ? (
-                    <Pill tone="success">{LICENSE_KIND_LABEL[licenseKind]}</Pill>
+                    <Pill tone="success">{licenseKindLabelUi(licenseKind, uiLang)}</Pill>
                   ) : null}
-                  <Pill tone="info">{REGION_LABEL[region]}</Pill>
-                  {country !== "all" ? <Pill tone="info">{COUNTRY_LABEL[country]}</Pill> : null}
+                  <Pill tone="info">{regionLabelUi(region, uiLang, REGION_LABEL[region])}</Pill>
+                  {country !== "all" ? <Pill tone="info">{countryLabelUi(country, uiLang, COUNTRY_LABEL[country])}</Pill> : null}
                   {primary === "credit" && storeRankSort !== "off" && storeRankCountry ? (
-                    <Pill tone="warning">{`商店榜排序 · 命中 ${storeRankHitCredit}`}</Pill>
+                    <Pill tone="warning">
+                      {uiLang === "en"
+                        ? `Store rank · hits ${storeRankHitCredit}`
+                        : `商店榜排序 · 命中 ${storeRankHitCredit}`}
+                    </Pill>
                   ) : null}
                   <Text size="small" tone="secondary">
                     {creditRowsSorted.length} 家 · 三项：信贷规模 / 用户 / 增速；点「详情」展开
@@ -28799,7 +31130,7 @@ export default function Canvas() {
 
       {isInstHub && hub !== "玩家" ? (
         <Stack gap={12}>
-          <H2>{INSTITUTION_TYPE_LABEL[hub]}</H2>
+          <H2>{institutionTypeLabel(hub, uiLang, INSTITUTION_TYPE_LABEL[hub])}</H2>
           {kw ? (
             <Callout tone="warning">
               顶栏仍留着搜索「{kw}」，机构类型页已不按该词过滤名单（避免流量平台等被滤成 0 家）。
@@ -28815,7 +31146,11 @@ export default function Canvas() {
           {hub === "监管" ? (
             <Stack gap={12}>
               <Text size="small" tone="secondary">
-                市场定位：{INST_BUCKET_LABEL.监管与合规中介} · 先选洲际与具体国家，再选牌照粗类，当地法定牌照按选择展开
+                {uiLang === "en" ? "Market focus:" : "市场定位："}
+                {instBucketLabel("监管与合规中介", uiLang)}
+                {uiLang === "en"
+                  ? " · Pick region & country, then license class; local statutory licenses expand from your selection"
+                  : " · 先选洲际与具体国家，再选牌照粗类，当地法定牌照按选择展开"}
               </Text>
 
               <GeoAndLicenseFilters
@@ -28850,17 +31185,19 @@ export default function Canvas() {
 
               <Stack gap={4}>
                 <Text size="small" weight="medium">
-                  当地法定牌照（监管对应）
+                  {uiLang === "en" ? "Local statutory licenses (regulator map)" : "当地法定牌照（监管对应）"}
                 </Text>
                 {country === "all" ? (
                   <Text size="small" tone="tertiary">
-                    请先在上方点选具体国家/地区；可选牌照粗类进一步收窄。选中后再展示该地法定牌照对照。
+                    {uiLang === "en"
+                      ? "Select a country/region above first; optional license class narrows further. Statutory licenses appear after selection."
+                      : "请先在上方点选具体国家/地区；可选牌照粗类进一步收窄。选中后再展示该地法定牌照对照。"}
                   </Text>
                 ) : (
                   <>
                     <Row gap={6} wrap>
                       <FilterChip
-                        label="全部法定牌照"
+                        label={uiLang === "en" ? "All statutory licenses" : "全部法定牌照"}
                         active={regLicenseId === "all"}
                         onClick={() => setRegLicenseId("all")}
                       />
@@ -28877,17 +31214,28 @@ export default function Canvas() {
                     </Row>
                     {regLicenseOptions.length === 0 ? (
                       <Text size="small" tone="tertiary">
-                        {licenseKind === "all"
-                          ? `「${COUNTRY_LABEL[country]}」暂未录入法定牌照对照表。`
-                          : `「${COUNTRY_LABEL[country]}」在「${LICENSE_KIND_LABEL[licenseKind]}」下暂无对照条目，可改选「全部牌照粗类」。`}
+                        {(() => {
+                          const cName = countryLabelUi(country, uiLang, COUNTRY_LABEL[country]);
+                          if (licenseKind === "all") {
+                            return uiLang === "en"
+                              ? `No statutory license map yet for “${cName}”.`
+                              : `「${cName}」暂未录入法定牌照对照表。`;
+                          }
+                          const kind = licenseKindLabelUi(licenseKind as LicenseKind, uiLang);
+                          return uiLang === "en"
+                            ? `No “${kind}” license rows for “${cName}” — try All license classes.`
+                            : `「${cName}」在「${kind}」下暂无对照条目，可改选「全部牌照粗类」。`;
+                        })()}
                       </Text>
                     ) : (
                       <Text size="small" tone="secondary">
-                        当前 · {COUNTRY_LABEL[country]}
+                        {uiLang === "en" ? "Current ·" : "当前 ·"}{" "}
+                        {countryLabelUi(country, uiLang, COUNTRY_LABEL[country])}
                         {licenseKind !== "all"
-                          ? ` · ${LICENSE_KIND_LABEL[licenseKind]}`
+                          ? ` · ${licenseKindLabelUi(licenseKind as LicenseKind, uiLang)}`
                           : ""}{" "}
-                        · {regLicenseOptions.length} 项法定牌照
+                        · {regLicenseOptions.length}{" "}
+                        {uiLang === "en" ? "statutory licenses" : "项法定牌照"}
                       </Text>
                     )}
                   </>
@@ -28895,25 +31243,36 @@ export default function Canvas() {
               </Stack>
 
               <Row gap={8} align="center" wrap>
-                <Pill tone="info">{REGION_LABEL[region]}</Pill>
-                {country !== "all" ? <Pill tone="info">{COUNTRY_LABEL[country]}</Pill> : null}
+                <Pill tone="info">{regionLabelUi(region, uiLang, REGION_LABEL[region])}</Pill>
+                {country !== "all" ? <Pill tone="info">{countryLabelUi(country, uiLang, COUNTRY_LABEL[country])}</Pill> : null}
                 {licenseKind !== "all" ? (
-                  <Pill tone="success">{LICENSE_KIND_LABEL[licenseKind]}</Pill>
+                  <Pill tone="success">{licenseKindLabelUi(licenseKind, uiLang)}</Pill>
                 ) : null}
                 {activeRegLicense ? (
                   <Pill tone="success">
-                    {activeRegLicense.name}@{COUNTRY_LABEL[activeRegLicense.country]}
+                    {activeRegLicense.name}@
+                    {countryLabelUi(
+                      activeRegLicense.country,
+                      uiLang,
+                      COUNTRY_LABEL[activeRegLicense.country],
+                    )}
                   </Pill>
                 ) : null}
                 <Text size="small" tone="secondary">
-                  监管主体 {ecoRows.length} 家
-                  {activeRegLicense ? ` · 持牌玩家 ${regLicenseHolders.length} 家` : ""}
+                  {uiLang === "en"
+                    ? `Regulators ${ecoRows.length}`
+                    : `监管主体 ${ecoRows.length} 家`}
+                  {activeRegLicense
+                    ? uiLang === "en"
+                      ? ` · Licensed players ${regLicenseHolders.length}`
+                      : ` · 持牌玩家 ${regLicenseHolders.length} 家`
+                    : ""}
                 </Text>
               </Row>
 
               <Divider />
               <Text size="small" weight="medium">
-                监管主体
+                {uiLang === "en" ? "Regulators" : "监管主体"}
               </Text>
               <Stack gap={8}>
                 {ecoRows.map((r) => (
@@ -28926,7 +31285,13 @@ export default function Canvas() {
                   <Divider />
                   <Row gap={8} align="center" wrap>
                     <Text size="small" weight="medium">
-                      持有「{activeRegLicense.name}@{COUNTRY_LABEL[activeRegLicense.country]}」的玩家
+                      {uiLang === "en" ? "Players holding" : "持有"}「{activeRegLicense.name}@
+                      {countryLabelUi(
+                        activeRegLicense.country,
+                        uiLang,
+                        COUNTRY_LABEL[activeRegLicense.country],
+                      )}
+                      」{uiLang === "en" ? "" : "的玩家"}
                     </Text>
                     <Text size="small" tone="secondary">
                       {regLicenseHolders.length} 家
@@ -28940,7 +31305,9 @@ export default function Canvas() {
                     </Stack>
                   ) : (
                     <Text size="small" tone="tertiary">
-                      当前筛选下暂无已建档持牌玩家（可扩写 licenseReg 后再交叉）。
+                      {uiLang === "en"
+                        ? "No licensed players on file for this filter (enrich licenseReg to cross-match)."
+                        : "当前筛选下暂无已建档持牌玩家（可扩写 licenseReg 后再交叉）。"}
                     </Text>
                   )}
                 </Stack>
@@ -28949,7 +31316,7 @@ export default function Canvas() {
           ) : hub === "流量服务商" ? (
             <Stack gap={12}>
               <Text size="small" tone="secondary">
-                市场定位：{INST_BUCKET_LABEL[INST_TYPE_TO_BUCKET[hub as InstitutionType]]}
+                {uiLang === "en" ? "Market focus:" : "市场定位："}{instBucketLabel(INST_TYPE_TO_BUCKET[hub as InstitutionType], uiLang)}
               </Text>
               <GeoAndLicenseFilters
                 region={region}
@@ -28978,18 +31345,20 @@ export default function Canvas() {
               />
               <Stack gap={6}>
                 <Text size="small" weight="medium">
-                  流量服务商细分（点选才生效；当前未单选则看全部）
+                  {uiLang === "en"
+                    ? "Traffic vendor subtypes (tap to filter; All when none selected)"
+                    : "流量服务商细分（点选才生效；当前未单选则看全部）"}
                 </Text>
                 <Row gap={6} wrap>
                   <FilterChip
-                    label={`全部 · ${TRAFFIC_KIND_ORDER.reduce((n, k) => n + countTrafficKind(k), 0)}`}
+                    label={`${uiLang === "en" ? "All" : "全部"} · ${TRAFFIC_KIND_ORDER.reduce((n, k) => n + countTrafficKind(k), 0)}`}
                     active={trafficKind === "all"}
                     onClick={() => setTrafficKind("all")}
                   />
                   {TRAFFIC_KIND_ORDER.map((k) => (
                     <FilterChip
                       key={k}
-                      label={`${TRAFFIC_KIND_LABEL[k]} · ${countTrafficKind(k)}`}
+                      label={`${trafficKindLabelUi(TRAFFIC_KIND_LABEL[k], uiLang)} · ${countTrafficKind(k)}`}
                       active={trafficKind === k}
                       clearable
                       onClick={() => setTrafficKind(trafficKind === k ? "all" : k)}
@@ -29002,29 +31371,36 @@ export default function Canvas() {
                   value={trafficKind}
                   onChange={(v) => setTrafficKind(v as TrafficServiceKind | "all")}
                   options={[
-                    { value: "all", label: "全部（未单选细分）" },
+                    {
+                      value: "all",
+                      label: uiLang === "en" ? "All (no subtype filter)" : "全部（未单选细分）",
+                    },
                     ...TRAFFIC_KIND_ORDER.map((k) => ({
                       value: k,
-                      label: `${TRAFFIC_KIND_LABEL[k]} · ${countTrafficKind(k)}`,
+                      label: `${trafficKindLabelUi(TRAFFIC_KIND_LABEL[k], uiLang)} · ${countTrafficKind(k)}`,
                     })),
                   ]}
                 />
               </Stack>
               <Row gap={8} align="center" wrap>
-                <Pill tone="info">{REGION_LABEL[region]}</Pill>
-                {formatCountryFilterLabel(country, region) ? (
-                  <Pill tone="info">{formatCountryFilterLabel(country, region)}</Pill>
+                <Pill tone="info">{regionLabelUi(region, uiLang, REGION_LABEL[region])}</Pill>
+                {formatCountryFilterLabel(country, region, uiLang) ? (
+                  <Pill tone="info">{formatCountryFilterLabel(country, region, uiLang)}</Pill>
                 ) : null}
                 {trafficKind !== "all" ? (
-                  <Pill tone="warning">{TRAFFIC_KIND_LABEL[trafficKind]}</Pill>
+                  <Pill tone="warning">{trafficKindLabelUi(TRAFFIC_KIND_LABEL[trafficKind], uiLang)}</Pill>
                 ) : (
-                  <Pill tone="neutral">细分未单选</Pill>
+                  <Pill tone="neutral">{uiLang === "en" ? "No subtype selected" : "细分未单选"}</Pill>
                 )}
                 <Text size="small" tone="secondary">
                   {trafficKind === "all"
-                    ? "当前未单选细分，展示全部流量服务商样本。"
+                    ? uiLang === "en"
+                      ? "No subtype selected — showing all traffic vendors."
+                      : "当前未单选细分，展示全部流量服务商样本。"
                     : TRAFFIC_KIND_BLURB[trafficKind]}{" "}
-                  属地筛选后样本 {ecoRows.length} 家。
+                  {uiLang === "en"
+                    ? `Filtered sample ${ecoRows.length}.`
+                    : `属地筛选后样本 ${ecoRows.length} 家。`}
                 </Text>
               </Row>
               <Stack gap={4}>
@@ -29036,7 +31412,7 @@ export default function Canvas() {
           ) : hub === "资金参与机构" ? (
             <Stack gap={12}>
               <Text size="small" tone="secondary">
-                市场定位：{INST_BUCKET_LABEL[INST_TYPE_TO_BUCKET[hub as InstitutionType]]}
+                {uiLang === "en" ? "Market focus:" : "市场定位："}{instBucketLabel(INST_TYPE_TO_BUCKET[hub as InstitutionType], uiLang)}
               </Text>
               <GeoAndLicenseFilters
                 region={region}
@@ -29063,35 +31439,60 @@ export default function Canvas() {
               />
               <Grid columns={5} gap={10}>
                 {FUND_KIND_ORDER.map((k) => (
-                  <Stat value={String(countFundKind(k))} label={FUND_KIND_LABEL[k]} />
+                  <Stat
+                    value={String(countFundKind(k))}
+                    label={fundKindLabelUi(FUND_KIND_LABEL[k], uiLang)}
+                  />
                 ))}
               </Grid>
               <Stack gap={4} style={{ minWidth: 200, maxWidth: 360 }}>
                 <Text size="small" weight="medium">
-                  资金参与细分
+                  {uiLang === "en" ? "Funding subtypes" : "资金参与细分"}
                 </Text>
                 <Select
                   value={fundKind}
                   onChange={(v) => setFundKind(v as FundParticipationKind | "all")}
                   options={[
-                    { value: "all", label: "全部" },
+                    { value: "all", label: uiLang === "en" ? "All" : "全部" },
                     ...FUND_KIND_ORDER.map((k) => ({
                       value: k,
-                      label: `${FUND_KIND_LABEL[k]} · ${countFundKind(k)}`,
+                      label: `${fundKindLabelUi(FUND_KIND_LABEL[k], uiLang)} · ${countFundKind(k)}`,
                     })),
                   ]}
                 />
               </Stack>
               <Row gap={8} align="center" wrap>
-                <Pill tone="info">{REGION_LABEL[region]}</Pill>
-                {country !== "all" ? <Pill tone="info">{COUNTRY_LABEL[country]}</Pill> : null}
+                <Pill tone="info">{regionLabelUi(region, uiLang, REGION_LABEL[region])}</Pill>
+                {country !== "all" ? <Pill tone="info">{countryLabelUi(country, uiLang, COUNTRY_LABEL[country])}</Pill> : null}
                 <Text size="small" tone="secondary">
                   {fundKind === "all"
                     ? INSTITUTION_TYPE_BLURB.资金参与机构
                     : FUND_KIND_BLURB[fundKind]}{" "}
-                  属地筛选后样本 {ecoRows.length} 家。
+                  {uiLang === "en" ? `Filtered sample ${ecoRows.length}.` : `属地筛选后样本 ${ecoRows.length} 家。`}
                 </Text>
               </Row>
+              {ecoRows.length === 0 ? (
+                <Callout tone="warning">
+                  {uiLang === "en" ? (
+                    <>
+                      No funding participants on file for{" "}
+                      {regionLabelUi(region, uiLang, REGION_LABEL[region])}
+                      {country !== "all"
+                        ? ` · ${countryLabelUi(country, uiLang, COUNTRY_LABEL[country])}`
+                        : ""}
+                      .
+                    </>
+                  ) : (
+                    <>
+                      当前属地（{REGION_LABEL[region]}
+                      {country !== "all" ? ` · ${COUNTRY_LABEL[country]}` : ""}）下暂无已建档的
+                      {fundKind === "all" ? (uiLang === "en" ? "Funding participants" : "资金参与机构") : fundKindLabelUi(FUND_KIND_LABEL[fundKind], uiLang)}
+                      。上方数字已按同一属地统计；全库「本地银行」目前仅有中国招商银行、印尼 Bank Jago
+                      等样本，与尼日利亚等国筛选对不上属正常。
+                    </>
+                  )}
+                </Callout>
+              ) : null}
               <Stack gap={4}>
                 {ecoRows.map((r) => (
                   <CreditPlayer r={r} />
@@ -29101,7 +31502,7 @@ export default function Canvas() {
           ) : hub === "股权投资人" ? (
             <Stack gap={12}>
               <Text size="small" tone="secondary">
-                市场定位：{INST_BUCKET_LABEL[INST_TYPE_TO_BUCKET[hub as InstitutionType]]}
+                {uiLang === "en" ? "Market focus:" : "市场定位："}{instBucketLabel(INST_TYPE_TO_BUCKET[hub as InstitutionType], uiLang)}
               </Text>
               <GeoAndLicenseFilters
                 region={region}
@@ -29128,38 +31529,41 @@ export default function Canvas() {
               />
               <Grid columns={6} gap={10}>
                 {EQUITY_KIND_ORDER.map((k) => (
-                  <Stat value={String(countEquityKind(k))} label={EQUITY_KIND_LABEL[k]} />
+                  <Stat
+                    value={String(countEquityKind(k))}
+                    label={equityKindLabelUi(EQUITY_KIND_LABEL[k], uiLang)}
+                  />
                 ))}
               </Grid>
               <Stack gap={4} style={{ minWidth: 200, maxWidth: 360 }}>
                 <Text size="small" weight="medium">
-                  股权投资人细分
+                  {uiLang === "en" ? "Equity investor subtypes" : "股权投资人细分"}
                 </Text>
                 <Select
                   value={equityKind}
                   onChange={(v) => setEquityKind(v as EquityInvestorKind | "all")}
                   options={[
-                    { value: "all", label: "全部" },
+                    { value: "all", label: uiLang === "en" ? "All" : "全部" },
                     ...EQUITY_KIND_ORDER.map((k) => ({
                       value: k,
-                      label: `${EQUITY_KIND_LABEL[k]} · ${countEquityKind(k)}`,
+                      label: `${equityKindLabelUi(EQUITY_KIND_LABEL[k], uiLang)} · ${countEquityKind(k)}`,
                     })),
                   ]}
                 />
               </Stack>
               <Row gap={8} align="center" wrap>
-                <Pill tone="info">{REGION_LABEL[region]}</Pill>
-                {formatCountryFilterLabel(country, region) ? (
-                  <Pill tone="info">{formatCountryFilterLabel(country, region)}</Pill>
+                <Pill tone="info">{regionLabelUi(region, uiLang, REGION_LABEL[region])}</Pill>
+                {formatCountryFilterLabel(country, region, uiLang) ? (
+                  <Pill tone="info">{formatCountryFilterLabel(country, region, uiLang)}</Pill>
                 ) : null}
                 {equityKind !== "all" ? (
-                  <Pill tone="warning">{EQUITY_KIND_LABEL[equityKind]}</Pill>
+                  <Pill tone="warning">{equityKindLabelUi(EQUITY_KIND_LABEL[equityKind], uiLang)}</Pill>
                 ) : null}
                 <Text size="small" tone="secondary">
                   {equityKind === "all"
                     ? INSTITUTION_TYPE_BLURB.股权投资人
                     : EQUITY_KIND_BLURB[equityKind]}{" "}
-                  属地筛选后样本 {ecoRows.length} 家。已有 CRM 主体仅打标不建重档。
+                  {uiLang === "en" ? `Filtered sample ${ecoRows.length}. Existing CRM entities are tagged only (no duplicate dossiers).` : `属地筛选后样本 ${ecoRows.length} 家。已有 CRM 主体仅打标不建重档。`}
                 </Text>
               </Row>
               <Stack gap={4}>
@@ -29171,7 +31575,7 @@ export default function Canvas() {
           ) : hub === "支付服务机构" ? (
             <Stack gap={12}>
               <Text size="small" tone="secondary">
-                市场定位：{INST_BUCKET_LABEL[INST_TYPE_TO_BUCKET[hub as InstitutionType]]}
+                {uiLang === "en" ? "Market focus:" : "市场定位："}{instBucketLabel(INST_TYPE_TO_BUCKET[hub as InstitutionType], uiLang)}
               </Text>
               <GeoAndLicenseFilters
                 region={region}
@@ -29218,13 +31622,15 @@ export default function Canvas() {
                 />
               </Stack>
               <Row gap={8} align="center" wrap>
-                <Pill tone="info">{REGION_LABEL[region]}</Pill>
-                {country !== "all" ? <Pill tone="info">{COUNTRY_LABEL[country]}</Pill> : null}
+                <Pill tone="info">{regionLabelUi(region, uiLang, REGION_LABEL[region])}</Pill>
+                {country !== "all" ? <Pill tone="info">{countryLabelUi(country, uiLang, COUNTRY_LABEL[country])}</Pill> : null}
                 <Text size="small" tone="secondary">
                   {paymentKind === "all"
-                    ? INSTITUTION_TYPE_BLURB.支付服务机构
+                    ? institutionTypeBlurbUi("支付服务机构", uiLang)
                     : PAYMENT_KIND_BLURB[paymentKind]}{" "}
-                  属地筛选后样本 {ecoRows.length} 家。
+                  {uiLang === "en"
+                    ? `Sample after geo filter: ${ecoRows.length}.`
+                    : `属地筛选后样本 ${ecoRows.length} 家。`}
                 </Text>
               </Row>
               <Stack gap={4}>
@@ -29236,12 +31642,15 @@ export default function Canvas() {
           ) : (
             <Stack gap={12}>
               <Text size="small" tone="secondary">
-                市场定位：{INST_BUCKET_LABEL[INST_TYPE_TO_BUCKET[hub as InstitutionType]]}
+                {uiLang === "en" ? "Market focus:" : "市场定位："}{instBucketLabel(INST_TYPE_TO_BUCKET[hub as InstitutionType], uiLang)}
               </Text>
               {isGeoScopedEcoType(hub as InstitutionType) ? (
                 <Stack gap={10}>
                   <Text size="small" tone="secondary">
-                    {INSTITUTION_TYPE_BLURB[hub as InstitutionType]} 属地筛选后样本 {ecoRows.length} 家。
+                    {institutionTypeBlurbUi(hub as InstitutionType, uiLang)}{" "}
+                    {uiLang === "en"
+                      ? `Sample after geo filter: ${ecoRows.length}.`
+                      : `属地筛选后样本 ${ecoRows.length} 家。`}
                   </Text>
                   <GeoAndLicenseFilters
                     region={region}
@@ -29266,9 +31675,9 @@ export default function Canvas() {
                     onLicenseKind={setLicenseKind}
                   />
                   <Row gap={8} align="center" wrap>
-                    <Pill tone="info">{REGION_LABEL[region]}</Pill>
+                    <Pill tone="info">{regionLabelUi(region, uiLang, REGION_LABEL[region])}</Pill>
                     {langZone !== "all" ? <Pill tone="info">{langZone}</Pill> : null}
-                    {country !== "all" ? <Pill tone="info">{COUNTRY_LABEL[country]}</Pill> : null}
+                    {country !== "all" ? <Pill tone="info">{countryLabelUi(country, uiLang, COUNTRY_LABEL[country])}</Pill> : null}
                     <Text size="small" tone="secondary">
                       {ecoRows.length} 家
                     </Text>
@@ -29276,7 +31685,10 @@ export default function Canvas() {
                 </Stack>
               ) : (
                 <Text size="small" tone="secondary">
-                  {INSTITUTION_TYPE_BLURB[hub]} 公开信息样本 {ecoRows.length} 家。
+                  {institutionTypeBlurbUi(hub as InstitutionType, uiLang)}{" "}
+                  {uiLang === "en"
+                    ? `Public sample: ${ecoRows.length}.`
+                    : `公开信息样本 ${ecoRows.length} 家。`}
                 </Text>
               )}
               <Stack gap={4}>
@@ -29289,7 +31701,8 @@ export default function Canvas() {
         </Stack>
       ) : null}
       </Stack>
-    </AtlasSideRail>
+      </AtlasScrollBody>
+    </PersistScrollShell>
   );
 }
 

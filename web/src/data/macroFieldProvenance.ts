@@ -29,6 +29,10 @@ const FIELD_DEFAULT_CITES: Record<string, number[]> = {
   nevImportTariff: [24],
   nevLocalVat: [24],
   nevTaxGap: [24],
+  nevHsCkd: [24],
+  nevHsBattery: [24],
+  nevHsMotor: [24],
+  nevPurchaseIncentive: [24],
   creditNote: [],
 };
 
@@ -113,7 +117,7 @@ export function scanMacroCiteHints(text?: string): number[] {
   if (/\bBIS\b|WS_TC/i.test(s) && !/无BIS/.test(s)) add(14);
   if (/\bOWID\b|Our\s*World\s*in\s*Data/i.test(s)) add(15);
   if (/ILO/i.test(s)) add(10);
-  if (/海关|关税|税则|LIVA|GST|IVA|PPN|LIGIE|CVD|反补贴|EVIDA|DOF|CAMEX|PMK/i.test(s)) add(24);
+  if (/海关|关税|税则|LIVA|GST|IVA|PPN|LIGIE|CVD|反补贴|EVIDA|DOF|CAMEX|PMK|HS8703|HS8507|HS8501|CKD|TARIC/i.test(s)) add(24);
   return out;
 }
 

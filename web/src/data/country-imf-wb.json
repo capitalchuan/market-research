@@ -4,37 +4,45 @@
   "imfOptions": [
     {
       "id": "all",
-      "labelZh": "全部 (IMF)"
+      "labelZh": "全部 (IMF)",
+      "labelEn": "All (IMF)"
     },
     {
       "id": "advanced",
-      "labelZh": "发达经济体"
+      "labelZh": "发达经济体",
+      "labelEn": "Advanced economies"
     },
     {
       "id": "emerging",
-      "labelZh": "新兴与发展中经济体"
+      "labelZh": "新兴与发展中经济体",
+      "labelEn": "Emerging & developing"
     }
   ],
   "wbOptions": [
     {
       "id": "all",
-      "labelZh": "全部 (世行收入)"
+      "labelZh": "全部 (世行收入)",
+      "labelEn": "All (World Bank income)"
     },
     {
       "id": "high",
-      "labelZh": "高收入"
+      "labelZh": "高收入",
+      "labelEn": "High income"
     },
     {
       "id": "upper_middle",
-      "labelZh": "中高收入"
+      "labelZh": "中高收入",
+      "labelEn": "Upper middle income"
     },
     {
       "id": "lower_middle",
-      "labelZh": "中低收入"
+      "labelZh": "中低收入",
+      "labelEn": "Lower middle income"
     },
     {
       "id": "low",
-      "labelZh": "低收入"
+      "labelZh": "低收入",
+      "labelEn": "Low income"
     }
   ],
   "byCode": {
@@ -709,6 +717,14 @@
       "wbIncomeZh": "中低收入",
       "wbIncomeEn": "Lower middle income",
       "iso3": "ZWE"
+    },
+    "GN": {
+      "imfDevTag": "emerging",
+      "imfDevTagZh": "新兴与发展中经济体",
+      "wbIncome": "low",
+      "wbIncomeZh": "低收入",
+      "wbIncomeEn": "Low income",
+      "iso3": "GIN"
     }
   }
 }

@@ -9,6 +9,7 @@ export type StressSeries = {
   synthetic?: boolean;
   method?: string;
   levelUsdPerL?: number;
+  levelUsdPerKwh?: number;
   points: StressPoint[];
 };
 
@@ -16,6 +17,7 @@ export type StressCountry = {
   inflation?: StressSeries;
   policyRate?: StressSeries;
   gasolineRetail?: StressSeries;
+  electricityResidential?: StressSeries;
 };
 
 export type StressHistoryDataset = {
@@ -31,7 +33,11 @@ export type StressHistoryDataset = {
 
 export const MACRO_STRESS_HISTORY = raw as StressHistoryDataset;
 
-export type StressMetricId = "inflation" | "policyRate" | "gasolineRetail";
+export type StressMetricId =
+  | "inflation"
+  | "policyRate"
+  | "gasolineRetail"
+  | "electricityResidential";
 
 export const STRESS_METRIC_META: readonly {
   id: StressMetricId;
@@ -41,6 +47,7 @@ export const STRESS_METRIC_META: readonly {
   { id: "inflation", label: "通胀", format: (v) => `${v.toFixed(2)}%` },
   { id: "policyRate", label: "政策利率", format: (v) => `${v.toFixed(2)}%` },
   { id: "gasolineRetail", label: "零售汽油", format: (v) => `${v.toFixed(2)} USD/L` },
+  { id: "electricityResidential", label: "居民电价", format: (v) => `${v.toFixed(3)} USD/kWh` },
 ] as const;
 
 export function getStressCountry(code: string): StressCountry | undefined {

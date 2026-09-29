@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useCanvasState } from "./shims/cursor-canvas";
+import { countryLabelUi, detectBrowserUiLang, type UiLang } from "./uiI18n";
 import { geoGraticule10, geoNaturalEarth1, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
@@ -52,6 +54,7 @@ const N3_TO_A2: Record<string, string> = {
   "710": "ZA",
   "566": "NG",
   "404": "KE",
+  "324": "GN",
   "643": "RU",
   "702": "SG",
 };
@@ -92,9 +95,17 @@ function CountryDetailPanel({
   overlay?: boolean;
 }) {
   const { guest } = useGuestMask();
-  const name = COUNTRY_LABEL_ZH[code] ?? invested?.country_zh ?? code;
-  const langLine = formatCountryLanguageLine(code);
-  const sub = guest ? "合作机构（已脱敏）" : "已投生产商详情";
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
+  const name = countryLabelUi(code, uiLang, COUNTRY_LABEL_ZH[code] ?? invested?.country_zh ?? code);
+  const langLine = formatCountryLanguageLine(code, uiLang);
+  const sub = guest
+    ? en
+      ? "Partners (masked)"
+      : "合作机构（已脱敏）"
+    : en
+      ? "Invested producer detail"
+      : "已投生产商详情";
   return (
     <MapDetailShell
       title={`${name} · ${code}`}
@@ -117,6 +128,8 @@ export function InvestedHeatGlobe({
   fill?: boolean;
   legendPlacement?: MapLegendPlacement;
 }) {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const { theme, c } = useMapChrome();
   const { aspect } = useMapViewport(fill);
   const width = mapFrameWidth(height, aspect);
@@ -240,7 +253,7 @@ export function InvestedHeatGlobe({
       const t = intensity(Math.max(usd, 1e-6));
       out.push({
         a2,
-        name: COUNTRY_LABEL_ZH[a2] ?? inv?.country_zh ?? f.properties?.name ?? a2,
+        name: countryLabelUi(a2, uiLang, COUNTRY_LABEL_ZH[a2] ?? inv?.country_zh ?? f.properties?.name ?? a2),
         outstandingUsd: inv?.outstanding_usd_for_heat ?? usd,
         investmentUsd: inv?.investment_usd ?? 0,
         producerCount: inv?.producers.length ?? 0,
@@ -261,7 +274,7 @@ export function InvestedHeatGlobe({
         const t = intensity(Math.max(usd, 1e-6));
         out.push({
           a2: "HK",
-          name: COUNTRY_LABEL_ZH.HK ?? inv.country_zh ?? "香港",
+          name: countryLabelUi("HK", uiLang, COUNTRY_LABEL_ZH.HK ?? inv.country_zh ?? "中国香港"),
           outstandingUsd: usd,
           investmentUsd: inv.investment_usd,
           producerCount: inv.producers.length,
@@ -275,7 +288,7 @@ export function InvestedHeatGlobe({
     }
     out.sort((a, b) => a.r - b.r);
     return out;
-  }, [countries, outstanding, pathGen, project, fill, minUsd, maxUsd, marketLending]);
+  }, [countries, outstanding, pathGen, project, fill, minUsd, maxUsd, marketLending, uiLang]);
 
   const callouts = useMemo(() => {
     if (focus) return [] as DotPoint[];
@@ -357,10 +370,12 @@ export function InvestedHeatGlobe({
             }}
           >
             <Button variant="secondary" size="sm" onClick={() => setFocus(null)}>
-              返回全球
+              {en ? "Back to world" : "返回全球"}
             </Button>
             <MapChip>
-              已放大：{COUNTRY_LABEL_ZH[focus] ?? INVESTED_BY_CODE[focus]?.country_zh ?? focus}
+              {en
+                ? `Zoomed: ${countryLabelUi(focus, uiLang, COUNTRY_LABEL_ZH[focus] ?? INVESTED_BY_CODE[focus]?.country_zh ?? focus)}`
+                : `已放大：${COUNTRY_LABEL_ZH[focus] ?? INVESTED_BY_CODE[focus]?.country_zh ?? focus}`}
             </MapChip>
           </div>
         ) : null}
@@ -462,7 +477,7 @@ export function InvestedHeatGlobe({
                 const side = p.x > width * 0.55 ? -1 : 1;
                 const lx = p.x + side * (28 + i * 6);
                 const ly = Math.max(28, Math.min(height - 36, p.y - 22 - i * 10));
-                const label = `${COUNTRY_LABEL_ZH[p.a2] ?? p.a2} ${maskUsd(p.outstandingUsd)}`;
+                const label = `${countryLabelUi(p.a2, uiLang, COUNTRY_LABEL_ZH[p.a2] ?? p.a2)} ${maskUsd(p.outstandingUsd)}`;
                 const tw = Math.min(140, 12 + label.length * 6.4);
                 return (
                   <g key={`call-${p.a2}`} pointerEvents="none">
@@ -510,9 +525,13 @@ export function InvestedHeatGlobe({
             accent="added"
           >
             <div style={{ fontWeight: 600 }}>{hover.name}</div>
-            <div style={{ color: c.added }}>在贷(热力) {maskUsd(hover.outstandingUsd)}</div>
+            <div style={{ color: c.added }}>
+              {en ? "Outstanding (heat) " : "在贷(热力) "}{maskUsd(hover.outstandingUsd)}
+            </div>
             <div style={{ color: c.textSecondary }}>
-              基金 {maskUsd(hover.investmentUsd)} · {hover.producerCount} 家平台
+              {en
+                ? `Fund ${maskUsd(hover.investmentUsd)} · ${hover.producerCount} platforms`
+                : `基金 ${maskUsd(hover.investmentUsd)} · ${hover.producerCount} 家平台`}
             </div>
           </MapTooltip>
         ) : null}
@@ -535,8 +554,12 @@ export function InvestedHeatGlobe({
         />
       ) : null}
       {!focus ? (
-        <MapSideLegend title="展业 · 点阵图例" placement={place}>
-          <SteppedLegend label="在贷余额 · 点色/点径 少 → 多" kind="added" compact={bottomLegend} />
+        <MapSideLegend title={en ? "Invested · dot legend" : "展业 · 点阵图例"} placement={place}>
+          <SteppedLegend
+            label={en ? "Outstanding · dot color/size low → high" : "在贷余额 · 点色/点径 少 → 多"}
+            kind="added"
+            compact={bottomLegend}
+          />
           <div
             style={{
               fontSize: 12,
@@ -545,25 +568,31 @@ export function InvestedHeatGlobe({
               marginTop: bottomLegend ? 8 : 0,
             }}
           >
-            浅底透图 · 色点 {ranked.length} 国 · 基金合计{" "}
-            {guest ? SENSITIVE_MASK : formatUsdCompact(PRODUCER_HOLDINGS.total_investment_usd)}
-            · 墨细环=市场放贷对照 · 点击点/横条放大
+            {en
+              ? `Light base · ${ranked.length} countries · fund total ${
+                  guest ? SENSITIVE_MASK : formatUsdCompact(PRODUCER_HOLDINGS.total_investment_usd)
+                } · dark ring = market lending ref · click dot/bar to zoom`
+              : `浅底透图 · 色点 ${ranked.length} 国 · 基金合计 ${
+                  guest ? SENSITIVE_MASK : formatUsdCompact(PRODUCER_HOLDINGS.total_investment_usd)
+                } · 墨细环=市场放贷对照 · 点击点/横条放大`}
           </div>
           <RankBarList
             compact={false}
             maxVisible={bottomLegend ? 20 : undefined}
-            scaleHint="条长 ∝ 展业在贷（相对列表最大值）"
+            scaleHint={en ? "Bar length ∝ invested outstanding (vs list max)" : "条长 ∝ 展业在贷（相对列表最大值）"}
             onSelect={(code) => setFocus(code)}
             items={ranked.map((row) => ({
               key: row.country_code,
-              label: COUNTRY_LABEL_ZH[row.country_code] ?? row.country_zh,
+              label: countryLabelUi(row.country_code, uiLang, COUNTRY_LABEL_ZH[row.country_code] ?? row.country_zh),
               value: row.outstanding_usd_for_heat,
               valueLabel: guest ? SENSITIVE_MASK : formatUsdCompact(row.outstanding_usd_for_heat),
             }))}
           />
           {INVESTED_BY_CODE.HK && !mapCodes.has("HK") ? (
             <div style={{ marginTop: 10, fontSize: 11, color: c.textSecondary, lineHeight: 1.5 }}>
-              中国香港在底图无独立面，地图上以锚点标出，可直接点击。
+              {en
+                ? "Hong Kong has no separate polygon on this basemap; shown as an anchor dot — click to zoom."
+                : "中国香港在底图无独立面，地图上以锚点标出，可直接点击。"}
             </div>
           ) : null}
         </MapSideLegend>

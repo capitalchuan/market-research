@@ -1,285 +1,1530 @@
 {
   "source": "公开快讯汇编",
   "sourceUrl": "",
-  "displayDate": "2026-08-16",
-  "coverageDate": "2026-08-15",
-  "windowStart": "2026-08-15 06:00",
-  "windowEnd": "2026-08-16 06:00",
-  "publishAt": "2026-08-16 06:00",
-  "generatedAt": "2026-08-17 04:05",
+  "displayDate": "2026-08-20",
+  "coverageDate": "2026-08-19",
+  "windowStart": "2026-08-19 06:00",
+  "windowEnd": "2026-08-20 06:00",
+  "publishAt": "2026-08-20 06:00",
+  "generatedAt": "2026-08-21 01:37",
   "stats": {
-    "coverageTotal": 27,
-    "relevant": 8,
-    "strong": 0,
-    "weak": 8,
-    "noise": 19,
-    "focusHit": 0,
-    "regOpsCount": 0,
+    "coverageTotal": 201,
+    "relevant": 111,
+    "strong": 11,
+    "weak": 100,
+    "noise": 90,
+    "focusHit": 11,
+    "regOpsCount": 1,
     "themeCount": 4,
     "windowHours": 24,
     "cutoffHourCst": 6
   },
-  "headline": "消费信贷晨报 · 2026-08-16",
+  "headline": "消费信贷晨报 · 2026-08-20",
   "lede": "只突出与牌照、资产定价、汇兑宏观强相关的快讯；其余收入弱相关。",
-  "overallVerdict": "已投市场今日未见明显牌照/监管强相关快讯，名录照常核对。",
+  "overallVerdict": "中国香港有监管/牌照相关消息，先核当地玩家牌照与名录；利率汇率仍影响资金成本与锁汇，现金贷定价跟着看；资产与定价信号勿与泛融资热度混为一谈。",
   "themes": [
     {
       "id": "reg_license",
       "title": "监管·牌照",
-      "count": 0,
-      "summary": "今日未见墨西哥、泰国、印尼、菲律宾、中国香港、印度当地牌照/监管强相关快讯",
+      "count": 1,
+      "summary": "新加坡承诺对基金经理实施税收豁免",
       "signals": [
         {
-          "label": "条数",
-          "value": "0"
+          "label": "金融",
+          "value": "1提及"
         }
       ],
-      "commentary": "已投属地牌照/利率上限/催收与名录变动，直接决定能否展业。",
+      "commentary": "已投属地牌照/利率上限/催收与名录变动，直接决定能否展业。 窗口要点：新加坡承诺向对冲基金交易员等个人基金管理人提供潜在丰厚的税收豁免。",
       "primary": true,
-      "sources": []
+      "sources": [
+        {
+          "title": "新加坡承诺对基金经理实施税收豁免",
+          "url": "",
+          "time": "13:31",
+          "relevance": "strong",
+          "cashLoanHint": "核对当地牌照/名录是否仍有效"
+        }
+      ]
     },
     {
       "id": "asset_price",
       "title": "资产·定价",
-      "count": 0,
-      "summary": "今日该板块暂无强相关快讯",
+      "count": 12,
+      "summary": "Anthropic上市前信贷安排料突破100亿美元，银行借机争夺IPO角；部分上市银行上半年业绩向好，信贷投放量质齐升；瑞典先买后付巨头Klarna谋求美国银行牌照，启动管理层大改组",
       "signals": [
         {
-          "label": "条数",
-          "value": "0"
+          "label": "信贷",
+          "value": "4提及"
+        },
+        {
+          "label": "银行",
+          "value": "4提及"
+        },
+        {
+          "label": "贷款",
+          "value": "3提及"
+        },
+        {
+          "label": "牌照",
+          "value": "3提及"
         }
       ],
-      "commentary": "资产质量、融资与定价锚；融资热≠风险已好转。",
+      "commentary": "资产质量、融资与定价锚；融资热≠风险已好转。 窗口要点：8月19日，据报道，Anthropic的循环信贷安排预计将超过约100亿美元的目标规模；8月18日，南京银行发布2026年半年度报告，营业收入、归母净利润双双实现超8%的增长。",
       "primary": true,
-      "sources": []
+      "sources": [
+        {
+          "title": "Anthropic上市前信贷安排料突破100亿美元，银行借机争夺IPO角色",
+          "url": "",
+          "time": "07:34",
+          "relevance": "weak",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        },
+        {
+          "title": "部分上市银行上半年业绩向好，信贷投放量质齐升",
+          "url": "",
+          "time": "07:34",
+          "relevance": "weak",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        },
+        {
+          "title": "瑞典先买后付巨头Klarna谋求美国银行牌照，启动管理层大改组",
+          "url": "",
+          "time": "09:03",
+          "relevance": "strong",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        },
+        {
+          "title": "Pimco总裁称财富管理机构正撤出私募信贷市场",
+          "url": "",
+          "time": "14:09",
+          "relevance": "weak",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        },
+        {
+          "title": "《全民医疗保障“十五五”规划》发布",
+          "url": "",
+          "time": "11:59",
+          "relevance": "weak",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        },
+        {
+          "title": "1至7月进出口银行新发放制造业贷款近5000亿元",
+          "url": "",
+          "time": "16:57",
+          "relevance": "weak",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        },
+        {
+          "title": "迪士尼与旗下美国广播公司起诉美联邦通讯委员会",
+          "url": "",
+          "time": "15:46",
+          "relevance": "strong",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        },
+        {
+          "title": "迪士尼旗下ABC援引第一修正案起诉联邦通信委员会",
+          "url": "",
+          "time": "07:50",
+          "relevance": "strong",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        },
+        {
+          "title": "高盛一周内达成第二笔交易，收购LCN瞄准“省心收租”模式",
+          "url": "",
+          "time": "08:40",
+          "relevance": "weak",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        },
+        {
+          "title": "苹果全面调整欧盟App Store收费规则，放宽第三方应用商店准入门槛",
+          "url": "",
+          "time": "07:30",
+          "relevance": "weak",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        },
+        {
+          "title": "多地消费品以旧换新政策再加码",
+          "url": "",
+          "time": "09:01",
+          "relevance": "weak",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        },
+        {
+          "title": "华泰证券：氨纶供需趋紧，行业景气有望上行",
+          "url": "",
+          "time": "08:48",
+          "relevance": "weak",
+          "cashLoanHint": "看对定价、额度与资产质量的影响"
+        }
+      ]
     },
     {
       "id": "fx_macro",
       "title": "汇兑·宏观",
-      "count": 0,
-      "summary": "今日该板块暂无强相关快讯",
+      "count": 7,
+      "summary": "人民币对美元创三年半新高 专家料年内有望温和升值；韩国家庭信贷迈入2000万亿韩元时代；瑞穗预计日本央行将加快升息步伐，最快9月行动",
       "signals": [
         {
-          "label": "条数",
-          "value": "0"
+          "label": "利率",
+          "value": "4提及"
+        },
+        {
+          "label": "美元",
+          "value": "3提及"
+        },
+        {
+          "label": "美联储",
+          "value": "3提及"
+        },
+        {
+          "label": "央行",
+          "value": "3提及"
         }
       ],
-      "commentary": "利率、汇率与通胀影响资金成本、锁汇与现金贷定价天花板。",
+      "commentary": "利率、汇率与通胀影响资金成本、锁汇与现金贷定价天花板。 窗口要点：日前，人民币对美元汇率创阶段新高；受住房相关贷款及用于杠杆炒股的信用贷款大幅增加推动，韩国家庭信贷规模首次突破2000万亿韩元。",
       "primary": true,
-      "sources": []
+      "sources": [
+        {
+          "title": "人民币对美元创三年半新高 专家料年内有望温和升值",
+          "url": "",
+          "time": "08:53",
+          "relevance": "strong",
+          "cashLoanHint": "联动资金成本与锁汇"
+        },
+        {
+          "title": "韩国家庭信贷迈入2000万亿韩元时代",
+          "url": "",
+          "time": "17:34",
+          "relevance": "strong",
+          "cashLoanHint": "联动资金成本与锁汇"
+        },
+        {
+          "title": "瑞穗预计日本央行将加快升息步伐，最快9月行动",
+          "url": "",
+          "time": "08:31",
+          "relevance": "strong",
+          "cashLoanHint": "联动资金成本与锁汇"
+        },
+        {
+          "title": "美联储9月维持利率不变的概率为65%",
+          "url": "",
+          "time": "08:00",
+          "relevance": "strong",
+          "cashLoanHint": "联动资金成本与锁汇"
+        },
+        {
+          "title": "亚玛芬体育：第二季度收入16.33亿美元，同比增长32%",
+          "url": "",
+          "time": "09:59",
+          "relevance": "strong",
+          "cashLoanHint": "联动资金成本与锁汇"
+        },
+        {
+          "title": "央行今日开展3274亿元人民币隔夜逆回购操作",
+          "url": "",
+          "time": "09:24",
+          "relevance": "strong",
+          "cashLoanHint": "联动资金成本与锁汇"
+        },
+        {
+          "title": "港股反弹节奏放缓，机构研判积极因素仍在积累",
+          "url": "",
+          "time": "08:03",
+          "relevance": "strong",
+          "cashLoanHint": "联动资金成本与锁汇"
+        }
+      ]
     },
     {
       "id": "other_weak",
       "title": "其他·弱相关",
-      "count": 27,
-      "summary": "Anthropic第二财季营收超过115亿美元，较上年同期飙升至少13倍；李录大举加仓拼多多，持仓仅剩8只；段永平继续加仓拼多多，大幅减持英伟达、谷歌",
+      "count": 181,
+      "summary": "AI芯片创企Etched融资7亿美元，近一个月估值翻番至210亿美元；微博：二季度总营收4.538亿美元，调整后运营利润1.254亿美元；黔西南农村商业银行登记成立，注册资本20亿",
       "signals": [
         {
           "label": "美元",
-          "value": "6提及"
-        },
-        {
-          "label": "银行",
-          "value": "2提及"
-        },
-        {
-          "label": "金融",
-          "value": "2提及"
+          "value": "20提及"
         },
         {
           "label": "人民币",
-          "value": "1提及"
+          "value": "11提及"
+        },
+        {
+          "label": "银行",
+          "value": "6提及"
+        },
+        {
+          "label": "融资",
+          "value": "5提及"
         }
       ],
-      "commentary": "弱相关或背景扫描，默认折叠；需要时再展开。 窗口要点：Anthropic PBC向潜在投资者表示，其第二季度营收较上年同期增长至少13倍；李录掌管的喜马拉雅基金，则大手笔清仓美国银行、西方石油、穆迪、标普全球、MSCI、H&R Block等6只个股，同时大举加仓拼多多和伯克希尔B股。",
+      "commentary": "弱相关或背景扫描，默认折叠；需要时再展开。 窗口要点：当地时间8月18日，AI芯片创企Etched宣布完成7亿美元新一轮融资，公司估值达210亿美元；微博发布2026年第二季度财报。",
       "primary": false,
       "sources": [
         {
-          "title": "Anthropic第二财季营收超过115亿美元，较上年同期飙升至少13倍",
+          "title": "AI芯片创企Etched融资7亿美元，近一个月估值翻番至210亿美元",
           "url": "",
-          "time": "09:45",
+          "time": "15:22",
           "relevance": "weak",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "李录大举加仓拼多多，持仓仅剩8只",
+          "title": "微博：二季度总营收4.538亿美元，调整后运营利润1.254亿美元",
           "url": "",
-          "time": "14:35",
+          "time": "17:03",
           "relevance": "weak",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "段永平继续加仓拼多多，大幅减持英伟达、谷歌",
+          "title": "黔西南农村商业银行登记成立，注册资本20亿",
           "url": "",
-          "time": "14:35",
-          "relevance": "noise",
-          "cashLoanHint": "弱相关，作背景"
-        },
-        {
-          "title": "英伟达披露持有210亿美元的SpaceX股份",
-          "url": "",
-          "time": "10:30",
-          "relevance": "noise",
-          "cashLoanHint": "弱相关，作背景"
-        },
-        {
-          "title": "消息人士：Anthropic预计2028年营收将达到约1900亿至2000亿美元",
-          "url": "",
-          "time": "10:15",
+          "time": "16:18",
           "relevance": "weak",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "英伟达据悉缩减为OpenAI数据中心提供2500亿美元担保的计划",
+          "title": "华润啤酒：2026年上半年股东应占溢利为51.69亿元",
           "url": "",
-          "time": "09:58",
-          "relevance": "noise",
-          "cashLoanHint": "弱相关，作背景"
-        },
-        {
-          "title": "订单饱满结构升级，CXO企业半年度业绩释放回暖信号",
-          "url": "",
-          "time": "10:59",
+          "time": "12:47",
           "relevance": "weak",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "伯克希尔·哈撒韦第二季度增持谷歌",
+          "title": "国轩高科旗下桐城新能源公司增资至35.3亿，增幅约30%",
           "url": "",
-          "time": "09:30",
+          "time": "16:59",
           "relevance": "weak",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "黄仁勋出手安抚AI算力市场：英伟达可能会“为单个投资项目提供最高25%的残值支持机制”",
+          "title": "人民币兑美元中间价报6.7854，上调51点",
           "url": "",
-          "time": "17:24",
-          "relevance": "noise",
-          "cashLoanHint": "弱相关，作背景"
-        },
-        {
-          "title": "宇树科技未上市先疯抢，部分中介出价520元/股",
-          "url": "",
-          "time": "12:25",
+          "time": "09:17",
           "relevance": "weak",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "2026年8月票房破30亿元",
+          "title": "比尔盖茨名下豪华度假村因维护不善面临1亿美元索赔",
           "url": "",
-          "time": "17:22",
+          "time": "08:07",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "Alphabet拟发行澳元债券，20年期融资成本或接近7%",
+          "url": "",
+          "time": "12:52",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "比特币巨鲸重返市场，两个月增持27.5亿美元",
+          "url": "",
+          "time": "11:55",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "两市融资余额增加52.23亿元",
+          "url": "",
+          "time": "08:48",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "据传优步通过大宗交易出售部分Aurora Innovation股权",
+          "url": "",
+          "time": "08:33",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "国产创新药迎三重业绩拐点，CXO龙头利润与订单同步创出历史新高",
+          "url": "",
+          "time": "07:43",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "如祺出行：上半年收入40.35亿元同比大增140.7%，AI数据服务贡献超亿元",
+          "url": "",
+          "time": "21:53",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "美国财政部宣布将长期国债回购操作规模至少扩大一倍",
+          "url": "",
+          "time": "20:54",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "AI算力租赁商Nebius拟发行45亿美元可转换优先票据",
+          "url": "",
+          "time": "19:39",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "颐和园、天坛等北京11家市属公园加入京津冀旅游景区联票",
+          "title": "宾州收紧数据中心新建审批，AI扩张面临监管新挑战",
           "url": "",
-          "time": "16:27",
+          "time": "19:12",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "恒指收涨0.09%，恒生科技指数跌1.21%",
+          "url": "",
+          "time": "16:12",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "拓荆科技旗下沈阳半导体设备公司增资至33.6亿，增幅约572%",
+          "url": "",
+          "time": "15:47",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "奇瑞汽车等入股蔚来旗下蔚聚科技，后者增资至7.25亿",
+          "url": "",
+          "time": "15:17",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "A股三大指数集体收跌，宇树科技大涨超460%",
+          "url": "",
+          "time": "15:02",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "市场监管总局：1至7月依法办结垄断协议和滥用市场支配地位案件13件",
+          "url": "",
+          "time": "14:02",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "朱雀三号关联方10年增资719倍",
+          "url": "",
+          "time": "12:15",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "半日主力资金加仓银行股，抛售电子股",
+          "url": "",
+          "time": "11:52",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "新方法可给单个免疫细胞“体检”",
+          "title": "A股三大指数午间休盘集体下跌，全市场超4900股下跌",
           "url": "",
-          "time": "16:24",
+          "time": "11:35",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "长江财险拟增资2.5亿元引入新国资股东",
+          "url": "",
+          "time": "08:56",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "传KKR提出90亿美元收购要约，公用事业公司UGI大涨",
+          "url": "",
+          "time": "08:52",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "华泰证券：看好具备端到端供需闭环能力的中国服装跨境电商龙头持续扩大全球份额",
+          "url": "",
+          "time": "08:29",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "鸿海增资越南子公司，计划扩大墨西哥业务",
+          "url": "",
+          "time": "08:22",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "折价深达50%，美银称英伟达“极具吸引力”",
+          "url": "",
+          "time": "07:41",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "星际荣耀SQX-3运载火箭整流罩静力试验取得成功星际荣耀SQX-3运载火箭整流罩静力试验取得成功",
+          "title": "OpenAI第二季度营收67亿美元，同比增长18%",
+          "url": "",
+          "time": "07:15",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "Marvell与谷歌就开发定制半导体产品达成商业协议",
+          "url": "",
+          "time": "20:41",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "快手CFO金秉：二季度自由现金流为正，下半年目标继续保持",
+          "url": "",
+          "time": "20:11",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "京东发布机器人战略",
+          "url": "",
+          "time": "20:02",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "现代汽车印度公司将于9月起提价，涨幅最高1%",
+          "url": "",
+          "time": "19:56",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "司法部发布关于欧盟外国补贴调查相关做法构成不当域外管辖的公告",
+          "url": "",
+          "time": "19:23",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "国信证券、华福证券等在深圳成立微电子装备合伙企业，出资额约4.1亿",
+          "url": "",
+          "time": "17:20",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "韩国上半年风险投资达8.87万亿韩元，创历史同期新高",
+          "url": "",
+          "time": "15:28",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "华源控股在苏州成立光通科技公司，注册资本1.8亿",
+          "url": "",
+          "time": "15:13",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "SK海力士拟回购40万亿韩元并注销",
+          "url": "",
+          "time": "14:49",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "鸿海加码越南、墨西哥子公司，或扩增CPO、AI服务器产能",
+          "url": "",
+          "time": "14:29",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "工信部：将推动机器人产业聚焦2个关键环节、4个重点行业",
+          "url": "",
+          "time": "14:13",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "AI需求推动，韩国上市公司上半年合并营业利润同比飙升近350%",
+          "url": "",
+          "time": "13:55",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "旺能环境：控股股东美欣达集团解除质押900.00万股",
+          "url": "",
+          "time": "12:07",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "宇树科技今年成立两家新公司",
+          "url": "",
+          "time": "10:58",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "黄金主题基金总规模突破4200亿元",
+          "url": "",
+          "time": "08:54",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "Kalshi寻求推出股指“永续合约”，进军传统交易所领地",
+          "url": "",
+          "time": "08:45",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "美国多州收紧数据中心建设，AI扩张面临监管压力",
+          "url": "",
+          "time": "08:27",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "看好AI投资机遇，QFII资金“广撒网”",
+          "url": "",
+          "time": "08:15",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "“秘密递表”释放制度红利，港交所向全球交易所“抢资产”",
+          "url": "",
+          "time": "07:48",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "美加关税谈判进入最后关头，特朗普政府淡化达成协议预期",
+          "url": "",
+          "time": "07:37",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "逾百家A股公司发布半年度利润分配方案，合计分红金额超1000亿元",
+          "url": "",
+          "time": "07:19",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "热门中概股美股盘前多数上涨，金山云涨超15%",
+          "url": "",
+          "time": "20:54",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "美股大型科技股盘前涨跌不一，闪迪涨超3%",
+          "url": "",
+          "time": "20:51",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "普京：预计俄罗斯2026年经济增长约1%",
+          "url": "",
+          "time": "20:44",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "湖南黄金：拟调整重大资产重组事项，股票20日起停牌",
+          "url": "",
+          "time": "20:29",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "昆仑万维：2026上半年营收53.59亿元，同比增长43.55%",
+          "url": "",
+          "time": "20:18",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "光大证券：上半年净利润22.29亿元，同比增长32.45%",
+          "url": "",
+          "time": "20:16",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "亿纬锂能：上半年净利润33.01亿元，同比增长105.66%",
+          "url": "",
+          "time": "20:06",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "上纬新材启元机器人正式启动2027届校园招聘",
+          "url": "",
+          "time": "19:58",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "Moderna美股盘前涨超110%",
+          "url": "",
+          "time": "19:57",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "恒瑞医药：上半年净利润44.65亿元，同比增长0.34%",
+          "url": "",
+          "time": "19:53",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "中天火箭：上半年净利润1693.45万元，同比增长329.31%",
+          "url": "",
+          "time": "19:46",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "盐津铺子：上半年净利润4.25亿元，同比增长14.1%",
+          "url": "",
+          "time": "19:41",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "特斯拉上线豆包大模型",
+          "url": "",
+          "time": "19:38",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "字节Seed基模团队调整组织架构",
+          "url": "",
+          "time": "19:36",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "韵达股份：7月快递服务业务收入46.43亿元，同比增长12.69%",
+          "url": "",
+          "time": "19:31",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "东微半导：上半年净利润1.06亿元，同比增长285.41%",
+          "url": "",
+          "time": "19:26",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "国际复材：上半年净利润6.4亿元，同比增长176.56%",
+          "url": "",
+          "time": "19:21",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "盛视科技：上半年净利润1.07亿元，同比增长342.91%",
+          "url": "",
+          "time": "19:10",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "三六零：上半年净利润2.16亿元，同比扭亏",
+          "url": "",
+          "time": "19:01",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "Moderna美股盘前上涨50%",
+          "url": "",
+          "time": "18:59",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "赛意信息：签订64.5亿元高性能算力服务销售合同",
+          "url": "",
+          "time": "18:54",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "申通快递：7月快递服务业务收入53.7亿元，同比增长25.26%",
+          "url": "",
+          "time": "18:50",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "机构今日买入誉衡药业等15股，卖出华正新材13.22亿元",
+          "url": "",
+          "time": "18:48",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "沃尔沃汽车宣布首席技术官、首席制造官等任命",
+          "url": "",
+          "time": "18:43",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "圆通速递：上半年净利润31.75亿元，同比增长73.44%",
+          "url": "",
+          "time": "18:41",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "微软人工智能首席营销官据悉将离职",
+          "url": "",
+          "time": "18:39",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "顺丰控股：7月速运物流、供应链及国际业务合计收入同比增长6.12%",
+          "url": "",
+          "time": "18:38",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "北方稀土：上半年净利润20.53亿元，同比增长120.46%",
+          "url": "",
+          "time": "18:34",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "空客A350F订单破百，预计2027年下半年交付",
+          "url": "",
+          "time": "18:28",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "中微公司：上半年净利润28.25亿元，同比增长300.22%",
+          "url": "",
+          "time": "18:24",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "赛力斯2026年半年报：营收574.93亿元，问界交付同比增长10.2%",
+          "url": "",
+          "time": "18:15",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "中国中车：上半年净利润同比增长10.28%，拟10派1.1元",
+          "url": "",
+          "time": "18:07",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "金山办公：上半年营业收入33.13亿元，同比增长24.69%",
+          "url": "",
+          "time": "17:59",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "荣泰健康：上半年净利润1.12亿元，同比增长31.48%",
+          "url": "",
+          "time": "17:48",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "南向资金今日净卖出华虹宏力29.69亿港元",
+          "url": "",
+          "time": "17:41",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "保变电气：上半年净利润1.34亿元，同比增长77.34%",
+          "url": "",
+          "time": "17:16",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "中国卫星：上半年净利润3456.58万元，同比扭亏为盈",
+          "url": "",
+          "time": "17:11",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "三星电子据悉因需求激增上调芯片代工价格，最高涨幅达15%",
+          "url": "",
+          "time": "17:05",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "飞南资源：上半年净利润6.49亿元，同比增长307.31%",
+          "url": "",
+          "time": "16:54",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "华盛锂电：上半年净利润2.23亿元，拟10派3元",
+          "url": "",
+          "time": "16:42",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "快手：可灵AI二季度营业收入超过8.5亿元，同比增长超过200%",
+          "url": "",
+          "time": "16:37",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "快手：第二季度财报营收355亿元，同比增长1.4%",
+          "url": "",
+          "time": "16:31",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "上海：推进第六代移动通信技术（6G）试验网实现智能协同并部署商用",
+          "url": "",
+          "time": "16:17",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "上海：支持头部数商平稳发展，鼓励行业龙头、互联网平台企业数据业务运营",
+          "url": "",
+          "time": "16:16",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "上海：构建“通用+智能+超算”三位一体的算力服务体系",
+          "url": "",
+          "time": "16:04",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "南向资金净卖出额达100亿港元",
+          "url": "",
+          "time": "15:52",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "国电南自：上半年净利润1.94亿元，同比增长22.01%",
+          "url": "",
+          "time": "15:50",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "沙特证券交易所将恢复交易，此前因突发技术问题暂停",
+          "url": "",
+          "time": "15:43",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "沪市科创板88家公司已披露半年报：收入增三成，利润增逾一倍",
+          "url": "",
+          "time": "15:39",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "消息称三星电子目标今年9月率先完成1d nm DRAM内存研发",
+          "url": "",
+          "time": "15:37",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "北京：新增20款已完成备案的生成式人工智能服务",
+          "url": "",
+          "time": "15:34",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "沙特证券交易所因突发技术问题暂停交易",
+          "url": "",
+          "time": "15:26",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "奇瑞旗下机器人子公司AiMoga正考虑独立上市",
+          "url": "",
+          "time": "15:14",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "保时捷回应“2030年前停产Taycan”：精简衍生车型，并非砍掉整个车系",
+          "url": "",
+          "time": "15:09",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "SK海力士：2025至2027年期间将把至少五成自由现金流用于回馈股东",
           "url": "",
           "time": "14:58",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "机器人消费街将亮相2026世界机器人大会",
+          "title": "小米新一代人形机器人剧透：双足、1.7米左右、全身66个自由度",
           "url": "",
-          "time": "14:34",
+          "time": "14:44",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "联想集团刘军：AI PC国内市场销量占比过半",
+          "title": "Cerebras推出CS-4系统对标英伟达，称其推理速度可达GPU服务器的30倍",
+          "url": "",
+          "time": "14:43",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "创业板指跌幅扩大至6%",
+          "url": "",
+          "time": "14:25",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "嘉士伯上半年营收增2.6%，上调全年盈利指引",
+          "url": "",
+          "time": "14:23",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "我国牵头制定，全球首个针对客船涂装技术的国际标准发布",
+          "url": "",
+          "time": "14:14",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "台积电先进封装CoWoS产能供不应求，订单爆满",
+          "url": "",
+          "time": "14:05",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "工信部副部长辛国斌：上半年机器人产业规上企业营收达1655亿元，同比增长24.5%",
           "url": "",
           "time": "13:45",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "“千问办公”首发上线GLM-5.3、DeepSeek V4 Pro两款模型",
+          "title": "北京火箭大街商业航天智能测运控中心正式启用",
           "url": "",
-          "time": "13:28",
+          "time": "13:27",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "电影《欢迎来龙餐馆》票房破6亿",
+          "title": "汇丰上调韩国股市评级至“超配”",
           "url": "",
-          "time": "13:25",
+          "time": "13:23",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "美图RoboNeo正式上线短剧专业版",
+          "title": "SK海力士芯片产出推动，韩国忠清北道第二季度矿业及制造业产出同比激增近28%",
           "url": "",
-          "time": "12:15",
+          "time": "13:19",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "澳研究人员利用干细胞培育出人类心脏瓣膜组织",
+          "title": "沪指失守3900点，日内跌超2.3%",
           "url": "",
-          "time": "12:00",
+          "time": "13:17",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "大疆Osmo 360 II发布首日拿下全渠道销量 TOP1",
+          "title": "人形机器人板块午后持续走低，10余股触及跌停",
           "url": "",
-          "time": "11:45",
+          "time": "13:16",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "2026年暑期档电影票房破95亿",
+          "title": "下周起，CHATGPT广告将拓展至31个欧洲国家",
           "url": "",
-          "time": "11:45",
+          "time": "13:15",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "迈时光电IPO辅导备案获受理",
+          "title": "沪指跌幅扩大至2%",
           "url": "",
-          "time": "11:28",
+          "time": "13:02",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "博泰车联：获头部新能源车企8397座舱平台项目定点",
+          "url": "",
+          "time": "12:38",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "韩国智库上调今年经济增长预期至3.2%，因AI需求强劲",
+          "url": "",
+          "time": "12:30",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "香港交易所：上半年股东应占溢利为105.68亿元，同比增长24%",
+          "url": "",
+          "time": "12:22",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "恒指午间休盘涨0.24%，恒生科技指数跌0.82%",
+          "url": "",
+          "time": "12:04",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "2026七夕档票房破亿",
+          "url": "",
+          "time": "11:44",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "嫦娥七号计划近日择机实施发射，器箭组合体完成垂直转运",
+          "url": "",
+          "time": "11:38",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "Momenta、XHEART与QNX宣布达成合作",
+          "url": "",
+          "time": "11:21",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "频准激光盘中股价跌破1000元，跌幅超过14%",
+          "url": "",
+          "time": "10:39",
           "relevance": "weak",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "今年以来港股IPO基石投资额同比增长158.3%",
+          "title": "科创50指数跌超5%",
           "url": "",
-          "time": "10:44",
+          "time": "10:32",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "《上海张江高新技术产业开发区发展“十五五”规划》发布",
+          "url": "",
+          "time": "10:26",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "创业板指跌4%",
+          "url": "",
+          "time": "10:21",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "沪深两市成交额超1万亿元",
+          "url": "",
+          "time": "10:17",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "欧委会批准奔驰、宝马、赛力斯共同控股超充合资公司逸安启",
+          "url": "",
+          "time": "10:10",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "三星拟投资2400亿韩元在韩国建设暖通空调生产线",
+          "url": "",
+          "time": "10:05",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "雷军打新宇树科技狂赚152亿",
+          "url": "",
+          "time": "09:48",
           "relevance": "weak",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "美股三大指数集体收跌",
+          "title": "N宇树成交额超100亿元",
           "url": "",
-          "time": "09:21",
+          "time": "09:46",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "阿里开源Qwen3.8，千问大模型全球下载超30亿次",
+          "title": "宇树创始人王兴兴身家超1300亿",
           "url": "",
-          "time": "09:15",
+          "time": "09:44",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         },
         {
-          "title": "DeepSeek V4 Pro正式版+Harness上线国家超算互联网",
+          "title": "梁文锋打新宇树科技浮盈11亿",
+          "url": "",
+          "time": "09:39",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "创业板指、科创50跌超3%",
+          "url": "",
+          "time": "09:34",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "A股三大指数集体低开，宇树科技高开629.44%",
+          "url": "",
+          "time": "09:26",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "恒指开盘跌0.49%，恒生科技指数跌1.27%",
+          "url": "",
+          "time": "09:23",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "超70家训练场建成启用，具身智能加速产业落地",
+          "url": "",
+          "time": "09:18",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "华泰证券：存量商业地产迎制度性重估窗口",
           "url": "",
           "time": "09:14",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "长江存储IPO辅导状态变更为“辅导验收”",
+          "url": "",
+          "time": "09:14",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "中信证券：算力新技术、微盘跨界、供电新架构、锂电的主题热情有望升温",
+          "url": "",
+          "time": "09:13",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "智谱：GLM-5.3 API即日起正式上线",
+          "url": "",
+          "time": "09:13",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "露笑科技：8英寸碳化硅衬底片已形成销售",
+          "url": "",
+          "time": "09:09",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "金禄电子：公司PCB产品可用于商业航天和人形机器人领域，但非主要应用领域",
+          "url": "",
+          "time": "09:07",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "Cerebras发布CS-4 AI加速器，称推理速度最高达GPU方案30倍",
+          "url": "",
+          "time": "09:04",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "中信证券：政策密集落地，零碳园区建设全面启动",
+          "url": "",
+          "time": "09:03",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "北交所年内新增上市公司51家",
+          "url": "",
+          "time": "08:50",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "中信建投：景气“内冷外热”延续，细分行情走向分化，机器人密集催化下占优",
+          "url": "",
+          "time": "08:49",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "A股科技板块修复进入业绩验证期，内部轮动和个股分化进一步加快",
+          "url": "",
+          "time": "08:42",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "中信证券：建议关注DPU头部第三方供应商",
+          "url": "",
+          "time": "08:42",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "法国官员：政府将引入人工智能工具测试系统网络安全漏洞",
+          "url": "",
+          "time": "08:30",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "本末动力（北京）科技股份有限公司递表港交所",
+          "url": "",
+          "time": "08:29",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "华泰证券：建议关注白糖产业链投资机会",
+          "url": "",
+          "time": "08:25",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "新股市场表现亮眼，频准激光上市首日突破千元",
+          "url": "",
+          "time": "08:24",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "需求激增、价格上涨，两大存储龙头上半年净利润增超10倍",
+          "url": "",
+          "time": "08:20",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "谷歌宣称其AI可承担前沿部署工程师的工作",
+          "url": "",
+          "time": "08:19",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "中信建投：稳健者加大算力投入力度，应用飞轮闭环优于预期",
+          "url": "",
+          "time": "08:17",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "央地打出消费“组合拳”，推动内需提质升级",
+          "url": "",
+          "time": "08:12",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "中信建投：7月经济数据支持债市缓慢偏强态势",
+          "url": "",
+          "time": "08:10",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "从成本传导走向AI需求共振，功率半导体行业迎景气周期",
+          "url": "",
+          "time": "08:09",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "债券ETF规模首超9000亿元，固收被动投资加速提质扩容",
+          "url": "",
+          "time": "08:01",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "公募REITs增持热潮涌动，产业方真金白银护盘",
+          "url": "",
+          "time": "07:57",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "多重因素推升成本，储能产业链“涨”声响起",
+          "url": "",
+          "time": "07:55",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "A股“人形机器人第一股”宇树科技今日登陆科创板",
+          "url": "",
+          "time": "07:54",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "热点城市土拍市场升温，民营房企重拾拿地信心",
+          "url": "",
+          "time": "07:53",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "重大突破，我国首次实现火箭陆地回收",
+          "url": "",
+          "time": "07:51",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "OpenAI在模型逃逸入侵事件后暂停强化训练两周，并公布新的安全措施",
+          "url": "",
+          "time": "07:47",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "全球资管巨头二季度持仓“大洗牌”，科技股操作分歧显著",
+          "url": "",
+          "time": "07:40",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "资金加速涌向硬科技赛道，A股并购重组聚焦“补链强链”",
+          "url": "",
+          "time": "07:40",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "向上游挺进，光模块产业“嬗变”",
+          "url": "",
+          "time": "07:32",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "公募REITs增持热潮涌动，产业方真金白银护盘",
+          "url": "",
+          "time": "07:25",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "债券ETF规模首超9000亿元，固收被动投资加速提质扩容",
+          "url": "",
+          "time": "07:22",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "Anthropic筹备超级投票权，为IPO铺路",
+          "url": "",
+          "time": "07:16",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "A股并购重组聚焦“补链强链”",
+          "url": "",
+          "time": "07:13",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "8月以来科技行情逐步修复，主动权益类基金净值明显回暖",
+          "url": "",
+          "time": "07:11",
+          "relevance": "noise",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "Anthropic预计将在几周内进行IPO",
+          "url": "",
+          "time": "07:03",
+          "relevance": "weak",
+          "cashLoanHint": "弱相关，作背景"
+        },
+        {
+          "title": "美股三大指数集体收跌，存储板块大幅回落",
+          "url": "",
+          "time": "07:00",
           "relevance": "noise",
           "cashLoanHint": "弱相关，作背景"
         }

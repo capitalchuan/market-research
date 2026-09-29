@@ -57,6 +57,8 @@ export type CcWatchDigest = {
   };
   markets: CcWatchMarket[];
   overallVerdict: string;
+  /** EN 国别速览长句；缺省时前端用短语映射 */
+  overallVerdictEn?: string;
   /** 周刊式卷首语（带评论的综述）；缺省时前端用 overallVerdict 合成 */
   foreword?: string;
 };

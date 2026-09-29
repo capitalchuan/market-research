@@ -1,6 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Link, useCanvasState, useHostTheme } from "cursor/canvas";
+import { detectBrowserUiLang } from "./uiI18n";
 import { canViewSourceCite } from "./authAccess";
+import type { GuestAccessProfile } from "./data/guestRegistration";
 import {
   SOURCE_CITE_RE,
   citeMark,
@@ -18,9 +20,18 @@ const HUB_RETURN_LABEL: Record<string, string> = {
   sources: "信源",
 };
 
+const HUB_RETURN_LABEL_EN: Record<string, string> = {
+  home: "Overview",
+  scenes: "Digital economy",
+  macro: "Country macro",
+  compare: "Compare",
+  sources: "Sources",
+};
+
 function useCanCite() {
   const [session] = useCanvasState("authSession1", "");
-  return canViewSourceCite(session);
+  const [guestAccess] = useCanvasState<GuestAccessProfile | null>("guestAccess1", null);
+  return canViewSourceCite(session, guestAccess);
 }
 
 /** 去掉正文中的 〔n〕 标记（访客展示用） */
@@ -49,10 +60,12 @@ export function useSourceCiteReturn() {
   const [, setHub] = useCanvasState<string>("hub7", "home");
   const [returnHub, setReturnHub] = useCanvasState<string>("sourceCiteReturnHub", "");
   const [, setFocus] = useCanvasState<string>("sourceCiteFocus", "");
+  const [uiLang] = useCanvasState<"zh" | "en">("uiLang1", detectBrowserUiLang());
 
+  const labelMap = uiLang === "en" ? HUB_RETURN_LABEL_EN : HUB_RETURN_LABEL;
   const label = returnHub
-    ? HUB_RETURN_LABEL[returnHub] || (returnHub.length <= 16 ? returnHub : "上一页")
-    : "总览";
+    ? labelMap[returnHub] || (returnHub.length <= 16 ? returnHub : uiLang === "en" ? "Previous" : "上一页")
+    : labelMap.home;
 
   const goBack = () => {
     const target = returnHub && returnHub !== "sources" ? returnHub : "home";
@@ -84,6 +97,7 @@ export function CitedText({
   const theme = useHostTheme();
   const goCite = useGoToSourceCite();
   const canCite = useCanCite();
+  const [uiLang] = useCanvasState<"zh" | "en">("uiLang1", detectBrowserUiLang());
   if (!text) return null;
   const color =
     tone === "tertiary" ? theme.text.tertiary : tone === "secondary" ? theme.text.secondary : theme.text.primary;
@@ -122,7 +136,7 @@ export function CitedText({
           <button
             key={`c-${i}-${p}`}
             type="button"
-            title={getSourceCitation(p)?.title || `信源 ${p}`}
+            title={getSourceCitation(p)?.title || (uiLang === "en" ? `Source ${p}` : `信源 ${p}`)}
             onClick={() => goCite(p)}
             style={{
               display: "inline",
@@ -159,15 +173,19 @@ export function MacroAsOfLine({
   dense?: boolean;
 }) {
   const theme = useHostTheme();
+  const [uiLang] = useCanvasState<"zh" | "en">("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   if (!asOf) {
     return (
-      <div style={{ fontSize: dense ? 10 : 11, color: theme.text.tertiary, marginTop: 2 }}>时点待核</div>
+      <div style={{ fontSize: dense ? 10 : 11, color: theme.text.tertiary, marginTop: 2 }}>
+        {en ? "As-of pending" : "时点待核"}
+      </div>
     );
   }
   return (
     <div style={{ fontSize: dense ? 10 : 11, color: theme.text.tertiary, marginTop: 2 }}>
-      时点 {asOf}
-      {fromSnap ? " · 对照包" : ""}
+      {en ? "As of" : "时点"} {asOf}
+      {fromSnap ? (en ? " · snapshot pack" : " · 对照包") : ""}
     </div>
   );
 }
@@ -176,7 +194,7 @@ export function MacroAsOfLine({
 export function MacroSourcesBlock({
   citeNos,
   dense,
-  title = "本卡信源",
+  title,
   style,
 }: {
   citeNos: number[];
@@ -187,6 +205,9 @@ export function MacroSourcesBlock({
   const theme = useHostTheme();
   const goCite = useGoToSourceCite();
   const canCite = useCanCite();
+  const [uiLang] = useCanvasState<"zh" | "en">("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
+  const heading = title ?? (en ? "Card sources" : "本卡信源");
   if (!canCite || !citeNos.length) return null;
   return (
     <div
@@ -205,8 +226,10 @@ export function MacroSourcesBlock({
           marginBottom: dense ? 4 : 6,
         }}
       >
-        {title}
-        <span style={{ fontWeight: 400 }}> · 点编号进目录</span>
+        {heading}
+        <span style={{ fontWeight: 400 }}>
+          {en ? " · tap IDs for index" : " · 点编号进目录"}
+        </span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: dense ? 4 : 6 }}>
         {citeNos.map((n) => {
@@ -250,7 +273,7 @@ export function MacroSourcesBlock({
                     lineHeight: 1.35,
                   }}
                 >
-                  {c?.title || `信源 ${n}`}
+                  {c?.title || (en ? `Source ${n}` : `信源 ${n}`)}
                 </span>
                 <span style={{ fontSize: dense ? 9 : 10, color: theme.text.tertiary }}>
                   {[c ? sourceCiteKindLabel(c.kind) : null, c?.asOf, c?.note].filter(Boolean).join(" · ")}
@@ -300,6 +323,7 @@ export function MapMacroKV({
 
 export function MacroSourcesLinkHint({ children }: { children?: ReactNode }) {
   const canCite = useCanCite();
+  const [uiLang] = useCanvasState<"zh" | "en">("uiLang1", detectBrowserUiLang());
   if (!canCite) {
     return children ? <span>{children}</span> : null;
   }
@@ -307,7 +331,7 @@ export function MacroSourcesLinkHint({ children }: { children?: ReactNode }) {
     <span>
       {children}
       {children ? " · " : null}
-      <Link href="#cite-1">信源目录</Link>
+      <Link href="#cite-1">{uiLang === "en" ? "Source index" : "信源目录"}</Link>
     </span>
   );
 }

@@ -31,6 +31,8 @@ import {
 import { heatColorWarm } from "./heatMapTheme";
 import { formatCountryLanguageLine } from "./data/countryLanguage";
 import { INVESTED_BY_CODE } from "./data/producerHoldings";
+import { useCanvasState } from "./shims/cursor-canvas";
+import { countryLabelUi, detectBrowserUiLang, type UiLang } from "./uiI18n";
 
 type CountryProps = { name?: string };
 
@@ -115,6 +117,7 @@ const N3_TO_A2: Record<string, string> = {
   "466": "ML",
   "180": "CD",
   "266": "GA",
+  "324": "GN",
   "276": "DE",
   "250": "FR",
   "528": "NL",
@@ -164,47 +167,55 @@ function CountryDetailPanel({
   overlay?: boolean;
 }) {
   const { c } = useMapChrome();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const zoom = COUNTRY_ZOOM_BY_CODE[code];
   const nbfc = summarizeNbfcForCountry(code);
-  const name = COUNTRY_LABEL_ZH[code] ?? code;
+  const name = countryLabelUi(code, uiLang, COUNTRY_LABEL_ZH[code] ?? code);
   const chartUrl = zoom?.source_url || playFinanceChartUrl(code);
-  const langLine = formatCountryLanguageLine(code);
+  const langLine = formatCountryLanguageLine(code, uiLang);
+  const detailHint = en
+    ? "Zoom detail · click Back to world to exit"
+    : "放大详情 · 点击「返回全球」退出";
 
   return (
     <MapDetailShell
       title={`${name} · ${code}`}
-      subtitle={
-        langLine
-          ? `${langLine} · 放大详情 · 点击「返回全球」退出`
-          : "放大详情 · 点击「返回全球」退出"
-      }
+      subtitle={langLine ? `${langLine} · ${detailHint}` : detailHint}
       onClose={onClose}
       overlay={overlay}
     >
-      <MapSection title="人口情况">
+      <MapSection title={en ? "Population" : "人口情况"}>
         {zoom ? (
           <>
-            <MapKV k="人口（约）" v={`${zoom.population_millions.toLocaleString()} 百万`} />
-            <MapKV k="人口结构" v={zoom.demographic_note} />
-            <MapKV k="人口信源" v={zoom.population_source} />
+            <MapKV
+              k={en ? "Population (approx.)" : "人口（约）"}
+              v={
+                en
+                  ? `${zoom.population_millions.toLocaleString()} m`
+                  : `${zoom.population_millions.toLocaleString()} 百万`
+              }
+            />
+            <MapKV k={en ? "Demographics" : "人口结构"} v={zoom.demographic_note} />
+            <MapKV k={en ? "Population source" : "人口信源"} v={zoom.population_source} />
           </>
         ) : (
-          <MapMuted>暂无人口摘要</MapMuted>
+          <MapMuted>{en ? "No population summary" : "暂无人口摘要"}</MapMuted>
         )}
       </MapSection>
 
-      <MapSection title="NBFC / 等效非银">
+      <MapSection title={en ? "NBFC / non-bank peers" : "NBFC / 等效非银"}>
         {nbfc ? (
           <>
             <MapKV
-              k="放贷总量(USD)"
+              k={en ? "Lending total (USD)" : "放贷总量(USD)"}
               v={
                 nbfc.lendingUsdBn > 0
-                  ? `约 USD ${nbfc.lendingUsdBn >= 10 ? nbfc.lendingUsdBn.toFixed(1) : nbfc.lendingUsdBn.toFixed(2)} bn`
+                  ? `${en ? "~" : "约 "}USD ${nbfc.lendingUsdBn >= 10 ? nbfc.lendingUsdBn.toFixed(1) : nbfc.lendingUsdBn.toFixed(2)} bn`
                   : "—"
               }
             />
-            <MapKV k="机构数量口径" v={nbfc.nbfcCountDisplay} />
+            <MapKV k={en ? "Institution count" : "机构数量口径"} v={nbfc.nbfcCountDisplay} />
             <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
               {nbfc.rows.map((r) => (
                 <div
@@ -220,28 +231,29 @@ function CountryDetailPanel({
                   }}
                 >
                   <div style={{ fontWeight: 600, color: c.text }}>{r.category}</div>
-                  <div>监管：{r.regulator || "—"}</div>
-                  <div>机构数：{r.nbfc_count || "—"}</div>
-                  <div>放贷：{r.loan_book_total || "—"}</div>
+                  <div>{en ? "Regulator" : "监管"}：{r.regulator || "—"}</div>
+                  <div>{en ? "Institutions" : "机构数"}：{r.nbfc_count || "—"}</div>
+                  <div>{en ? "Lending" : "放贷"}：{r.loan_book_total || "—"}</div>
                   <div>USD：{r.loan_book_usd || "—"}</div>
                   {r.default_rate ? <div>Default/NPL：{r.default_rate}</div> : null}
-                  <div>时点：{r.as_of || "—"}</div>
+                  <div>{en ? "As of" : "时点"}：{r.as_of || "—"}</div>
                 </div>
               ))}
             </div>
           </>
         ) : (
-          <MapMuted>暂无 NBFC 统计</MapMuted>
+          <MapMuted>{en ? "No NBFC stats" : "暂无 NBFC 统计"}</MapMuted>
         )}
       </MapSection>
 
       <MapSection title="Google Play · Finance · Free">
         {zoom?.available === false ? (
-          <MapMuted>{zoom.note || "该地区无官方 Google Play。"}</MapMuted>
+          <MapMuted>{zoom.note || (en ? "No official Google Play in this market." : "该地区无官方 Google Play。")}</MapMuted>
         ) : (
           <>
             <div style={{ fontSize: 11, color: c.textTertiary, marginBottom: 6 }}>
-              快照 {zoom?.as_of || "—"} · <MapExtLink href={chartUrl}>打开 Play Finance 榜单</MapExtLink>
+              {en ? "Snapshot" : "快照"} {zoom?.as_of || "—"} ·{" "}
+              <MapExtLink href={chartUrl}>{en ? "Open Play Finance chart" : "打开 Play Finance 榜单"}</MapExtLink>
             </div>
             <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: c.text, lineHeight: 1.65 }}>
               {(zoom?.top_free_finance || []).map((app) => (
@@ -269,6 +281,8 @@ export function LendingHeatGlobe({
   legendPlacement?: MapLegendPlacement;
 }) {
   const { c } = useMapChrome();
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const { aspect } = useMapViewport(fill);
   const width = mapFrameWidth(height, aspect);
   const bottomLegend = fill || legendPlacement === "bottom";
@@ -365,7 +379,7 @@ export function LendingHeatGlobe({
       const t = intensity(bn);
       out.push({
         a2,
-        name: COUNTRY_LABEL_ZH[a2] ?? f.properties?.name ?? a2,
+        name: countryLabelUi(a2, uiLang, COUNTRY_LABEL_ZH[a2] ?? f.properties?.name ?? a2),
         usdBn: bn,
         x: cen[0],
         y: cen[1],
@@ -376,7 +390,7 @@ export function LendingHeatGlobe({
     }
     out.sort((a, b) => a.r - b.r);
     return out;
-  }, [countries, lending, pathGen, fill, minBn, maxBn]);
+  }, [countries, lending, pathGen, fill, minBn, maxBn, uiLang]);
 
   const callouts = useMemo(() => {
     if (focus) return [] as DotPoint[];
@@ -458,9 +472,13 @@ export function LendingHeatGlobe({
             }}
           >
             <Button variant="secondary" size="sm" onClick={() => setFocus(null)}>
-              返回全球
+              {en ? "Back to world" : "返回全球"}
             </Button>
-            <MapChip>已放大：{COUNTRY_LABEL_ZH[focus] ?? focus}</MapChip>
+            <MapChip>
+              {en
+                ? `Zoomed: ${countryLabelUi(focus, uiLang, COUNTRY_LABEL_ZH[focus] ?? focus)}`
+                : `已放大：${COUNTRY_LABEL_ZH[focus] ?? focus}`}
+            </MapChip>
           </div>
         ) : null}
 
@@ -556,7 +574,7 @@ export function LendingHeatGlobe({
                 const side = p.x > width * 0.55 ? -1 : 1;
                 const lx = p.x + side * (28 + i * 6);
                 const ly = Math.max(28, Math.min(height - 36, p.y - 22 - i * 10));
-                const label = `${COUNTRY_LABEL_ZH[p.a2] ?? p.a2} USD ${p.usdBn >= 10 ? p.usdBn.toFixed(1) : p.usdBn.toFixed(2)}bn`;
+                const label = `${countryLabelUi(p.a2, uiLang, COUNTRY_LABEL_ZH[p.a2] ?? p.a2)} USD ${p.usdBn >= 10 ? p.usdBn.toFixed(1) : p.usdBn.toFixed(2)}bn`;
                 const tw = Math.min(148, 12 + label.length * 6.4);
                 return (
                   <g key={`call-${p.a2}`} pointerEvents="none">
@@ -604,8 +622,12 @@ export function LendingHeatGlobe({
             accent="removed"
           >
             <div style={{ fontWeight: 600 }}>{hover.name}</div>
-            <div style={{ color: c.textSecondary }}>放贷总量 ≈ USD {hover.usdBn.toFixed(2)} bn</div>
-            <div style={{ color: c.textTertiary, marginTop: 2 }}>点击放大查看详情</div>
+            <div style={{ color: c.textSecondary }}>
+              {en ? "Lending total ≈" : "放贷总量 ≈"} USD {hover.usdBn.toFixed(2)} bn
+            </div>
+            <div style={{ color: c.textTertiary, marginTop: 2 }}>
+              {en ? "Click to zoom for details" : "点击放大查看详情"}
+            </div>
           </MapTooltip>
         ) : null}
 
@@ -618,23 +640,33 @@ export function LendingHeatGlobe({
         <CountryDetailPanel code={focus} onClose={() => setFocus(null)} />
       ) : null}
       {!focus ? (
-        <MapSideLegend title="市场 · 点阵图例" placement={place}>
+        <MapSideLegend title={en ? "Market · dot legend" : "市场 · 点阵图例"} placement={place}>
           <SteppedLegend
-            label="非银/等效放贷(USD) · 点色/点径 少 → 多"
+            label={
+              en
+                ? "NBFC / peer lending (USD) · color/size low → high"
+                : "非银/等效放贷(USD) · 点色/点径 少 → 多"
+            }
             kind="warm"
             compact={bottomLegend}
           />
           <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 8, marginTop: bottomLegend ? 8 : 0 }}>
-            浅底透图 · 色点 {ranked.length} 国 · NBFC/等效放贷存量粗算（非 AUM）· 蓝细环=已有展业对照 · 点击点/横条放大
+            {en
+              ? `Light basemap · ${ranked.length} countries · NBFC/peer book (not AUM) · blue ring = invested · click dots/bars to zoom`
+              : `浅底透图 · 色点 ${ranked.length} 国 · NBFC/等效放贷存量粗算（非 AUM）· 蓝细环=已有展业对照 · 点击点/横条放大`}
           </div>
           <RankBarList
             compact={false}
             maxVisible={bottomLegend ? 20 : undefined}
-            scaleHint="条长 ∝ 非银放贷 USD bn（相对列表最大值；非 AUM）"
+            scaleHint={
+              en
+                ? "Bar ∝ NBFC lending USD bn (vs list max; not AUM)"
+                : "条长 ∝ 非银放贷 USD bn（相对列表最大值；非 AUM）"
+            }
             onSelect={(code) => setFocus(code)}
             items={ranked.map(([code, bn]) => ({
               key: code,
-              label: COUNTRY_LABEL_ZH[code] ?? code,
+              label: countryLabelUi(code, uiLang, COUNTRY_LABEL_ZH[code] ?? code),
               value: bn,
               valueLabel: `USD ${bn >= 10 ? bn.toFixed(1) : bn.toFixed(2)} bn`,
             }))}

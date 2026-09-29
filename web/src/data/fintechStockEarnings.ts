@@ -180,3 +180,84 @@ export const FINTECH_FUNDAMENTAL_COLS: { key: FundKey; label: string; title: str
     title: "管理口径在贷余额（折美元，非累计放款）",
   },
 ];
+
+const FUND_COL_EN: Record<FundKey, { label: string; title: string }> = {
+  equity: { label: "Book equity", title: "Book equity (USD-equivalent)" },
+  debtRatio: { label: "Leverage", title: "Debt / assets (total liabilities ÷ total assets)" },
+  revenue: { label: "Revenue", title: "Revenue (USD-equivalent)" },
+  ebitda: { label: "EBITDA", title: "EBITDA (USD-equivalent)" },
+  cashLike: {
+    label: "Cash-like",
+    title: "Cash + investments + CDs + govies (USD-eq.; excl. customer float)",
+  },
+  creditAum: {
+    label: "Credit book",
+    title: "Managed loan book (USD-eq.; not cumulative origination)",
+  },
+};
+
+export function fintechFundamentalColUi(
+  col: { key: FundKey; label: string; title: string },
+  lang: "zh" | "en" = "zh",
+): { key: FundKey; label: string; title: string } {
+  if (lang !== "en") return col;
+  const en = FUND_COL_EN[col.key];
+  return en ? { key: col.key, label: en.label, title: en.title } : col;
+}
+
+/** Compact USD-scale label from absolute dollars (1e8 = 1 亿) */
+function formatUsdCompactFromAbs(n: number): string {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? "-" : "";
+  if (abs >= 1e12) return `${sign}${(abs / 1e12).toFixed(2)}T`;
+  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(1)}B`;
+  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(0)}M`;
+  if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(0)}K`;
+  return `${sign}${abs.toLocaleString("en-US")}`;
+}
+
+/**
+ * EN 表格：把「131 亿 / 2.9 万亿」等换成 13.1B / 2.9T，避免残留「亿」。
+ * 中文模式原样（仅去 $）。
+ */
+export function formatFintechFundamentalUi(text: string, lang: "zh" | "en" = "zh"): string {
+  const raw = stripUsdSymbol(text || "").trim();
+  if (!raw || raw === "—") return "—";
+  if (lang !== "en") return raw;
+
+  // Pure metric → compact English
+  if (/^[<>≈~-−]*\s*[\d.,]+\s*(%|亿|万亿|[KMBTkmbt])?\s*$/i.test(raw)) {
+    if (/%/.test(raw)) {
+      const n = parseFintechMetricNumber(raw);
+      return n == null ? raw.replace(/%/, "%") : `${n}%`;
+    }
+    const n = parseFintechMetricNumber(raw);
+    if (n != null) return formatUsdCompactFromAbs(n);
+  }
+
+  let s = raw
+    .replace(/([\d.]+)\s*万亿/g, (_, a) => `${a}T`)
+    .replace(/([\d.]+)\s*亿美元/g, (_, a) => `${a}B`)
+    .replace(/([\d.]+)\s*亿\s*(RMB|CNY|BRL|IDR|INR|JPY|KRW|MXN|AED)/gi, (_, a, ccy) => {
+      const v = Number(a) / 10;
+      if (!Number.isFinite(v)) return `${a}bn ${ccy}`;
+      const t = v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2);
+      return `${t.replace(/\.0+$/, "")}bn ${String(ccy).toUpperCase()}`;
+    })
+    .replace(/([\d.]+)\s*亿(?!美元)/g, (_, a) => {
+      const v = Number(a) / 10;
+      if (!Number.isFinite(v)) return `${a}B`;
+      const t = v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2);
+      return `${t.replace(/\.0+$/, "")}B`;
+    })
+    .replace(/股东权益约?/g, "")
+    .replace(/营收约?/g, "")
+    .replace(/BVPS约?/g, "BVPS ~")
+    .replace(/Adjusted EBITDA约?/gi, "Adj. EBITDA ~")
+    .replace(/量级/g, "")
+    .replace(/（对照股东信）/g, " (shareholder letter)")
+    .replace(/见10-Q/g, "see 10-Q")
+    .replace(/约/g, "~");
+  s = s.replace(/[（]/g, "(").replace(/[）]/g, ")").replace(/\s{2,}/g, " ").trim();
+  return s || raw;
+}

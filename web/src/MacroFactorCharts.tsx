@@ -9,9 +9,14 @@ import {
   resolveFxSeries,
   sliceFxPointsByMonths,
   fxLocalStrengthChgPct as calcFxLocalStrengthChgPct,
-  fxPointsSpanLabel,
   type FxHistoryCountry,
 } from "./data/fxHistory";
+import {
+  fxChgPeriodLabel,
+  fxPointsSpanLabelUi,
+  yearWindowLabel,
+} from "./data/macroTextUi";
+import { detectBrowserUiLang, type UiLang } from "./uiI18n";
 import {
   MACRO_STRESS_HISTORY,
   STRESS_METRIC_META,
@@ -60,6 +65,17 @@ const HH_DEBT_CEIL_HI = 55;
 const GOV_DEBT_WATCH = 60;
 const TERTIARY_HIGH = 65;
 const PRIMARY_HIGH = 30;
+
+const STRESS_METRIC_LABEL_EN: Record<StressMetricId, string> = {
+  inflation: "Inflation",
+  policyRate: "Policy rate",
+  gasolineRetail: "Retail gasoline",
+  electricityResidential: "Residential electricity",
+};
+
+function stressMetricLabelUi(id: StressMetricId, zh: string, lang: UiLang): string {
+  return lang === "en" ? STRESS_METRIC_LABEL_EN[id] || zh : zh;
+}
 
 function firstNumber(s: string | undefined): number | null {
   if (!s) return null;
@@ -254,13 +270,17 @@ export function IncomeSectorCharts({
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const sec = parseSector(snap.sectorMix);
   const gdpPc = firstNumber(snap.gdpPerCapitaUsd);
   const incomePc = firstNumber(snap.incomePerCapita);
   if (!sec && gdpPc == null && incomePc == null) {
     return (
       <Text size="small" tone="tertiary">
-        三产/人均收入字段不足，暂无法作图。
+        {en
+          ? "Sector mix / income per capita fields insufficient — cannot chart."
+          : "三产/人均收入字段不足，暂无法作图。"}
       </Text>
     );
   }
@@ -268,12 +288,26 @@ export function IncomeSectorCharts({
   const pA = tot ? (sec!.agri / tot) * 100 : 0;
   const pM = tot ? (sec!.mfg / tot) * 100 : 0;
   const pS = tot ? (sec!.svc / tot) * 100 : 0;
-  const highValue =
-    pS >= TERTIARY_HIGH ? "服务占比已过附加值偏高阈值" : pS >= 50 ? "服务占主导、制造仍有空间" : "仍偏初级/制造驱动";
+  const highValue = en
+    ? pS >= TERTIARY_HIGH
+      ? "Services share above high-value-added threshold"
+      : pS >= 50
+        ? "Services-led; manufacturing still has room"
+        : "Still primary / manufacturing-driven"
+    : pS >= TERTIARY_HIGH
+      ? "服务占比已过附加值偏高阈值"
+      : pS >= 50
+        ? "服务占主导、制造仍有空间"
+        : "仍偏初级/制造驱动";
   const primaryRisk = pA >= PRIMARY_HIGH;
 
-  const incomeFooter =
-    incomePc != null
+  const incomeFooter = en
+    ? incomePc != null
+      ? "Scale is WB GNI/cap PPP — not household disposable income; not directly comparable to nominal GDP/cap."
+      : gdpPc != null
+        ? "Missing GNI/cap PPP · using nominal GDP/cap as proxy"
+        : "—"
+    : incomePc != null
       ? "主尺为世行 GNI/人 PPP，不是住户可支配收入；与现价人均 GDP 不可直接比大小"
       : gdpPc != null
         ? "缺人均收入（GNI PPP）· 暂用人均 GDP 现价代理"
@@ -281,18 +315,24 @@ export function IncomeSectorCharts({
   const gdpBand =
     gdpPc == null
       ? null
-      : gdpPc >= 12000
-        ? "人均 GDP 已过成熟阈值 12000"
-        : gdpPc >= 2000
-          ? "人均 GDP 介于新兴与成熟阈值之间"
-          : "人均 GDP 低于准入关注阈值 2000";
+      : en
+        ? gdpPc >= 12000
+          ? "GDP/cap above mature threshold 12,000"
+          : gdpPc >= 2000
+            ? "GDP/cap between emerging and mature bands"
+            : "GDP/cap below entry watch threshold 2,000"
+        : gdpPc >= 12000
+          ? "人均 GDP 已过成熟阈值 12000"
+          : gdpPc >= 2000
+            ? "人均 GDP 介于新兴与成熟阈值之间"
+            : "人均 GDP 低于准入关注阈值 2000";
 
   const incomeFooterNode = (
     <>
       <GlossedText text={incomeFooter} />
       {gdpBand ? (
         <>
-          ；
+          {en ? "; " : "；"}
           <GlossedText text={gdpBand} />
         </>
       ) : null}
@@ -303,31 +343,33 @@ export function IncomeSectorCharts({
     <Stack gap={10}>
       <Grid columns={2} gap={8}>
         <Panel
-          title={`${countryLabel} · 产业结构`}
-          subtitle="分项占比（Trading Economics 绝对值折算）· 水平快照"
+          title={`${countryLabel} · ${en ? "Sector mix" : "产业结构"}`}
+          subtitle={
+            en
+              ? "Share by sector (TE absolute values) · level snapshot"
+              : "分项占比（Trading Economics 绝对值折算）· 水平快照"
+          }
           footer={
-            <>
-              {highValue}
-              {primaryRisk ? `；农业占比偏高（≥${PRIMARY_HIGH}%阈值）` : ""}。服务阈值对照 {TERTIARY_HIGH}%。
-              单看占比难判人均增减，见下方序时配看。
-            </>
+            en
+              ? `${highValue}${primaryRisk ? `; agriculture share high (≥${PRIMARY_HIGH}%)` : ""}. Services threshold ${TERTIARY_HIGH}%. Shares alone do not show income change — see time series below.`
+              : `${highValue}${primaryRisk ? `；农业占比偏高（≥${PRIMARY_HIGH}%阈值）` : ""}。服务阈值对照 ${TERTIARY_HIGH}%。单看占比难判人均增减，见下方序时配看。`
           }
         >
           {sec ? (
             <Stack gap={6}>
-              <HBar label="农业" pct={pA} color={theme.fill.primary} />
-              <HBar label="制造" pct={pM} color={c.accent} />
-              <HBar label="服务" pct={pS} color={c.added} />
+              <HBar label={en ? "Agriculture" : "农业"} pct={pA} color={theme.fill.primary} />
+              <HBar label={en ? "Manufacturing" : "制造"} pct={pM} color={c.accent} />
+              <HBar label={en ? "Services" : "服务"} pct={pS} color={c.added} />
             </Stack>
           ) : (
             <Text size="small" tone="tertiary">
-              无三产分项
+              {en ? "No sector breakdown" : "无三产分项"}
             </Text>
           )}
         </Panel>
         <Panel
-          title={`${countryLabel} · 收入能力`}
-          subtitle="人均收入 · GNI/人 PPP（美元）"
+          title={`${countryLabel} · ${en ? "Income capacity" : "收入能力"}`}
+          subtitle={en ? "Income/cap · GNI/cap PPP (USD)" : "人均收入 · GNI/人 PPP（美元）"}
           footer={incomeFooterNode}
         >
           {incomePc != null || gdpPc != null ? (
@@ -337,17 +379,33 @@ export function IncomeSectorCharts({
               </div>
               <div style={{ fontSize: 11, color: c.textSecondary, marginTop: 4 }}>
                 <GlossedText
-                  text={incomePc != null ? "人均收入（GNI/人 PPP）" : "人均 GDP（现价·代理）"}
+                  text={
+                    en
+                      ? incomePc != null
+                        ? "Income/cap (GNI/cap PPP)"
+                        : "GDP/cap (nominal · proxy)"
+                      : incomePc != null
+                        ? "人均收入（GNI/人 PPP）"
+                        : "人均 GDP（现价·代理）"
+                  }
                 />
               </div>
               {incomePc != null && gdpPc != null ? (
                 <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 6, lineHeight: 1.4 }}>
                   <GlossedText
-                    text={`对照人均 GDP 现价 ${Math.round(gdpPc).toLocaleString()} 美元${
-                      incomePc > gdpPc * 1.2
-                        ? " · PPP 抬升属常见（生活成本折算后购买力高于名义美元）"
-                        : ""
-                    }`}
+                    text={
+                      en
+                        ? `Nominal GDP/cap ${Math.round(gdpPc).toLocaleString()} USD${
+                            incomePc > gdpPc * 1.2
+                              ? " · PPP uplift common (purchasing power above nominal USD)"
+                              : ""
+                          }`
+                        : `对照人均 GDP 现价 ${Math.round(gdpPc).toLocaleString()} 美元${
+                            incomePc > gdpPc * 1.2
+                              ? " · PPP 抬升属常见（生活成本折算后购买力高于名义美元）"
+                              : ""
+                          }`
+                    }
                   />
                 </div>
               ) : null}
@@ -363,7 +421,13 @@ export function IncomeSectorCharts({
                     />
                   </div>
                   <div style={{ fontSize: 10, color: c.textTertiary, marginTop: 4 }}>
-                    <GlossedText text="准入成熟阈值进度按人均 GDP 现价（阈值 12000），不用 PPP 收入硬套" />
+                    <GlossedText
+                      text={
+                        en
+                          ? "Mature-threshold progress uses nominal GDP/cap (12,000) — not PPP income"
+                          : "准入成熟阈值进度按人均 GDP 现价（阈值 12000），不用 PPP 收入硬套"
+                      }
+                    />
                   </div>
                 </>
               ) : null}
@@ -396,11 +460,15 @@ function MiniSpark({
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   if (!incomeSeriesReady(series)) {
     return (
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 11, color: c.textTertiary }}>{label}</div>
-        <div style={{ fontSize: 12, color: c.textTertiary, marginTop: 6 }}>序时暂缺</div>
+        <div style={{ fontSize: 12, color: c.textTertiary, marginTop: 6 }}>
+          {en ? "Series TBD" : "序时暂缺"}
+        </div>
       </div>
     );
   }
@@ -452,6 +520,8 @@ function IncomeCompanionPanel({
   countryCode?: string;
   countryLabel: string;
 }) {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const companion = countryCode ? getIncomeCompanion(countryCode) : undefined;
   const infl = countryCode ? getStressCountry(countryCode)?.inflation : undefined;
   const hasAny =
@@ -461,8 +531,9 @@ function IncomeCompanionPanel({
     incomeSeriesReady(companion?.servicesShare) ||
     stressSeriesReady(infl);
 
-  // 结构 vs 人均：简短 so-what
-  let soWhat = "三产是形态快照；人均增减看序时，侨汇/通胀会让结构与口袋脱节。";
+  let soWhat = en
+    ? "Sector mix is a level snapshot; income change needs time series — remittances/inflation can decouple structure from wallets."
+    : "三产是形态快照；人均增减看序时，侨汇/通胀会让结构与口袋脱节。";
   if (companion) {
     const gdp = companion.gdpPerCapita;
     const agri = companion.agriShare;
@@ -471,27 +542,42 @@ function IncomeCompanionPanel({
     const bits: string[] = [];
     if (incomeSeriesReady(gdp)) {
       const d = incomeChgPct(sliceIncomeByYears(gdp.points, 10));
-      bits.push(d > 5 ? "近十年人均GDP上行" : d < -5 ? "近十年人均GDP承压" : "近十年人均GDP大致持平");
+      bits.push(
+        en
+          ? d > 5
+            ? "GDP/cap up over ~10y"
+            : d < -5
+              ? "GDP/cap pressured over ~10y"
+              : "GDP/cap roughly flat over ~10y"
+          : d > 5
+            ? "近十年人均GDP上行"
+            : d < -5
+              ? "近十年人均GDP承压"
+              : "近十年人均GDP大致持平",
+      );
     }
     if (incomeSeriesReady(agri) && incomeSeriesReady(svc)) {
       const da = incomeChgPts(sliceIncomeByYears(agri.points, 10));
       const ds = incomeChgPts(sliceIncomeByYears(svc.points, 10));
-      if (da > 1 && ds < -1) bits.push("农业份额未降、服务回落→结构改善叙事要打折");
-      else if (da < -1 && ds > 1) bits.push("农业降、服务升→结构与人均更易同向");
+      if (da > 1 && ds < -1)
+        bits.push(en ? "Agri share not falling, services retreating — structure story discounted" : "农业份额未降、服务回落→结构改善叙事要打折");
+      else if (da < -1 && ds > 1)
+        bits.push(en ? "Agri down, services up — structure aligns with income" : "农业降、服务升→结构与人均更易同向");
     }
     if (incomeSeriesReady(remit)) {
       const last = remit.points[remit.points.length - 1]!.v;
-      if (last >= 15) bits.push(`侨汇/GDP约${last.toFixed(0)}%，旁路收入权重高`);
+      if (last >= 15)
+        bits.push(en ? `Remittances/GDP ~${last.toFixed(0)}% — high side-income weight` : `侨汇/GDP约${last.toFixed(0)}%，旁路收入权重高`);
     }
-    if (bits.length) soWhat = bits.join("；") + "。";
+    if (bits.length) soWhat = bits.join(en ? "; " : "；") + (en ? "." : "。");
   }
 
   if (!hasAny) {
     return (
       <Panel
-        title={`${countryLabel} · 人均与旁路收入（配看三产）`}
-        subtitle="序时暂缺"
-        footer="待接入世行人均GDP / 侨汇 / 三产份额序列"
+        title={`${countryLabel} · ${en ? "Income & side flows (vs sector mix)" : "人均与旁路收入（配看三产）"}`}
+        subtitle={en ? "Series TBD" : "序时暂缺"}
+        footer={en ? "Pending WB GDP/cap, remittances, sector-share series" : "待接入世行人均GDP / 侨汇 / 三产份额序列"}
       >
         <Text size="small" tone="tertiary">
           {soWhat}
@@ -500,7 +586,6 @@ function IncomeCompanionPanel({
     );
   }
 
-  // 通胀转成 IncomeSeries 形态给 MiniSpark
   const inflAsIncome: IncomeSeries | null = stressSeriesReady(infl)
     ? {
         unit: infl.unit,
@@ -511,8 +596,12 @@ function IncomeCompanionPanel({
 
   return (
     <Panel
-      title={`${countryLabel} · 人均与旁路收入（配看三产）`}
-      subtitle="世行年频 · 近约十年 · 三产静态图请对照本行序时"
+      title={`${countryLabel} · ${en ? "Income & side flows (vs sector mix)" : "人均与旁路收入（配看三产）"}`}
+      subtitle={
+        en
+          ? "WB annual · ~10y window · compare static sector chart above"
+          : "世行年频 · 近约十年 · 三产静态图请对照本行序时"
+      }
       footer={soWhat}
     >
       <div
@@ -523,31 +612,31 @@ function IncomeCompanionPanel({
         }}
       >
         <MiniSpark
-          label="人均 GDP"
+          label={en ? "GDP/cap" : "人均 GDP"}
           series={companion?.gdpPerCapita}
           mode="pct"
-          format={(v) => `${Math.round(v).toLocaleString()} 美元`}
+          format={(v) => (en ? `${Math.round(v).toLocaleString()} USD` : `${Math.round(v).toLocaleString()} 美元`)}
         />
         <MiniSpark
-          label="侨汇 / GDP"
+          label={en ? "Remittances / GDP" : "侨汇 / GDP"}
           series={companion?.remittancesGdp}
           mode="pts"
           format={(v) => `${v.toFixed(1)}%`}
         />
         <MiniSpark
-          label="农业占 GDP"
+          label={en ? "Agriculture share" : "农业占 GDP"}
           series={companion?.agriShare}
           mode="pts"
           format={(v) => `${v.toFixed(1)}%`}
         />
         <MiniSpark
-          label="服务占 GDP"
+          label={en ? "Services share" : "服务占 GDP"}
           series={companion?.servicesShare}
           mode="pts"
           format={(v) => `${v.toFixed(1)}%`}
         />
         <MiniSpark
-          label="通胀（月频）"
+          label={en ? "Inflation (monthly)" : "通胀（月频）"}
           series={inflAsIncome}
           mode="pts"
           years={5}
@@ -570,12 +659,24 @@ const FX_UP = "#E53935";
 const FX_DOWN = "#1B8F4A";
 
 function FxChgBadge({ strengthChg }: { strengthChg: number }) {
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const flat = Math.abs(strengthChg) < 0.05;
   const up = strengthChg > 0;
   const color = flat ? undefined : up ? FX_UP : FX_DOWN;
   const arrow = flat ? "–" : up ? "▲" : "▼";
   const sign = flat ? "" : up ? "+" : "";
-  const word = flat ? "持平" : up ? "本币升" : "本币贬";
+  const word = en
+    ? flat
+      ? "flat"
+      : up
+        ? "local FX up"
+        : "local FX down"
+    : flat
+      ? "持平"
+      : up
+        ? "本币升"
+        : "本币贬";
   return (
     <span style={{ display: "inline-flex", alignItems: "baseline", gap: 4, fontSize: 12, fontWeight: 600, color: color }}>
       <span aria-hidden style={{ fontSize: 11, lineHeight: 1 }}>
@@ -614,6 +715,8 @@ function FxTrendPanel({
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const [period, setPeriod] = useCanvasState<FxChgPeriodId>("fxChgPeriod1", "all");
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
@@ -644,12 +747,25 @@ function FxTrendPanel({
 
   const activeIdx = hoverIdx != null && hoverIdx < pts.length ? hoverIdx : pts.length - 1;
   const active = pts[activeIdx]!;
-  const spanLabel = fxPointsSpanLabel(pts, series.synthetic && period === "all");
+  const spanLabel = fxPointsSpanLabelUi(pts, uiLang, series.synthetic && period === "all");
+  const periodLabel = fxChgPeriodLabel(periodMeta, uiLang);
 
   const shared = sharedCcyNote(series.ccy);
+  const sharedEn =
+    series.ccy.toUpperCase() === "XOF"
+      ? "West African CFA zone (shared currency — curves look alike)"
+      : series.ccy.toUpperCase() === "XAF"
+        ? "Central African CFA zone (shared currency — curves look alike)"
+        : series.ccy.toUpperCase() === "NAD"
+          ? "Tightly linked to the rand (ZAR area)"
+          : null;
   const subtitle = series.synthetic
-    ? `示意 · ${series.pair} · 随机游走 · 窗口 ${periodMeta.label}`
-    : `周抽样 · ${series.pair} · ${seriesDateRange(pts)} · 窗口 ${periodMeta.label}${shared ? ` · ${shared}` : ""}`;
+    ? en
+      ? `Illustrative · ${series.pair} · random walk · window ${periodLabel}`
+      : `示意 · ${series.pair} · 随机游走 · 窗口 ${periodLabel}`
+    : en
+      ? `Weekly · ${series.pair} · ${seriesDateRange(pts)} · window ${periodLabel}${sharedEn || shared ? ` · ${sharedEn || shared}` : ""}`
+      : `周抽样 · ${series.pair} · ${seriesDateRange(pts)} · 窗口 ${periodLabel}${shared ? ` · ${shared}` : ""}`;
 
   const onMove = (e: MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -691,16 +807,18 @@ function FxTrendPanel({
 
   return (
     <Panel
-      title={`${countryLabel} · 汇率走势`}
+      title={`${countryLabel} · ${en ? "FX trend" : "汇率走势"}`}
       subtitle={subtitle}
       footer={
         series.synthetic
           ? series.note
-          : `${series.source ?? "Frankfurter"} · ${series.unit}${series.note ? ` · ${series.note}` : ""} · 箭头按本币强弱（红涨绿跌）· 可选窗口重算 · 悬停看时点`
+          : en
+            ? `${series.source ?? "Frankfurter"} · ${series.unit}${series.note ? ` · ${series.note}` : ""} · arrow = local FX strength (red up / green down) · hover for point`
+            : `${series.source ?? "Frankfurter"} · ${series.unit}${series.note ? ` · ${series.note}` : ""} · 箭头按本币强弱（红涨绿跌）· 可选窗口重算 · 悬停看时点`
       }
     >
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-        {FX_CHG_PERIODS.map((p) => chip(p.id, p.label))}
+        {FX_CHG_PERIODS.map((p) => chip(p.id, fxChgPeriodLabel(p, uiLang)))}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
         <div>
@@ -771,7 +889,7 @@ function FxTrendPanel({
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: c.textTertiary }}>
         <span>{pts[0]?.d}</span>
         <span>
-          低 {formatFxValue(lo)} · 高 {formatFxValue(hi)}
+          {en ? "Lo" : "低"} {formatFxValue(lo)} · {en ? "Hi" : "高"} {formatFxValue(hi)}
         </span>
         <span>{pts[pts.length - 1]?.d}</span>
       </div>
@@ -800,17 +918,24 @@ function ReservesTrendPanel({
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const [win, setWin] = useCanvasState<"5y" | "10y" | "all">("resHistWin1", "10y");
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const series = countryCode ? getReservesHistory(countryCode) : undefined;
   const winMeta = CA_YEAR_WINDOWS.find((w) => w.id === win) || CA_YEAR_WINDOWS[1]!;
+  const winLabel = yearWindowLabel(winMeta.id, uiLang);
 
   if (!series) {
     return (
       <Panel
-        title={`${countryLabel} · 外汇储备`}
-        subtitle={`时点 · 亿美元${snapResAsOf ? ` · ${snapResAsOf}` : ""}`}
-        footer={fxLevelNote || (snapRes != null ? "序时暂缺" : "—")}
+        title={`${countryLabel} · ${en ? "FX reserves" : "外汇储备"}`}
+        subtitle={
+          en
+            ? `Point · USD bn${snapResAsOf ? ` · ${snapResAsOf}` : ""}`
+            : `时点 · 亿美元${snapResAsOf ? ` · ${snapResAsOf}` : ""}`
+        }
+        footer={fxLevelNote || (snapRes != null ? (en ? "Series TBD" : "序时暂缺") : "—")}
       >
         <div style={{ fontSize: 22, fontWeight: 600, color: c.text }}>
           {snapRes != null ? snapRes.toLocaleString() : "—"}
@@ -849,12 +974,26 @@ function ReservesTrendPanel({
     setHoverIdx(Math.max(0, Math.min(pts.length - 1, Math.round(t * (pts.length - 1)))));
   };
 
-  const attr = flat ? "区间大致持平" : up ? "外储增厚/缓冲改善" : "外储回落/失血压力";
+  const attr = flat
+    ? en
+      ? "roughly flat in window"
+      : "区间大致持平"
+    : up
+      ? en
+        ? "reserves thicker / buffer better"
+        : "外储增厚/缓冲改善"
+      : en
+        ? "reserves down / drain pressure"
+        : "外储回落/失血压力";
 
   return (
     <Panel
-      title={`${countryLabel} · 外汇储备`}
-      subtitle={`年频 · 亿美元 · ${pts[0]!.d.slice(0, 4)}..${last.d.slice(0, 4)} · ${winMeta.label}`}
+      title={`${countryLabel} · ${en ? "FX reserves" : "外汇储备"}`}
+      subtitle={
+        en
+          ? `Annual · USD bn · ${pts[0]!.d.slice(0, 4)}..${last.d.slice(0, 4)} · ${winLabel}`
+          : `年频 · 亿美元 · ${pts[0]!.d.slice(0, 4)}..${last.d.slice(0, 4)} · ${winLabel}`
+      }
       footer={`${series.source ?? "World Bank"}${series.note ? ` · ${series.note}` : ""} · ${attr}${fxLevelNote ? ` · ${fxLevelNote}` : ""}`}
     >
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
@@ -881,7 +1020,7 @@ function ReservesTrendPanel({
                 fontWeight: activeWin ? 600 : 500,
               }}
             >
-              {w.label}
+              {yearWindowLabel(w.id, uiLang)}
             </button>
           );
         })}
@@ -891,7 +1030,9 @@ function ReservesTrendPanel({
           <span style={{ fontSize: 22, fontWeight: 600, color: hoverIdx != null ? stroke : c.text, fontVariantNumeric: "tabular-nums" }}>
             {formatReservesYi(active.v)}
           </span>
-          <span style={{ fontSize: 10, color: c.textTertiary, marginLeft: 6 }}>亿美元 · {active.d.slice(0, 7)}</span>
+          <span style={{ fontSize: 10, color: c.textTertiary, marginLeft: 6 }}>
+            {en ? "USD bn" : "亿美元"} · {active.d.slice(0, 7)}
+          </span>
         </div>
         <span
           style={{
@@ -935,17 +1076,32 @@ function CaTrendPanel({
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const [win, setWin] = useCanvasState<"5y" | "10y" | "all">("caHistWin1", "10y");
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const series = countryCode ? getCaHistory(countryCode) : undefined;
   const winMeta = CA_YEAR_WINDOWS.find((w) => w.id === win) || CA_YEAR_WINDOWS[1]!;
+  const winLabel = yearWindowLabel(winMeta.id, uiLang);
 
   if (!series) {
     return (
       <Panel
-        title={`${countryLabel} · 经常账户`}
-        subtitle={`时点 · CA/GDP${snapCaAsOf ? ` · ${snapCaAsOf}` : ""}`}
-        footer={snapCa != null ? (snapCa >= 0 ? "顺差/平衡偏稳" : "逆差") : "序时暂缺"}
+        title={`${countryLabel} · ${en ? "Current account" : "经常账户"}`}
+        subtitle={`Point · CA/GDP${snapCaAsOf ? ` · ${snapCaAsOf}` : ""}`}
+        footer={
+          snapCa != null
+            ? snapCa >= 0
+              ? en
+                ? "surplus / near balance"
+                : "顺差/平衡偏稳"
+              : en
+                ? "deficit"
+                : "逆差"
+            : en
+              ? "Series TBD"
+              : "序时暂缺"
+        }
       >
         <div style={{ fontSize: 22, fontWeight: 600, color: snapCa != null && snapCa < 0 ? c.removed : c.added }}>
           {snapCa != null ? `${snapCa}%` : "—"}
@@ -1000,8 +1156,17 @@ function CaTrendPanel({
     setHoverIdx(Math.max(0, Math.min(pts.length - 1, Math.round(t * (pts.length - 1)))));
   };
 
-  const attr =
-    flat
+  const attr = en
+    ? flat
+      ? "roughly flat in window"
+      : up
+        ? delta > 0 && last.v >= 0
+          ? "surplus wider / buffer better"
+          : "deficit narrower / pressure easing"
+        : last.v < 0
+          ? "deficit deeper / pressure rising"
+          : "surplus narrower"
+    : flat
       ? "区间大致持平"
       : up
         ? delta > 0 && last.v >= 0
@@ -1013,9 +1178,13 @@ function CaTrendPanel({
 
   return (
     <Panel
-      title={`${countryLabel} · 经常账户`}
-      subtitle={`年频 · CA/GDP · ${pts[0]!.d.slice(0, 4)}..${last.d.slice(0, 4)} · ${winMeta.label}`}
-      footer={`${series.source ?? "World Bank"}${series.note ? ` · ${series.note}` : ""} · ${attr} · 零轴=平衡`}
+      title={`${countryLabel} · ${en ? "Current account" : "经常账户"}`}
+      subtitle={
+        en
+          ? `Annual · CA/GDP · ${pts[0]!.d.slice(0, 4)}..${last.d.slice(0, 4)} · ${winLabel}`
+          : `年频 · CA/GDP · ${pts[0]!.d.slice(0, 4)}..${last.d.slice(0, 4)} · ${winLabel}`
+      }
+      footer={`${series.source ?? "World Bank"}${series.note ? ` · ${series.note}` : ""} · ${attr}${en ? " · zero = balance" : " · 零轴=平衡"}`}
     >
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
         {CA_YEAR_WINDOWS.map((w) => {
@@ -1041,7 +1210,7 @@ function CaTrendPanel({
                 fontWeight: activeWin ? 600 : 500,
               }}
             >
-              {w.label}
+              {yearWindowLabel(w.id, uiLang)}
             </button>
           );
         })}
@@ -1094,6 +1263,8 @@ export function FxCaCharts({
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const ca = parseCaGdp(snap.currentAccount);
   const res = parseReservesUsdBn(snap.fxReserves);
   const vol = firstNumber(snap.fxVolInYear);
@@ -1109,39 +1280,71 @@ export function FxCaCharts({
   const notes: string[] = [];
   if (ca != null) {
     notes.push(
-      ca >= 2
-        ? `经常账户顺差约 ${ca}%GDP`
-        : ca >= 0
-          ? `经常账户大致平衡（${ca}%GDP）`
-          : ca > -3
-            ? `轻度逆差 ${ca}%GDP`
-            : `逆差偏深 ${ca}%GDP`,
+      en
+        ? ca >= 2
+          ? `Current account surplus ~${ca}% GDP`
+          : ca >= 0
+            ? `Current account roughly balanced (${ca}% GDP)`
+            : ca > -3
+              ? `Mild deficit ${ca}% GDP`
+              : `Deep deficit ${ca}% GDP`
+        : ca >= 2
+          ? `经常账户顺差约 ${ca}%GDP`
+          : ca >= 0
+            ? `经常账户大致平衡（${ca}%GDP）`
+            : ca > -3
+              ? `轻度逆差 ${ca}%GDP`
+              : `逆差偏深 ${ca}%GDP`,
     );
   }
   if (res != null) {
     notes.push(
-      res >= 1000
-        ? `外储约 ${res.toLocaleString()} 亿美元，规模很大`
-        : res >= 150
-          ? `外储约 ${res.toLocaleString()} 亿美元`
-          : res >= 50
-            ? `外储约 ${res.toLocaleString()} 亿美元，中等`
-            : `外储约 ${res.toLocaleString()} 亿美元，偏薄`,
+      en
+        ? res >= 1000
+          ? `Reserves ~${res.toLocaleString()} USD bn — very large`
+          : res >= 150
+            ? `Reserves ~${res.toLocaleString()} USD bn`
+            : res >= 50
+              ? `Reserves ~${res.toLocaleString()} USD bn — moderate`
+              : `Reserves ~${res.toLocaleString()} USD bn — thin`
+        : res >= 1000
+          ? `外储约 ${res.toLocaleString()} 亿美元，规模很大`
+          : res >= 150
+            ? `外储约 ${res.toLocaleString()} 亿美元`
+            : res >= 50
+              ? `外储约 ${res.toLocaleString()} 亿美元，中等`
+              : `外储约 ${res.toLocaleString()} 亿美元，偏薄`,
     );
   }
   if (vol != null) {
-    notes.push(vol >= 15 ? `年内汇率波动约 ±${vol}%，偏大` : `年内汇率波动约 ±${vol}%`);
+    notes.push(
+      en
+        ? vol >= 15
+          ? `FX vol ~±${vol}% YTD — elevated`
+          : `FX vol ~±${vol}% YTD`
+        : vol >= 15
+          ? `年内汇率波动约 ±${vol}%，偏大`
+          : `年内汇率波动约 ±${vol}%`,
+    );
   }
-  if (known < 2) notes.push("分项不足，示意分仅供对照");
+  if (known < 2) notes.push(en ? "Sparse inputs — illustrative score only" : "分项不足，示意分仅供对照");
 
   const stress =
-    score >= 75
-      ? "示意：外部缓冲相对厚，极端冲击下本币稳定空间更大"
-      : score >= 55
-        ? "示意：有一定缓冲，极端冲击仍需锁汇/限兑预案"
-        : score >= 40
-          ? "示意：缓冲一般，融资与汇兑需并排盯"
-          : "示意：缓冲偏弱，极端情形本币稳定压力大";
+    en
+      ? score >= 75
+        ? "Illustrative: thick external buffer — more FX stability room under stress"
+        : score >= 55
+          ? "Illustrative: some buffer — still need FX controls / convertibility playbook"
+          : score >= 40
+            ? "Illustrative: moderate buffer — watch funding and FX together"
+            : "Illustrative: weak buffer — FX stability pressure in extreme scenarios"
+      : score >= 75
+        ? "示意：外部缓冲相对厚，极端冲击下本币稳定空间更大"
+        : score >= 55
+          ? "示意：有一定缓冲，极端冲击仍需锁汇/限兑预案"
+          : score >= 40
+            ? "示意：缓冲一般，融资与汇兑需并排盯"
+            : "示意：缓冲偏弱，极端情形本币稳定压力大";
 
   const partRow = (label: string, pts: number, has: boolean) => (
     <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: c.textTertiary }}>
@@ -1181,7 +1384,9 @@ export function FxCaCharts({
   const fxLevelAsOf = extractAsOf(snap.fxTrend) || extractAsOf(snap.fxHint);
   const fxLevelNote =
     snap.fxTrend || snap.fxHint
-      ? `汇率水平${fxLevelAsOf ? ` · ${fxLevelAsOf}` : ""}：${splitValue(snap.fxTrend || snap.fxHint || "")}`
+      ? en
+        ? `FX level${fxLevelAsOf ? ` · ${fxLevelAsOf}` : ""}: ${splitValue(snap.fxTrend || snap.fxHint || "")}`
+        : `汇率水平${fxLevelAsOf ? ` · ${fxLevelAsOf}` : ""}：${splitValue(snap.fxTrend || snap.fxHint || "")}`
       : null;
   const hasExtHist = Boolean(
     (countryCode && getCaHistory(countryCode)) || (countryCode && getReservesHistory(countryCode)),
@@ -1192,9 +1397,15 @@ export function FxCaCharts({
       {fxSeries ? (
         <FxTrendPanel countryLabel={countryLabel} series={fxSeries} />
       ) : (
-        <Panel title={`${countryLabel} · 汇率走势`} subtitle="暂无可用序列" footer={snap.fxTrend || snap.fxHint || "—"}>
+        <Panel
+          title={`${countryLabel} · ${en ? "FX trend" : "汇率走势"}`}
+          subtitle={en ? "No series available" : "暂无可用序列"}
+          footer={snap.fxTrend || snap.fxHint || "—"}
+        >
           <Text size="small" tone="tertiary">
-            缺公开周序列，且宏观卡未同时给出对美元水平与年内波动，无法示意。
+            {en
+              ? "No public weekly series; macro card lacks both USD level and YTD vol — cannot illustrate."
+              : "缺公开周序列，且宏观卡未同时给出对美元水平与年内波动，无法示意。"}
           </Text>
         </Panel>
       )}
@@ -1213,8 +1424,12 @@ export function FxCaCharts({
           fxLevelNote={fxLevelNote}
         />
         <Panel
-          title={`${countryLabel} · 汇兑韧性`}
-          subtitle={`示意分 ${score}/100 · 非评级 · 混用时段+时点`}
+          title={`${countryLabel} · ${en ? "FX resilience" : "汇兑韧性"}`}
+          subtitle={
+            en
+              ? `Illustrative score ${score}/100 · not a rating · mixed period + point`
+              : `示意分 ${score}/100 · 非评级 · 混用时段+时点`
+          }
           footer={stress}
         >
           <div style={{ height: 8, background: theme.fill.quaternary, marginTop: 4 }}>
@@ -1227,24 +1442,33 @@ export function FxCaCharts({
             />
           </div>
           <Stack gap={4} style={{ marginTop: 8 }}>
-            {partRow("经常账户", caPts, ca != null)}
-            {partRow("外储规模", resPts, res != null)}
-            {partRow("汇率波动", volPts, vol != null)}
+            {partRow(en ? "Current account" : "经常账户", caPts, ca != null)}
+            {partRow(en ? "Reserves" : "外储规模", resPts, res != null)}
+            {partRow(en ? "FX volatility" : "汇率波动", volPts, vol != null)}
           </Stack>
           <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 8, lineHeight: 1.4 }}>
-            {notes.slice(0, 3).join("；")}
-            {snap.fxVolInYear ? `；波动 ${splitValue(snap.fxVolInYear)}${volAsOf ? ` · ${volAsOf}` : ""}` : ""}
+            {notes.slice(0, 3).join(en ? "; " : "；")}
+            {snap.fxVolInYear
+              ? en
+                ? `; vol ${splitValue(snap.fxVolInYear)}${volAsOf ? ` · ${volAsOf}` : ""}`
+                : `；波动 ${splitValue(snap.fxVolInYear)}${volAsOf ? ` · ${volAsOf}` : ""}`
+              : ""}
           </div>
         </Panel>
       </Grid>
       {hasExtHist ? (
         <div style={{ fontSize: 10, color: c.textTertiary, lineHeight: 1.4 }}>
-          外部缓冲序时：CA/GDP · {CA_HISTORY.meta.range}；外储 · {RESERVES_HISTORY.meta.range || "—"}（世行年频，末端可并入国别卡）。与汇率图并读：逆差加深+外储回落常抬本币压力。对照{" "}
-          {CA_HISTORY.meta.asOf}
-          {RESERVES_HISTORY.meta.asOf && RESERVES_HISTORY.meta.asOf !== CA_HISTORY.meta.asOf
-            ? ` / 外储 ${RESERVES_HISTORY.meta.asOf}`
-            : ""}
-          。
+          {en
+            ? `External buffer series: CA/GDP · ${CA_HISTORY.meta.range}; reserves · ${RESERVES_HISTORY.meta.range || "—"} (WB annual; terminal may merge into country card). Read with FX chart: deeper deficit + falling reserves often lifts FX pressure. As of ${CA_HISTORY.meta.asOf}${
+                RESERVES_HISTORY.meta.asOf && RESERVES_HISTORY.meta.asOf !== CA_HISTORY.meta.asOf
+                  ? ` / reserves ${RESERVES_HISTORY.meta.asOf}`
+                  : ""
+              }.`
+            : `外部缓冲序时：CA/GDP · ${CA_HISTORY.meta.range}；外储 · ${RESERVES_HISTORY.meta.range || "—"}（世行年频，末端可并入国别卡）。与汇率图并读：逆差加深+外储回落常抬本币压力。对照 ${CA_HISTORY.meta.asOf}${
+                RESERVES_HISTORY.meta.asOf && RESERVES_HISTORY.meta.asOf !== CA_HISTORY.meta.asOf
+                  ? ` / 外储 ${RESERVES_HISTORY.meta.asOf}`
+                  : ""
+              }。`}
         </div>
       ) : null}
     </Stack>
@@ -1254,6 +1478,8 @@ export function FxCaCharts({
 export function CreditDebtCharts({ snap, countryLabel }: { snap: MacroChartSnap; countryLabel: string }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const { consumerMn, privateMn } = parseCreditAmounts(snap.privCreditOrConsumer);
   const pair =
     consumerMn != null && privateMn != null && privateMn > 0
@@ -1271,27 +1497,35 @@ export function CreditDebtCharts({ snap, countryLabel }: { snap: MacroChartSnap;
   const govHigh = gov != null && gov >= GOV_DEBT_WATCH;
   const hasAnyCredit = consumerMn != null || privateMn != null;
 
-  let creditFooter = "暂无消费/私营信贷存量口径";
+  let creditFooter = en ? "No consumer / private credit stock data" : "暂无消费/私营信贷存量口径";
   if (pair) {
-    creditFooter = `消费约占私营贷款 ${consShare.toFixed(0)}%（单位已粗对齐）。相对关系用于看零售杠杆浓度。`;
+    creditFooter = en
+      ? `Consumer ~${consShare.toFixed(0)}% of private loans (units roughly aligned). Shows retail leverage concentration.`
+      : `消费约占私营贷款 ${consShare.toFixed(0)}%（单位已粗对齐）。相对关系用于看零售杠杆浓度。`;
   } else if (consumerMn != null) {
-    creditFooter = `仅录入消费信贷约 ${consumerMn.toLocaleString()}（缺私营贷款对照）`;
+    creditFooter = en
+      ? `Consumer credit only ~${consumerMn.toLocaleString()} (no private loan comparator)`
+      : `仅录入消费信贷约 ${consumerMn.toLocaleString()}（缺私营贷款对照）`;
   } else if (privateMn != null) {
-    creditFooter = `仅录入私营/私人部门贷款约 ${privateMn.toLocaleString()}（缺消费信贷分项）`;
+    creditFooter = en
+      ? `Private-sector loans only ~${privateMn.toLocaleString()} (no consumer split)`
+      : `仅录入私营/私人部门贷款约 ${privateMn.toLocaleString()}（缺消费信贷分项）`;
   }
 
   return (
     <Grid columns={2} gap={8}>
       <Panel
-        title={`${countryLabel} · 信贷结构`}
-        subtitle="时段 · 消费信贷 / 私营部门贷款"
+        title={`${countryLabel} · ${en ? "Credit mix" : "信贷结构"}`}
+        subtitle={en ? "Period · consumer credit / private-sector loans" : "时段 · 消费信贷 / 私营部门贷款"}
         footer={creditFooter}
       >
         {pair ? (
           <Stack gap={8}>
-            <HBar label="消费" pct={Math.min(100, consShare)} color={c.removed} />
-            <HBar label="其他*" pct={Math.min(100, Math.max(0, 100 - consShare))} color={c.accent} />
-            <div style={{ fontSize: 10, color: c.textTertiary }}>*其他≈私营贷款−消费口径</div>
+            <HBar label={en ? "Consumer" : "消费"} pct={Math.min(100, consShare)} color={c.removed} />
+            <HBar label={en ? "Other*" : "其他*"} pct={Math.min(100, Math.max(0, 100 - consShare))} color={c.accent} />
+            <div style={{ fontSize: 10, color: c.textTertiary }}>
+              {en ? "*Other ≈ private loans − consumer definition" : "*其他≈私营贷款−消费口径"}
+            </div>
           </Stack>
         ) : hasAnyCredit ? (
           <Stack gap={6}>
@@ -1299,7 +1533,13 @@ export function CreditDebtCharts({ snap, countryLabel }: { snap: MacroChartSnap;
               {(consumerMn ?? privateMn)!.toLocaleString()}
             </div>
             <div style={{ fontSize: 11, color: c.textTertiary }}>
-              {consumerMn != null ? "消费信贷存量（单边）" : "私营/私人部门贷款（单边）"}
+              {en
+                ? consumerMn != null
+                  ? "Consumer credit stock (single side)"
+                  : "Private-sector loans (single side)"
+                : consumerMn != null
+                  ? "消费信贷存量（单边）"
+                  : "私营/私人部门贷款（单边）"}
             </div>
           </Stack>
         ) : (
@@ -1309,22 +1549,37 @@ export function CreditDebtCharts({ snap, countryLabel }: { snap: MacroChartSnap;
         )}
       </Panel>
       <Panel
-        title={`${countryLabel} · 负债率`}
-        subtitle={`时点 · 居民阈值 ${HH_DEBT_CEIL_LO}–${HH_DEBT_CEIL_HI}% · 政府观察线 ${GOV_DEBT_WATCH}%`}
+        title={`${countryLabel} · ${en ? "Leverage ratios" : "负债率"}`}
+        subtitle={
+          en
+            ? `Point · household band ${HH_DEBT_CEIL_LO}–${HH_DEBT_CEIL_HI}% · gov watch ${GOV_DEBT_WATCH}%`
+            : `时点 · 居民阈值 ${HH_DEBT_CEIL_LO}–${HH_DEBT_CEIL_HI}% · 政府观察线 ${GOV_DEBT_WATCH}%`
+        }
         footer={
-          hhNearCeil
-            ? "居民杠杆接近/进入新兴市场过热带，需防触顶"
-            : hh != null
-              ? `居民杠杆 ${hh}% 距过热带仍有空间，整体未触顶`
-              : "居民杠杆暂缺"
+          en
+            ? hhNearCeil
+              ? "Household leverage near / in EM overheating band — watch ceiling"
+              : hh != null
+                ? `Household ${hh}% — room before overheating band`
+                : "Household leverage TBD"
+            : hhNearCeil
+              ? "居民杠杆接近/进入新兴市场过热带，需防触顶"
+              : hh != null
+                ? `居民杠杆 ${hh}% 距过热带仍有空间，整体未触顶`
+                : "居民杠杆暂缺"
         }
       >
         <Stack gap={8}>
-          <HBar label="居民" pct={hh ?? 0} color={hhNearCeil ? c.removed : c.added} note={hh == null ? "—" : undefined} />
-          <HBar label="政府" pct={Math.min(100, gov ?? 0)} color={govHigh ? c.removed : c.accent} />
+          <HBar
+            label={en ? "Household" : "居民"}
+            pct={hh ?? 0}
+            color={hhNearCeil ? c.removed : c.added}
+            note={hh == null ? "—" : undefined}
+          />
+          <HBar label={en ? "Government" : "政府"} pct={Math.min(100, gov ?? 0)} color={govHigh ? c.removed : c.accent} />
           <div style={{ fontSize: 10, color: c.textTertiary }}>
-            信心 {snap.consumerConfidence ?? "—"}
-            {govHigh ? "；政府债务已过观察线" : ""}
+            {en ? "Confidence" : "信心"} {snap.consumerConfidence ?? "—"}
+            {govHigh ? (en ? "; government debt above watch line" : "；政府债务已过观察线") : ""}
           </div>
         </Stack>
       </Panel>
@@ -1338,6 +1593,84 @@ const STRESS_CHG_PERIODS: readonly { id: FxChgPeriodId; label: string; months: n
   { id: "5y", label: "5年", months: 60 },
   { id: "all", label: "全区间", months: null },
 ];
+
+function isStressLevelOnly(series: StressSeries, metricId?: StressMetricId): boolean {
+  // GPP 快照 / 持平假序时：只展示水平卡，不画曲线
+  if (
+    series.method === "gpp_level_flat" ||
+    series.method === "gpp_level_snapshot" ||
+    (metricId === "electricityResidential" && series.synthetic === true)
+  ) {
+    return true;
+  }
+  const pts = series.points || [];
+  if (pts.length < 2) return true;
+  const v0 = pts[0]!.v;
+  return pts.every((p) => Math.abs(p.v - v0) < 1e-9);
+}
+
+/** 时点水平卡：只有快照、无真实序时时用，避免画假曲线 */
+function StressLevelCard({
+  label,
+  series,
+  format,
+}: {
+  label: string;
+  series: StressSeries;
+  format: (v: number) => string;
+}) {
+  const theme = useHostTheme();
+  const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
+  const pts = series.points || [];
+  const last = pts[pts.length - 1];
+  const level =
+    typeof series.levelUsdPerKwh === "number"
+      ? series.levelUsdPerKwh
+      : typeof series.levelUsdPerL === "number"
+        ? series.levelUsdPerL
+        : last?.v;
+  const asOf = last?.d?.slice(0, 7) || "";
+  if (level == null || Number.isNaN(level)) return null;
+
+  return (
+    <div
+      style={{
+        minWidth: 0,
+        padding: "8px 8px 6px",
+        border: `1px solid ${c.panelBorder}`,
+        borderRadius: 6,
+        background: c.panelBg,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: c.textSecondary }}>
+          <GlossedText text={label} />
+          <span style={{ marginLeft: 6, fontWeight: 400, color: c.textTertiary }}>
+            {en ? "snapshot" : "快照"}
+          </span>
+        </div>
+        <span style={{ fontSize: 11, color: c.textTertiary }}>{en ? "no series" : "无序时"}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 2 }}>
+        <span style={{ fontSize: 18, fontWeight: 600, color: c.text, fontVariantNumeric: "tabular-nums" }}>
+          {format(level)}
+        </span>
+        {asOf ? <span style={{ fontSize: 10, color: c.textTertiary }}>{asOf}</span> : null}
+      </div>
+      <div style={{ marginTop: 10, fontSize: 11, lineHeight: 1.45, color: c.textTertiary }}>
+        {series.note ||
+          (en
+            ? "Level snapshot only — no trend (public monthly/semi-annual electricity series not loaded)."
+            : "仅有时点水平，不画走势（公开月/半年电价序时未落库）。")}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: c.textTertiary, marginTop: 8 }}>
+        <span>{series.source ?? ""}</span>
+      </div>
+    </div>
+  );
+}
 
 function StressSpark({
   label,
@@ -1356,14 +1689,16 @@ function StressSpark({
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const pts = useMemo(() => sliceStressByMonths(series.points, months), [series.points, months]);
   const chg = stressChgPct(pts);
   const flat = Math.abs(chg) < 0.05;
   const up = chg > 0;
   // 默认：升=压力↑暖色，降=缓用绿；通胀读数为负（通缩）则改冷色
-  let stroke = flat ? accent : up ? "#C45C26" : "#1B8F4A";
-  let fill = flat ? "rgba(80,140,180,0.10)" : up ? "rgba(196,92,38,0.12)" : "rgba(27,143,74,0.10)";
+  let stroke = flat ? accent : up ? theme.category.orange : theme.category.green;
+  let fill = flat ? theme.fill.tertiary : up ? theme.diff.removedLine : theme.diff.insertedLine;
 
   const W = 320;
   const H = 72;
@@ -1376,10 +1711,10 @@ function StressSpark({
   const crossesZero = metricId === "inflation" && Math.min(...ys) < 0 && Math.max(...ys) > 0;
   const hasNeg = metricId === "inflation" && Math.min(...ys) < 0;
   if (inflNeg) {
-    stroke = "#2B6CB0";
-    fill = "rgba(43,108,176,0.14)";
+    stroke = theme.category.blue;
+    fill = theme.diff.insertedLine;
   }
-  const valueColor = inflNeg ? "#2B6CB0" : hoverIdx != null ? stroke : c.text;
+  const valueColor = inflNeg ? theme.category.blue : hoverIdx != null ? stroke : c.text;
 
   let lo = Math.min(...ys);
   let hi = Math.max(...ys);
@@ -1417,17 +1752,21 @@ function StressSpark({
         <div style={{ fontSize: 11, fontWeight: 600, color: c.textSecondary }}>
           <GlossedText text={label} />
           {series.synthetic ? (
-            <span style={{ marginLeft: 6, fontWeight: 400, color: c.textTertiary }}>示意</span>
+            <span style={{ marginLeft: 6, fontWeight: 400, color: c.textTertiary }}>
+              {en ? "illustrative" : "示意"}
+            </span>
           ) : null}
           {inflNeg ? (
-            <span style={{ marginLeft: 6, fontWeight: 500, color: "#2B6CB0" }}>通缩</span>
+            <span style={{ marginLeft: 6, fontWeight: 500, color: theme.category.blue }}>
+              {en ? "deflation" : "通缩"}
+            </span>
           ) : null}
         </div>
         <span
           style={{
             fontSize: 11,
             fontWeight: 600,
-            color: flat ? c.textTertiary : up ? "#C45C26" : "#1B8F4A",
+            color: flat ? c.textTertiary : up ? theme.category.orange : theme.category.green,
             fontVariantNumeric: "tabular-nums",
           }}
         >
@@ -1474,7 +1813,7 @@ function StressSpark({
   );
 }
 
-/** 景气与定价压测：通胀 / 政策利率 / 零售汽油精要折线（观测；汽油多为示意） */
+/** 景气与定价压测：通胀 / 政策利率 / 零售汽油 / 居民电价精要折线 */
 export function StressPricingCharts({
   countryCode,
   countryLabel,
@@ -1484,21 +1823,34 @@ export function StressPricingCharts({
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   const [period, setPeriod] = useCanvasState<FxChgPeriodId>("stressChgPeriod1", "3y");
   const row = getStressCountry(countryCode);
   const periodMeta = STRESS_CHG_PERIODS.find((p) => p.id === period) || STRESS_CHG_PERIODS[1]!;
 
   const cards = STRESS_METRIC_META.map((m) => {
     const series = row?.[m.id];
-    if (!stressSeriesReady(series)) return null;
-    return { ...m, series };
+    if (!series) return null;
+    // 电价等水平快照：有读数即可；其余仍需 ≥2 点才画走势
+    const ok =
+      m.id === "electricityResidential"
+        ? (series.points?.length ?? 0) >= 1 || typeof series.levelUsdPerKwh === "number"
+        : stressSeriesReady(series);
+    if (!ok) return null;
+    return { ...m, label: stressMetricLabelUi(m.id, m.label, uiLang), series };
   }).filter(Boolean) as { id: StressMetricId; label: string; format: (v: number) => string; series: StressSeries }[];
 
   if (!cards.length) {
     return (
-      <Panel title={`${countryLabel} · 压测趋势`} subtitle="序时暂缺">
+      <Panel
+        title={`${countryLabel} · ${en ? "Stress trends" : "压测趋势"}`}
+        subtitle={en ? "Series TBD" : "序时暂缺"}
+      >
         <Text size="small" tone="tertiary">
-          该国暂无通胀/政策利率/汽油序时落库（BIS 未覆盖或汽油缺快照）。
+          {en
+            ? "No inflation / policy rate / gasoline / electricity series for this country."
+            : "该国暂无通胀/政策利率/汽油/电价序时落库。"}
         </Text>
       </Panel>
     );
@@ -1508,7 +1860,9 @@ export function StressPricingCharts({
     <Stack gap={8}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
         <span style={{ fontSize: 11, color: c.textTertiary }}>
-          压测序时 · {MACRO_STRESS_HISTORY.meta.range} · 窗口
+          {en
+            ? `Stress series · ${MACRO_STRESS_HISTORY.meta.range} · window`
+            : `压测序时 · ${MACRO_STRESS_HISTORY.meta.range} · 窗口`}
         </span>
         {STRESS_CHG_PERIODS.map((p) => {
           const active = period === p.id;
@@ -1522,7 +1876,7 @@ export function StressPricingCharts({
                 padding: "0 8px",
                 borderRadius: 6,
                 border: `1px solid ${active ? c.accent : c.panelBorder}`,
-                background: active ? "rgba(80,140,180,0.12)" : c.panelBg,
+                background: active ? theme.fill.tertiary : c.panelBg,
                 color: active ? c.text : c.textSecondary,
                 cursor: "pointer",
                 font: "inherit",
@@ -1530,27 +1884,32 @@ export function StressPricingCharts({
                 fontWeight: active ? 600 : 500,
               }}
             >
-              {p.label}
+              {fxChgPeriodLabel(p, uiLang)}
             </button>
           );
         })}
       </div>
-      <Grid columns={cards.length >= 3 ? 3 : cards.length} gap={8}>
-        {cards.map((card) => (
-          <StressSpark
-            key={card.id}
-            label={card.label}
-            series={card.series}
-            format={card.format}
-            accent={c.accent}
-            months={periodMeta.months}
-            metricId={card.id}
-          />
-        ))}
+      <Grid columns={cards.length >= 4 ? 2 : cards.length >= 3 ? 3 : cards.length} gap={8}>
+        {cards.map((card) =>
+          isStressLevelOnly(card.series, card.id) ? (
+            <StressLevelCard key={card.id} label={card.label} series={card.series} format={card.format} />
+          ) : (
+            <StressSpark
+              key={card.id}
+              label={card.label}
+              series={card.series}
+              format={card.format}
+              accent={c.accent}
+              months={periodMeta.months}
+              metricId={card.id}
+            />
+          ),
+        )}
       </Grid>
       <div style={{ fontSize: 10, color: c.textTertiary, lineHeight: 1.4 }}>
-        通胀/政策利率：BIS 月度观测。零售汽油标「示意」时=TE 泵价水平×布伦特月均路径，非官方零售序时。涨跌按区间首末变动（升=定价压力↑）；通胀负值标通缩冷色并画零轴。对照时点{" "}
-        {MACRO_STRESS_HISTORY.meta.asOf}。
+        {en
+          ? `Inflation / policy rate: BIS. Retail gasoline marked illustrative = TE pump × Brent. Residential electricity: US FRED monthly, EU Eurostat semi-annual in USD; others (incl. six ops countries) GPP snapshot only. As of ${MACRO_STRESS_HISTORY.meta.asOf}.`
+          : `通胀/政策利率：BIS。零售汽油标「示意」时=TE 泵价×布伦特。居民电价：美 FRED 月度、欧 Eurostat 半年频折 USD 画走势；其余（含展业六国）仅 GPP 快照水平。对照 ${MACRO_STRESS_HISTORY.meta.asOf}。`}
       </div>
     </Stack>
   );

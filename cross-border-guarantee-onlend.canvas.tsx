@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   BarChart,
   Button,
@@ -6,7 +6,6 @@ import {
   Card,
   CardBody,
   CardHeader,
-  CollapsibleSection,
   Divider,
   Grid,
   H1,
@@ -29,12 +28,12 @@ import {
  * 跨境保函项下转贷测算（多国可配）
  *
  * 公式对齐桌面《保函测算菲律宾 2.xlsx》：
- * 离岸美元存款 + 利息前置 → 保函面额 → 本币贷款（折扣、覆盖本息）→ 转贷息差折回美元。
+ * 离岸美元存款 →（可选利息前置进面额）保函面额 → 本币贷款（折扣、覆盖本息）→ 转贷息差折回美元。
  * 定价横梁：存款价格、保函手续费、贷款价格、转贷价格、保函折扣率、本币保证金、货币对政策利率差。
  * 菲律宾 = 表内已谈妥报价；尼日利亚 = CBN 2026-06 各银行 prime/max 贷款价（AbokiForex 信源）；其余国家 = 宏观政策利率 + 菲律宾点差外推。
  */
 
-type CountryId = "PH" | "NG" | "ID" | "MX" | "KE";
+type CountryId = "PH" | "NG" | "ID" | "MX" | "KE" | "RU";
 
 type CountryPreset = {
   id: CountryId;
@@ -71,6 +70,148 @@ const USD_POLICY = 3.75; // TE 美国政策利率 2026-07
 const HK_DEPOSIT = 4.5; // 表内保函存款美元报价（历史香港行报价）
 const GUARANTEE_FEE = 0.9; // 全额质押 0.8–1.0% 取中
 const DISCOUNT = 250;
+
+/** 画布因 useCanvasState 落盘/热更重挂时，滚动常被重置到页首；跨挂载记住位置 */
+const SCROLL_STORAGE_KEY = "guarantee-onlend-canvas-scroll-y";
+
+function findScrollParent(start: HTMLElement | null): HTMLElement | null {
+  let el: HTMLElement | null = start;
+  while (el) {
+    const { overflowY } = getComputedStyle(el);
+    if (
+      (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
+      el.scrollHeight > el.clientHeight + 1
+    ) {
+      return el;
+    }
+    el = el.parentElement;
+  }
+  return null;
+}
+
+function readSavedScroll(): number {
+  try {
+    const n = Number(sessionStorage.getItem(SCROLL_STORAGE_KEY) ?? "");
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeSavedScroll(y: number) {
+  try {
+    sessionStorage.setItem(SCROLL_STORAGE_KEY, String(Math.max(0, Math.round(y))));
+  } catch {
+    /* ignore */
+  }
+}
+
+function usePreserveCanvasScroll() {
+  const anchorRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const y = readSavedScroll();
+    if (y <= 0) return;
+    const apply = () => {
+      const scroller = findScrollParent(anchorRef.current);
+      if (scroller) {
+        scroller.scrollTop = y;
+      } else {
+        window.scrollTo(0, y);
+        document.documentElement.scrollTop = y;
+        document.body.scrollTop = y;
+      }
+    };
+    apply();
+    const raf = requestAnimationFrame(apply);
+    const t = window.setTimeout(apply, 50);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t);
+    };
+  }, []);
+
+  useEffect(() => {
+    const scroller = findScrollParent(anchorRef.current);
+    const save = () => {
+      const y = scroller
+        ? scroller.scrollTop
+        : window.scrollY || document.documentElement.scrollTop;
+      writeSavedScroll(y);
+    };
+    const opts: AddEventListenerOptions = { passive: true, capture: true };
+    scroller?.addEventListener("scroll", save, opts);
+    window.addEventListener("scroll", save, opts);
+    document.addEventListener("pointerdown", save, opts);
+    document.addEventListener("keydown", save, opts);
+    return () => {
+      scroller?.removeEventListener("scroll", save, opts);
+      window.removeEventListener("scroll", save, opts);
+      document.removeEventListener("pointerdown", save, opts);
+      document.removeEventListener("keydown", save, opts);
+    };
+  }, []);
+
+  return anchorRef;
+}
+
+/** 展开状态落盘，避免画布热更重挂后 PersistCollapsibleSection 被 defaultOpen 重置 */
+function PersistCollapsibleSection({
+  title,
+  leading,
+  count,
+  trailing,
+  children,
+  defaultOpen = false,
+  style,
+}: {
+  title: string;
+  leading?: ReactNode;
+  count?: number;
+  trailing?: ReactNode;
+  children?: ReactNode;
+  defaultOpen?: boolean;
+  style?: CSSProperties;
+}) {
+  const t = useHostTheme();
+  const [open, setOpen] = useCanvasState(
+    `guarantee-onlend-collapsible-v1-${title}`,
+    defaultOpen,
+  );
+  return (
+    <div style={style}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
+        style={{
+          display: "flex",
+          width: "100%",
+          alignItems: "center",
+          gap: 8,
+          padding: "8px 0",
+          border: "none",
+          background: "transparent",
+          cursor: "pointer",
+          color: t.text.primary,
+          textAlign: "left",
+        }}
+      >
+        <span style={{ width: 16, color: t.text.tertiary }}>{open ? "▾" : "▸"}</span>
+        {leading}
+        <span style={{ fontWeight: 600, fontSize: 14 }}>{title}</span>
+        {count != null ? (
+          <span style={{ color: t.text.tertiary, fontSize: 12 }}>{count}</span>
+        ) : null}
+        <span style={{ flex: 1 }} />
+        {trailing}
+      </button>
+      {open ? <div style={{ paddingLeft: 24, paddingBottom: 8 }}>{children}</div> : null}
+    </div>
+  );
+}
 
 /** AbokiForex 转载 CBN Money Market Indicators · 2026-06 分项 prime/max 贷款价 */
 const NG_CBN_LENDING_SOURCE = {
@@ -166,6 +307,26 @@ function localBankDepositCheck(inputs: Inputs): LocalDepLoanCheck {
 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
+}
+
+/** 保函金额 = 利息前置 ? 存款本金×(1+存款利率×天数/360) : 存款本金 */
+function depositInterestFactor(depositRatePct: number, depositDays: number) {
+  return 1 + ((depositRatePct / 100) * depositDays) / 360;
+}
+
+function isInterestUpfront(i: { interestUpfront?: boolean }) {
+  return i.interestUpfront !== false;
+}
+
+function depositUsdFromGuaranteeFace(
+  guaranteeUsd: number,
+  depositRatePct: number,
+  depositDays: number,
+  interestUpfront = true,
+): number {
+  if (!interestUpfront) return Math.max(guaranteeUsd, 0);
+  const factor = depositInterestFactor(depositRatePct, depositDays);
+  return Math.max(guaranteeUsd / Math.max(factor, 1e-9), 0);
 }
 
 function inferredLoan(policy: number) {
@@ -308,6 +469,33 @@ const PRESETS: Record<CountryId, CountryPreset> = {
     /** 肯尼亚存款利息 WHT 常见 15% · 待当地核验 */
     marginInterestTaxPct: 15,
   },
+  RU: {
+    id: "RU",
+    nameZh: "俄罗斯",
+    ccy: "RUB",
+    ccyName: "卢布",
+    regulator: "CBR",
+    quoted: false,
+    depositUsd: 100,
+    depositRatePct: HK_DEPOSIT,
+    depositDays: 365,
+    guaranteeFeePct: GUARANTEE_FEE,
+    loanRatePct: inferredLoan(14),
+    loanDays: 360,
+    fx: 82.3,
+    discountPct: DISCOUNT,
+    onlendPct: inferredOnlend(inferredLoan(14)),
+    localPolicyPct: 14,
+    usdPolicyPct: USD_POLICY,
+    fxVolHint: "±18% · USD/RUB 年内高低/均价",
+    asOf: "待当地报价 · 宏观 TE/CBR 2026-07/08",
+    loanNote:
+      "俄央行关键利率 14% + 菲律宾点差外推。汇率 TE 约 82.3（2026-08）；制裁/结算通道与本地报价须单独核验。",
+    marginPct: 25,
+    localDepositRatePct: 13,
+    /** 俄罗斯存款利息 NDFL 常见 13% · 待当地核验 */
+    marginInterestTaxPct: 13,
+  },
 };
 
 type Inputs = {
@@ -330,6 +518,11 @@ type Inputs = {
   marginInterestTaxPct: number;
   /** CHUAN 占 JV 股权 %；本币存款端收益仅按此比例计入 CHUAN 口径 */
   chuanJvPct: number;
+  /**
+   * 利息前置：开立含利息的保函须先将存款利息计入面额。
+   * 关闭时保函金额=存款本金（不含利息），存款利息仍作收益但不进面额。
+   */
+  interestUpfront: boolean;
 };
 
 function jvShareOf(i: Inputs) {
@@ -387,6 +580,7 @@ function fromPreset(p: CountryPreset): Inputs {
     localDepositRatePct: p.localDepositRatePct,
     marginInterestTaxPct: p.marginInterestTaxPct,
     chuanJvPct: 70,
+    interestUpfront: true,
   };
 }
 
@@ -406,13 +600,14 @@ const CCY_SYMBOL: Record<CountryId, string> = {
   ID: "Rp",
   MX: "MX$",
   KE: "KSh",
+  RU: "₽",
 };
 
 /** open.er-api.com · USD 基准即期（无 key） */
 const FX_SPOT_API = "https://open.er-api.com/v6/latest/USD";
 
 function roundFxSpot(fx: number, id: CountryId) {
-  if (id === "ID" || id === "NG" || id === "KE") return Math.round(fx);
+  if (id === "ID" || id === "NG" || id === "KE" || id === "RU") return Math.round(fx);
   return round2(fx);
 }
 
@@ -479,8 +674,8 @@ function StatValue({
       as="span"
       weight="semibold"
       style={{
-        fontSize: size === "large" ? 28 : 22,
-        lineHeight: 1.1,
+        fontSize: size === "large" ? 22 : 18,
+        lineHeight: 1.15,
         whiteSpace: "nowrap",
         ...(color ? { color } : {}),
       }}
@@ -742,7 +937,9 @@ function compute(i: Inputs): Calc {
   const shockFx = fx * (1 + i.fxShockPct / 100);
 
   const depositInterestUsd = (i.depositUsd * depR * i.depositDays) / 360;
-  const guaranteeUsd = i.depositUsd + depositInterestUsd;
+  const guaranteeUsd = isInterestUpfront(i)
+    ? i.depositUsd + depositInterestUsd
+    : i.depositUsd;
   const guaranteeFeeUsd = guaranteeUsd * feeR;
   const loanLocal =
     (guaranteeUsd * disc * fx) / (1 + (loanR * i.loanDays) / 365);
@@ -862,6 +1059,760 @@ function presetCalc(id: CountryId) {
   return compute(fromPreset(PRESETS[id]));
 }
 
+/**
+ * 分配侧：把一笔投资看成横向资金条。
+ * 保函位置核心区别：
+ * - 帮小贷劣后：保证主体保函 **节降** JV 代小贷出具的保证金（无保函对照 % → 节降后 %）
+ * - 帮银行缓释：保函挡在银行敞口前；JV 保证金 **不因保函节降**，仍按无保函全额缴
+ */
+type GuaranteePlacement = "none" | "help_mfi" | "help_bank";
+
+type AllocParams = {
+  placement: GuaranteePlacement;
+  /** 预估 Vintage / EL = 银行风险敞口，占助贷本金 %（与本金直接比例） */
+  vintageElPct: number;
+  /** 代偿备付占助贷本金 % · 日常代偿；画在固收当量区，不占本金轴结构 */
+  compensatoryPct: number;
+  /**
+   * 小贷净资产（占助贷本金 %）· 按实际情况配置；
+   * 银行风险敞口 = 本金 − 保证金 − 保函 − 小贷净资产（缓释后纯敞口）。
+   */
+  mfiCreditPct: number;
+  /**
+   * 保函层展示厚度；0=按测算 保函金额/助贷本金。
+   * 展示厚度；0=按测算 保函金额/助贷本金。保证主体无或有虚线。
+   */
+  guaranteeTranchePct: number;
+  /** 无保函对照保证金 %（帮小贷情景对照） */
+  marginWithoutGuaranteePct: number;
+  /** JV 代小贷服务费，占银行助贷本金 %（默认 0.2） */
+  jvServiceFeePct: number;
+};
+
+const DEFAULT_ALLOC: AllocParams = {
+  placement: "help_bank",
+  vintageElPct: 10,
+  compensatoryPct: 3,
+  mfiCreditPct: 12,
+  guaranteeTranchePct: 0, // 0 → 用保函金额/助贷本金
+  marginWithoutGuaranteePct: 40,
+  jvServiceFeePct: 0.2,
+};
+
+function normalizeAlloc(raw: AllocParams): AllocParams {
+  return { ...DEFAULT_ALLOC, ...raw };
+}
+
+/** 瀑布/分配侧实际计入的 JV 保证金比例（%·助贷本金） */
+function effectiveMarginPct(alloc: AllocParams, inputs: Inputs): number {
+  if (alloc.placement === "help_bank") {
+    return Math.max(alloc.marginWithoutGuaranteePct, 0);
+  }
+  return Math.max(inputs.marginPct, 0);
+}
+
+type StripLayer = {
+  id: string;
+  label: string;
+  entity: string;
+  /** 占助贷本金比例 0–1 */
+  thickness: number;
+  /** 左端起点 0–1（0=最优先/左，1=最劣后/右） */
+  start: number;
+  priority: number;
+  kind: "funding" | "first_loss" | "mezz" | "senior_residual" | "credit";
+  active: boolean;
+};
+
+type PartyAlloc = {
+  party: "chuan" | "jv" | "bank";
+  nameZh: string;
+  fundingRole: string;
+  creditRole: string;
+  incomeUsd: number;
+  costUsd: number;
+  netUsd: number;
+  riskPremiumUsd: number;
+  carryUsd: number;
+  note: string;
+};
+
+type Allocation = {
+  loanUsd: number;
+  vintageFromLeft: number;
+  layers: StripLayer[];
+  parties: PartyAlloc[];
+  thesis: string;
+  pricingHint: string;
+  marginReliefPp: number;
+  guaranteeCoverageUsd: number;
+  bankNetInterestUsd: number;
+  jvFirstLossUsd: number;
+  chuanCreditSliceUsd: number;
+};
+
+function buildRiskLayers(
+  alloc: AllocParams,
+  marginPct: number,
+): StripLayer[] {
+  const place = alloc.placement;
+  const c = Math.max(alloc.compensatoryPct, 0) / 100;
+  const m = Math.max(marginPct, 0) / 100;
+  const g =
+    place === "none" ? 0 : Math.max(alloc.guaranteeTranchePct, 0) / 100;
+  const mfi = Math.max(alloc.mfiCreditPct, 0) / 100;
+
+  // 自右（劣后）向左堆叠；帮小贷图示：敞口 | 小贷 | [EL] | 保函 | 保证金
+  type Piece = Omit<StripLayer, "start">;
+  const juniorFirst: Piece[] = [
+    {
+      id: "compensatory",
+      label: "代偿备付金",
+      entity: "JV 代小贷",
+      thickness: c,
+      priority: 1,
+      kind: "first_loss",
+      active: c > 0,
+    },
+    {
+      id: "margin",
+      label: "保证金",
+      entity: "JV 代小贷",
+      thickness: m,
+      priority: 2,
+      kind: "first_loss",
+      active: m > 0,
+    },
+  ];
+  if (place === "help_mfi") {
+    juniorFirst.push({
+      id: "guarantee",
+      label: "保函",
+      entity: "保证主体",
+      thickness: g,
+      priority: 3,
+      kind: "mezz",
+      active: g > 0,
+    });
+  }
+  juniorFirst.push({
+    id: "mfi-credit",
+    label: "小贷公司信用",
+    entity: "小贷公司",
+    thickness: mfi,
+    priority: place === "help_mfi" ? 4 : 3,
+    kind: "credit",
+    active: mfi > 0,
+  });
+  if (place === "help_bank") {
+    juniorFirst.push({
+      id: "guarantee",
+      label: "保函",
+      entity: "保证主体",
+      thickness: g,
+      priority: 4,
+      kind: "mezz",
+      active: g > 0,
+    });
+  }
+
+  let used = juniorFirst.reduce((s, x) => s + (x.active ? x.thickness : 0), 0);
+  if (used > 0.95) {
+    const scale = 0.95 / used;
+    for (const x of juniorFirst) {
+      if (x.active) x.thickness *= scale;
+    }
+    used = 0.95;
+  }
+  const residual = Math.max(1 - used, 0.05);
+  const bankLayer: Piece = {
+    id: "bank-residual",
+    label: "本金损失（残余）",
+    entity: "本地银行",
+    thickness: residual,
+    priority: 5,
+    kind: "senior_residual",
+    active: true,
+  };
+
+  // 图示：左=优先，右=劣后
+  const leftToRight = [
+    bankLayer,
+    ...[...juniorFirst].reverse().filter((x) => x.active),
+  ];
+
+  let cursor = 0;
+  return leftToRight.map((p) => {
+    const start = cursor;
+    cursor += p.thickness;
+    return { ...p, start };
+  });
+}
+
+function computeAllocation(
+  inputs: Inputs,
+  calc: Calc,
+  allocIn: AllocParams,
+): Allocation {
+  const fmtUsd = (wan: number) =>
+    `${num(wan, wan >= 100 ? 1 : 2)} 万美元`;
+  const loanUsd = Math.max(calc.loanPrincipalUsd, 1e-9);
+  const alloc = allocIn;
+  const marginPct = effectiveMarginPct(alloc, inputs);
+  const layers = buildRiskLayers(alloc, marginPct);
+  const vintageFromLeft = Math.max(0, Math.min(1, 1 - alloc.vintageElPct / 100));
+
+  const guaranteeCoverageUsd =
+    alloc.placement === "none"
+      ? 0
+      : Math.max(alloc.guaranteeTranchePct, 0) > 0
+        ? (loanUsd * Math.max(alloc.guaranteeTranchePct, 0)) / 100
+        : Math.max(calc.guaranteeUsd, 0);
+  const jvFirstLossUsd =
+    (loanUsd *
+      (Math.max(alloc.compensatoryPct, 0) + marginPct)) /
+    100;
+  const chuanCreditSliceUsd = guaranteeCoverageUsd;
+
+  const gLivePct =
+    alloc.placement === "none"
+      ? 0
+      : (Math.max(calc.guaranteeUsd, 0) / loanUsd) * 100;
+  const jvServiceUsd =
+    (loanUsd * Math.max(alloc.jvServiceFeePct ?? 0.2, 0)) / 100;
+
+  /**
+   * 三主体当期收入（分配口径，与 CHUAN 合并账本可不同）：
+   * - 保证主体：开保函承担风险 → 赚取「转贷−银行贷款报价」息差 + 保函存款利息 + 保函费（风险溢价）
+   * - JV：本地服务费 + 或有保证金存款利息（视谈判）
+   * - 银行：收入=发放本金的贷款固收利息；成本=代付 JV 保证金存款利息（可核验的存款成本；不含无法考证的吸储成本）
+   */
+  const guarantorSpreadUsd =
+    alloc.placement === "none" ? 0 : Math.max(calc.spreadUsdSpot, 0);
+  const guarantorDepositUsd = Math.max(calc.depositInterestUsd, 0);
+  const guarantorFeeUsd =
+    alloc.placement === "none" ? 0 : Math.max(calc.guaranteeFeeUsd, 0);
+  const guarantorIncome =
+    guarantorSpreadUsd + guarantorDepositUsd + guarantorFeeUsd;
+
+  const jvMarginIncome = Math.max(calc.marginInterestUsd, 0);
+  const jvIncome = jvServiceUsd + jvMarginIncome;
+
+  const bankInterestUsd = calc.loanCostUsd;
+  /** 可核验存款成本=代付 JV 保证金存款利息；净额=固收利息−该成本（仍不含吸储成本） */
+  const bankDepositCostUsd = jvMarginIncome;
+  const bankNimUsd = Math.max(bankInterestUsd - bankDepositCostUsd, 0);
+
+  const marginReliefPp =
+    alloc.placement === "help_mfi"
+      ? Math.max(0, alloc.marginWithoutGuaranteePct - inputs.marginPct)
+      : 0;
+
+  let thesis: string;
+  let pricingHint: string;
+  if (alloc.placement === "none") {
+    thesis =
+      "不开保函：保证主体无信用义务与息差分成；JV 可收服务费及或有保证金利息；银行赚贷款利息扣除代付保证金存款利息后的场景息差。";
+    pricingHint =
+      "无保函时转贷−贷款息差不归保证主体。若需增信，再选「帮小贷」或「帮银行」。";
+  } else if (alloc.placement === "help_mfi") {
+    thesis =
+      "帮小贷劣后：保证主体保函置换/节降 JV 代小贷保证金（无保函对照 → 节降后实缴）；保函劣后帮小贷、不进银行敞口倒算；转贷差价归保证主体。";
+    pricingHint = `保函节降保证金 ${pct(alloc.marginWithoutGuaranteePct, 0)} → ${pct(inputs.marginPct, 0)}（−${pct(marginReliefPp, 0)}）；应向小贷收更高报价。保函约 ${fmtUsd(guaranteeCoverageUsd)}；息差 ${fmtUsd(guarantorSpreadUsd)} 归保证主体。`;
+  } else {
+    thesis =
+      "帮银行缓释：保函挡在银行敞口前；JV 保证金不因保函节降，仍按无保函对照全额缴存；转贷差价归保证主体。";
+    pricingHint = `JV 保证金全额 ${pct(marginPct, 0)}（保函不节降）。保函约 ${fmtUsd(guaranteeCoverageUsd)}缓释银行；息差 ${fmtUsd(guarantorSpreadUsd)} 归保证主体；银行场景息差 ${fmtUsd(bankNimUsd)}。`;
+  }
+
+  const parties: PartyAlloc[] = [
+    {
+      party: "chuan",
+      nameZh: "保证主体",
+      fundingRole:
+        alloc.placement === "none"
+          ? "可不出资"
+          : `保函存款质押 ${fmtUsd(inputs.depositUsd)}${
+              isInterestUpfront(inputs)
+                ? "（利息前置进面额）"
+                : "（利息未前置·面额=本金）"
+            }`,
+      creditRole:
+        alloc.placement === "none"
+          ? "无保函信用义务"
+          : alloc.placement === "help_mfi"
+            ? `保函 ${pct(gLivePct, 1)} · 节降 JV 保证金 ${pct(marginReliefPp, 0)}`
+            : `保函 ${pct(gLivePct, 1)} · 缓释银行（保证金不节降）`,
+      incomeUsd: guarantorIncome,
+      costUsd: 0,
+      netUsd: guarantorIncome,
+      riskPremiumUsd: guarantorFeeUsd,
+      carryUsd: guarantorSpreadUsd + guarantorDepositUsd,
+      note:
+        alloc.placement === "none"
+          ? "未开保函：无息差分成、无保函费"
+          : "收入=转贷相对银行报价的差价 + 保函存款利息 + 保函费（风险溢价）",
+    },
+    {
+      party: "jv",
+      nameZh: "JV",
+      fundingRole: `代小贷存出保证金 ${fmtUsd(calc.marginLocal / inputs.fx)}（${pct(marginPct, 0)}·本金${
+        alloc.placement === "help_mfi" && marginReliefPp > 0
+          ? ` · 保函节降 ${pct(marginReliefPp, 0)}`
+          : alloc.placement === "help_bank"
+            ? " · 全额不节降"
+            : ""
+      }）+ 代偿备付 ${pct(alloc.compensatoryPct, 1)}`,
+      creditRole: "先损：代偿备付、保证金（视结构）",
+      incomeUsd: jvIncome,
+      costUsd: 0,
+      netUsd: jvIncome,
+      riskPremiumUsd: 0,
+      carryUsd: jvIncome,
+      note: `服务费 ${fmtUsd(jvServiceUsd)}（助贷本金×${pct(alloc.jvServiceFeePct ?? 0.2)}）+ 或有保证金利息 ${fmtUsd(jvMarginIncome)}（视谈判）`,
+    },
+    {
+      party: "bank",
+      nameZh: "本地银行",
+      fundingRole: `发放本金 ${fmtUsd(loanUsd)}`,
+      creditRole: "信用增级耗尽后的本金残余",
+      incomeUsd: bankInterestUsd,
+      costUsd: bankDepositCostUsd,
+      netUsd: bankNimUsd,
+      riskPremiumUsd: 0,
+      carryUsd: bankNimUsd,
+      note: `收入=发放本金固收利息 ${fmtUsd(bankInterestUsd)}；成本=代付保证金存款利息 ${fmtUsd(bankDepositCostUsd)}（付 JV）；净额=固收·场景息差 ${fmtUsd(bankNimUsd)}`,
+    },
+  ].sort((a, b) => b.incomeUsd - a.incomeUsd);
+
+  return {
+    loanUsd,
+    vintageFromLeft,
+    layers,
+    parties,
+    thesis,
+    pricingHint,
+    marginReliefPp,
+    guaranteeCoverageUsd,
+    bankNetInterestUsd: bankNimUsd,
+    jvFirstLossUsd,
+    chuanCreditSliceUsd,
+  };
+}
+
+type ExportFormat = "excel" | "pdf";
+
+type GuaranteeExportContext = {
+  inputs: Inputs;
+  calc: Calc;
+  allocation: Allocation;
+  allocParams: AllocParams;
+  country: CountryPreset;
+  chuanMerge: ReturnType<typeof chuanMergeMetrics>;
+  chuanIncludeJv: boolean;
+  targetUsdYieldPct: number;
+  generatedAt: string;
+};
+
+function xmlEsc(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function exportStamp() {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
+function placementLabelZh(p: GuaranteePlacement) {
+  if (p === "help_mfi") return "帮小贷劣后";
+  if (p === "help_bank") return "帮银行缓释";
+  return "不开保函";
+}
+
+function downloadTextFile(filename: string, mime: string, content: string) {
+  const blob = new Blob(["\uFEFF", content], { type: `${mime};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function htmlEsc(s: string) {
+  return xmlEsc(s);
+}
+
+/** Excel HTML 行：B 列放数值/公式（x:fmla），兼容中文版 Excel / WPS */
+function excelHtmlRow(
+  label: string,
+  value: string | number,
+  unit: string,
+  opts?: { formula?: string; kind?: "input" | "calc" | "text" },
+) {
+  const kind = opts?.kind ?? "text";
+  const cls =
+    kind === "input" ? "input" : kind === "calc" ? "calc" : "";
+  const fmla = opts?.formula
+    ? ` x:fmla="${htmlEsc(opts.formula)}"`
+    : "";
+  const numAttr = typeof value === "number" ? ' x:num=""' : "";
+  const display =
+    typeof value === "number" ? String(value) : htmlEsc(String(value));
+  return `<tr>
+    <td>${htmlEsc(label)}</td>
+    <td class="${cls}"${fmla}${numAttr}>${display}</td>
+    <td>${htmlEsc(unit)}</td>
+  </tr>`;
+}
+
+function excelHtmlSection(title: string) {
+  return `<tr><td colspan="3" class="section">${htmlEsc(title)}</td></tr>`;
+}
+
+function excelHtmlBlankRow() {
+  return "<tr><td colspan=\"3\">&nbsp;</td></tr>";
+}
+
+function bankExposurePct(ctx: GuaranteeExportContext) {
+  const loanUsd = Math.max(ctx.calc.loanPrincipalUsd, 1e-9);
+  const gPct = (ctx.calc.guaranteeUsd / loanUsd) * 100;
+  const marginPct = effectiveMarginPct(ctx.allocParams, ctx.inputs);
+  return (
+    100 -
+    marginPct -
+    ctx.allocParams.mfiCreditPct -
+    (ctx.allocParams.placement === "help_bank" ? gPct : 0)
+  );
+}
+
+function buildGuaranteeExcelHtml(ctx: GuaranteeExportContext) {
+  const { inputs: i, calc: c, allocation: a, allocParams: ap, country, chuanMerge } =
+    ctx;
+  const upfront = isInterestUpfront(i) ? 1 : 0;
+  const chuanFormula = ctx.chuanIncludeJv
+    ? "=B22+B34+B35*B18/100-B24"
+    : "=B22+B34-B24";
+
+  const structureRows = [
+    excelHtmlRow("跨境保函项下转贷测算", "", "", { kind: "text" }),
+    excelHtmlRow("国家", country.nameZh, ""),
+    excelHtmlRow("生成时间", ctx.generatedAt, ""),
+    excelHtmlBlankRow(),
+    excelHtmlSection("【结构参数 · 黄底可改】"),
+    excelHtmlRow("保函存款本金", i.depositUsd, "万美元", { kind: "input" }),
+    excelHtmlRow("存款利率", i.depositRatePct, "%", { kind: "input" }),
+    excelHtmlRow("存款天数", i.depositDays, "天", { kind: "input" }),
+    excelHtmlRow("保函手续费", i.guaranteeFeePct, "%", { kind: "input" }),
+    excelHtmlRow("贷款价格", i.loanRatePct, "%", { kind: "input" }),
+    excelHtmlRow("贷款天数", i.loanDays, "天", { kind: "input" }),
+    excelHtmlRow(`汇率 · ${country.ccy}/USD`, i.fx, "", { kind: "input" }),
+    excelHtmlRow("保函折扣率", i.discountPct, "%", { kind: "input" }),
+    excelHtmlRow("转贷价格", i.onlendPct, "%", { kind: "input" }),
+    excelHtmlRow("本币保证金(瀑布实缴)", i.marginPct, "%·助贷本金", { kind: "input" }),
+    excelHtmlRow("本币存款利率", i.localDepositRatePct, "%", { kind: "input" }),
+    excelHtmlRow("保证金利息税率", i.marginInterestTaxPct, "%", { kind: "input" }),
+    excelHtmlRow("CHUAN占JV股权", i.chuanJvPct, "%", { kind: "input" }),
+    excelHtmlRow("利息前置(1=是)", upfront, "", { kind: "input" }),
+    excelHtmlBlankRow(),
+    excelHtmlSection("【测算结果 · 蓝底含公式】"),
+    excelHtmlRow("保函存款利息", c.depositInterestUsd, "万美元", {
+      kind: "calc",
+      formula: "=B6*B7/100*B8/360",
+    }),
+    excelHtmlRow("保函面额", c.guaranteeUsd, "万美元", {
+      kind: "calc",
+      formula: "=IF(B19=1,B6+B22,B6)",
+    }),
+    excelHtmlRow("保函手续费", c.guaranteeFeeUsd, "万美元", {
+      kind: "calc",
+      formula: "=B23*B9/100",
+    }),
+    excelHtmlRow("助贷本金(本币)", c.loanLocal, `万${country.ccyName}`, {
+      kind: "calc",
+      formula: "=B23*B13/100*B12/(1+B10/100*B11/365)",
+    }),
+    excelHtmlRow("转贷利息", c.onlendInterestLocal, `万${country.ccyName}`, {
+      kind: "calc",
+      formula: "=B25*B14/100*B11/360",
+    }),
+    excelHtmlRow("贷款利息", c.loanInterestLocal, `万${country.ccyName}`, {
+      kind: "calc",
+      formula: "=B25*B10/100*B11/360",
+    }),
+    excelHtmlRow("本币息差", c.spreadLocal, `万${country.ccyName}`, {
+      kind: "calc",
+      formula: "=B26-B27",
+    }),
+    excelHtmlRow("保证金本金", c.marginLocal, `万${country.ccyName}`, {
+      kind: "calc",
+      formula: "=B25*B15/100",
+    }),
+    excelHtmlRow("保证金利息(税前)", c.marginInterestGrossLocal, `万${country.ccyName}`, {
+      kind: "calc",
+      formula: "=B29*B16/100*B11/360",
+    }),
+    excelHtmlRow("利息税", c.marginInterestTaxLocal, `万${country.ccyName}`, {
+      kind: "calc",
+      formula: "=B30*B17/100",
+    }),
+    excelHtmlRow("保证金利息(税后)", c.marginInterestLocal, `万${country.ccyName}`, {
+      kind: "calc",
+      formula: "=B30-B31",
+    }),
+    excelHtmlRow("本币侧小计", c.localLegNetLocal, `万${country.ccyName}`, {
+      kind: "calc",
+      formula: "=B28+B32",
+    }),
+    excelHtmlRow("息差折美元", c.spreadUsdSpot, "万美元", {
+      kind: "calc",
+      formula: "=B28/B12",
+    }),
+    excelHtmlRow("保证金利息折美元", c.marginInterestUsd, "万美元", {
+      kind: "calc",
+      formula: "=B32/B12",
+    }),
+    excelHtmlRow("本币侧折美元", c.localLegNetUsd, "万美元", {
+      kind: "calc",
+      formula: "=B33/B12",
+    }),
+    excelHtmlRow("助贷本金折美元", c.loanPrincipalUsd, "万美元", {
+      kind: "calc",
+      formula: "=B25/B12",
+    }),
+    excelHtmlRow("全折美元净收益", c.netUsdFull, "万美元", {
+      kind: "calc",
+      formula: "=B22+B36-B24",
+    }),
+    excelHtmlRow("全折美元收益率", c.usdYieldFull, "", {
+      kind: "calc",
+      formula: "=B38/B6",
+    }),
+    excelHtmlRow("美元侧净收益", c.usdLegNetUsd, "万美元", {
+      kind: "calc",
+      formula: "=B22-B24",
+    }),
+    excelHtmlRow(
+      `CHUAN口径净收益 · ${chuanMerge.suffix}`,
+      chuanMerge.netUsd,
+      "万美元",
+      { kind: "calc", formula: chuanFormula },
+    ),
+    excelHtmlRow("CHUAN口径收益率", chuanMerge.yieldPct, "", {
+      kind: "calc",
+      formula: "=B41/B6",
+    }),
+  ].join("");
+
+  const expPct = bankExposurePct(ctx);
+  const effMargin = effectiveMarginPct(ap, i);
+  const allocRows = [
+    excelHtmlSection("【分配侧 · 权利义务快照】"),
+    excelHtmlRow("保函位置", placementLabelZh(ap.placement), ""),
+    excelHtmlRow("利息前置", isInterestUpfront(i) ? "是" : "否", ""),
+    excelHtmlRow("保证金", effMargin, "%·助贷本金", { kind: "input" }),
+    ...(ap.placement === "help_mfi"
+      ? [
+          excelHtmlRow("节降前保证金", ap.marginWithoutGuaranteePct, "%·助贷本金", {
+            kind: "input",
+          }),
+          excelHtmlRow("保函节降", a.marginReliefPp, "pp", { kind: "calc" }),
+        ]
+      : []),
+    excelHtmlRow("EL", ap.vintageElPct, "%·本金", { kind: "input" }),
+    excelHtmlRow("小贷净资产", ap.mfiCreditPct, "%·助贷本金", { kind: "input" }),
+    excelHtmlRow("代偿备付", ap.compensatoryPct, "%·助贷本金", { kind: "input" }),
+    excelHtmlRow("JV服务费", ap.jvServiceFeePct ?? 0.2, "%·助贷本金", { kind: "input" }),
+    excelHtmlRow("银行风险敞口(倒算)", expPct, "%·助贷本金", { kind: "calc" }),
+    excelHtmlRow("银行固收利息(收入)", a.parties.find((p) => p.party === "bank")?.incomeUsd ?? 0, "万美元", { kind: "calc" }),
+    excelHtmlRow("银行存款成本", a.parties.find((p) => p.party === "bank")?.costUsd ?? 0, "万美元", { kind: "calc" }),
+    excelHtmlRow("固收·场景息差(净额)", a.bankNetInterestUsd, "万美元", { kind: "calc" }),
+    excelHtmlBlankRow(),
+    excelHtmlSection("三主体当期收入（万美元）"),
+    ...a.parties.map((p) => excelHtmlRow(p.nameZh, p.incomeUsd, p.note, { kind: "calc" })),
+    excelHtmlBlankRow(),
+    excelHtmlRow("情景说明", a.thesis, ""),
+    excelHtmlRow("定价提示", a.pricingHint, ""),
+  ].join("");
+
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<!--[if gte mso 9]><xml>
+<x:ExcelWorkbook>
+<x:ExcelWorksheets>
+<x:ExcelWorksheet>
+<x:Name>结构测算</x:Name>
+<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet>
+</x:ExcelWorksheets>
+</x:ExcelWorkbook>
+</xml><![endif]-->
+<style>
+table { border-collapse: collapse; }
+td, th { border: 1px solid #ccc; padding: 4px 8px; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; font-size: 11pt; }
+.section { font-weight: bold; background: #e8e8e8; }
+.input { background: #FFF8E8; mso-number-format: "General"; }
+.calc { background: #EEF6FF; mso-number-format: "General"; }
+</style>
+</head>
+<body>
+<table cellspacing="0" cellpadding="0">
+<colgroup><col width="220"/><col width="140"/><col width="120"/></colgroup>
+<tbody>
+${structureRows}
+</tbody>
+</table>
+<br/>
+<table cellspacing="0" cellpadding="0">
+<colgroup><col width="220"/><col width="140"/><col width="280"/></colgroup>
+<tbody>
+${allocRows}
+</tbody>
+</table>
+</body>
+</html>`;
+}
+
+function buildGuaranteePdfHtml(ctx: GuaranteeExportContext) {
+  const { inputs: i, calc: c, allocation: a, allocParams: ap, country, chuanMerge } =
+    ctx;
+  const expPct = bankExposurePct(ctx);
+  const effMargin = effectiveMarginPct(ap, i);
+  const paramRows: [string, string][] = [
+    ["国家", `${country.nameZh} · ${country.regulator} · ${country.ccy}`],
+    ["保函存款本金", `${num(i.depositUsd)} 万美元`],
+    ["存款利率 / 天数", `${pct(i.depositRatePct)} · ${i.depositDays} 天`],
+    ["保函手续费", pct(i.guaranteeFeePct)],
+    ["贷款价格 / 天数", `${pct(i.loanRatePct)} · ${i.loanDays} 天`],
+    ["汇率", `${num(i.fx, i.fx >= 100 ? 0 : 2)} ${country.ccy}/USD`],
+    ["保函折扣率", pct(i.discountPct)],
+    ["转贷价格", pct(i.onlendPct)],
+    ["本币保证金(瀑布实缴)", pct(effMargin)],
+    ["本币存款利率", pct(i.localDepositRatePct)],
+    ["保证金利息税率", pct(i.marginInterestTaxPct)],
+    ["CHUAN占JV股权", pct(i.chuanJvPct, 0)],
+    ["利息前置", isInterestUpfront(i) ? "是" : "否"],
+  ];
+  const resultRows: [string, string][] = [
+    ["保函面额", `${num(c.guaranteeUsd)} 万美元`],
+    ["助贷本金", `${num(c.loanLocal)} 万${country.ccyName} · ≈ ${num(c.loanPrincipalUsd)} 万美元`],
+    ["本币息差", `${num(c.spreadLocal)} 万${country.ccyName} · ≈ ${num(c.spreadUsdSpot)} 万美元`],
+    ["保证金利息(税后)", `${num(c.marginInterestLocal)} 万${country.ccyName} · ≈ ${num(c.marginInterestUsd)} 万美元`],
+    ["全折美元净收益", `${num(c.netUsdFull)} 万美元`],
+    ["全折美元收益率", pct(c.usdYieldFull * 100, 2)],
+    [`CHUAN口径收益率 · ${chuanMerge.suffix}`, pct(chuanMerge.yieldPct * 100, 2)],
+    ["银行固收利息(收入)", `${num(a.parties.find((p) => p.party === "bank")?.incomeUsd ?? 0)} 万美元`],
+    ["银行存款成本", `${num(a.parties.find((p) => p.party === "bank")?.costUsd ?? 0)} 万美元`],
+    ["固收·场景息差(净额)", `${num(a.bankNetInterestUsd)} 万美元`],
+  ];
+  const allocParamRows: [string, string][] = [
+    ["保函位置", placementLabelZh(ap.placement)],
+    ["保证金", pct(effMargin)],
+    ...(ap.placement === "help_mfi"
+      ? [
+          ["节降前保证金", pct(ap.marginWithoutGuaranteePct, 0)],
+          ["保函节降", pct(a.marginReliefPp, 0)],
+        ]
+      : []),
+    ["EL", pct(ap.vintageElPct, 0)],
+    ["小贷净资产", pct(ap.mfiCreditPct, 0)],
+    ["代偿备付", pct(ap.compensatoryPct, 1)],
+    ["JV 服务费", pct(ap.jvServiceFeePct ?? 0.2, 2)],
+    ["银行风险敞口(倒算)", pct(expPct, 1)],
+  ];
+  const partyRows: [string, string, string][] = a.parties.map((p) => [
+    p.nameZh,
+    `${num(p.incomeUsd)} 万美元`,
+    p.note,
+  ]);
+
+  const table = (title: string, head: string[], rows: string[][]) => `
+    <h2>${xmlEsc(title)}</h2>
+    <table>
+      <thead><tr>${head.map((h) => `<th>${xmlEsc(h)}</th>`).join("")}</tr></thead>
+      <tbody>${rows
+        .map(
+          (r) =>
+            `<tr>${r.map((cell) => `<td>${xmlEsc(cell)}</td>`).join("")}</tr>`,
+        )
+        .join("")}</tbody>
+    </table>`;
+
+  return `<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<title>保函转贷测算 · ${xmlEsc(country.nameZh)}</title>
+<style>
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; font-size: 12px; color: #111; margin: 24px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .meta { color: #666; margin-bottom: 16px; }
+  h2 { font-size: 13px; margin: 18px 0 8px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #f5f5f5; width: 28%; }
+  .note { color: #444; line-height: 1.5; margin: 8px 0; }
+  @media print { body { margin: 12mm; } }
+</style>
+</head><body>
+  <h1>跨境保函项下转贷测算表</h1>
+  <div class="meta">${xmlEsc(ctx.generatedAt)} · ${xmlEsc(country.asOf)}</div>
+  ${table("结构参数", ["项目", "取值"], paramRows)}
+  ${table("测算结果", ["项目", "结果"], resultRows)}
+  ${table("分配侧 · 结构参数", ["项目", "取值"], allocParamRows)}
+  <table>
+    <tbody>
+      <tr><th>情景说明</th><td>${xmlEsc(a.thesis)}</td></tr>
+      <tr><th>定价提示</th><td>${xmlEsc(a.pricingHint)}</td></tr>
+    </tbody>
+  </table>
+  ${table("三主体当期收入", ["主体", "收入", "说明"], partyRows)}
+  <p class="note">银行收入=发放本金固收利息；成本=代付 JV 保证金存款利息；净额=固收·场景息差。不含无法考证的吸储成本。Excel 含公式版（黄底改参数、蓝底公式）可复算。</p>
+</body></html>`;
+}
+
+function openGuaranteePdfPrint(html: string, title: string) {
+  const w = window.open("", "_blank", "noopener,noreferrer");
+  if (!w) {
+    throw new Error("请允许弹出窗口，或在浏览器设置中放行后重试");
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  w.document.title = title;
+  window.setTimeout(() => {
+    w.focus();
+    w.print();
+  }, 350);
+}
+
+function exportGuaranteeReport(ctx: GuaranteeExportContext, format: ExportFormat) {
+  const base = `保函转贷测算-${ctx.country.nameZh}-${exportStamp()}`;
+  if (format === "excel") {
+    downloadTextFile(
+      `${base}.xls`,
+      "application/vnd.ms-excel",
+      buildGuaranteeExcelHtml(ctx),
+    );
+    return "已下载 Excel（含公式），请用 Excel / WPS 打开；黄底改参数、蓝底自动重算";
+  }
+  openGuaranteePdfPrint(
+    buildGuaranteePdfHtml(ctx),
+    `保函转贷测算 · ${ctx.country.nameZh}`,
+  );
+  return "已打开打印预览，请选择「另存为 PDF」";
+}
+
 /** 菲律宾表内 C19，作跨国外报价的美元门槛默认值 */
 const PH_EXCEL_YIELD_PCT = 9.0508;
 const TARGET_YIELD_STEP = 0.25;
@@ -892,7 +1843,9 @@ function invertOnlendPct(
   const localDepR = Math.max(i.localDepositRatePct, 0) / 100;
   const fx = Math.max(i.fx, 1e-9);
   const depositInterestUsd = (i.depositUsd * depR * i.depositDays) / 360;
-  const guaranteeUsd = i.depositUsd + depositInterestUsd;
+  const guaranteeUsd = isInterestUpfront(i)
+    ? i.depositUsd + depositInterestUsd
+    : i.depositUsd;
   const guaranteeFeeUsd = guaranteeUsd * feeR;
   const loanLocal =
     (guaranteeUsd * disc * fx) / (1 + (loanR * i.loanDays) / 365);
@@ -937,24 +1890,75 @@ function Field({
   onChange,
   suffix,
   hint,
+  step = 1,
+  min = 0,
+  max = 1e12,
 }: {
   label: string;
   value: number;
   onChange: (n: number) => void;
   suffix?: string;
   hint?: string;
+  /** 上下微调步长；默认 1 */
+  step?: number;
+  min?: number;
+  max?: number;
 }) {
+  const [text, setText] = useState(() => String(value));
+  useEffect(() => {
+    setText(String(value));
+  }, [value]);
+  const commit = (raw: string) => {
+    const trimmed = String(raw).trim().replace(/,/g, "");
+    if (trimmed === "" || trimmed === "-" || trimmed === ".") {
+      setText(raw);
+      return;
+    }
+    const n = Number(trimmed);
+    if (!Number.isFinite(n)) {
+      setText(raw);
+      return;
+    }
+    const clamped = Math.min(max, Math.max(min, n));
+    setText(String(clamped));
+    onChange(round2(clamped));
+  };
+  const bump = (delta: number) => {
+    const next = Math.min(max, Math.max(min, value + delta));
+    onChange(round2(next));
+  };
   return (
     <Stack gap={4}>
       <Text size="small" tone="secondary">
         {label}
         {suffix ? ` · ${suffix}` : ""}
       </Text>
-      <TextInput
-        type="number"
-        value={String(value)}
-        onChange={(v) => onChange(parseNum(v, value))}
-      />
+      <Row gap={6} align="center">
+        <TextInput
+          type="text"
+          value={text}
+          onChange={commit}
+          style={{ flex: 1, minWidth: 88 }}
+        />
+        <Stack gap={0} style={{ flexShrink: 0 }}>
+          <IconButton
+            title={`提高 ${step}`}
+            size="sm"
+            onClick={() => bump(step)}
+            disabled={value >= max - 1e-9}
+          >
+            +
+          </IconButton>
+          <IconButton
+            title={`降低 ${step}`}
+            size="sm"
+            onClick={() => bump(-step)}
+            disabled={value <= min + 1e-9}
+          >
+            −
+          </IconButton>
+        </Stack>
+      </Row>
       {hint ? (
         <Text size="small" tone="tertiary">
           {hint}
@@ -1051,7 +2055,7 @@ function StepStat({
               onClick={() => bump(step)}
               disabled={value >= max - 1e-9}
             >
-              ▲
+              +
             </IconButton>
             <IconButton
               title={`降低 ${step}${stepUnit}`}
@@ -1059,7 +2063,7 @@ function StepStat({
               onClick={() => bump(-step)}
               disabled={value <= min + 1e-9}
             >
-              ▼
+              −
             </IconButton>
           </Stack>
         </Row>
@@ -1430,7 +2434,7 @@ function PnlWaterfall({
           </div>
         </div>
       </div>
-      <CollapsibleSection title="明细表" defaultOpen={false}>
+      <PersistCollapsibleSection title="明细表" defaultOpen={false}>
         <Table
           headers={["项目", "类型", "金额", "计息基数", "公式"]}
           columnAlign={["left", "left", "right", "left", "left"]}
@@ -1446,7 +2450,1304 @@ function PnlWaterfall({
             s.formula,
           ])}
         />
-      </CollapsibleSection>
+      </PersistCollapsibleSection>
+    </Stack>
+  );
+}
+
+type PartyKey = "bank" | "jv" | "mfi" | "chuan";
+
+function partyColor(
+  party: PartyKey,
+  theme: ReturnType<typeof useHostTheme>,
+): string {
+  const c = theme.category;
+  if (party === "bank") return c.blue;
+  if (party === "jv") return c.cyan;
+  if (party === "mfi") return c.orange;
+  return c.purple;
+}
+
+function partyName(party: PartyKey): string {
+  if (party === "bank") return "银行";
+  if (party === "jv") return "JV代小贷";
+  if (party === "mfi") return "小贷";
+  return "保证主体";
+}
+
+const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨"];
+
+type MapLeg = {
+  id: string;
+  party: PartyKey;
+  label: string;
+  entityLabel: string;
+  oblRank: number | null;
+  rightRank: number | null;
+  rightLabel: string;
+  /** 义务位置：占银行助贷本金 0–1（义务轨独立轴=本金100%） */
+  start: number;
+  actual: number;
+  /** 虚线范围（仅非 bridge 行使用） */
+  scope: number;
+  scopeStart: number;
+  /** 义务条下方短注 */
+  oblNote?: string;
+  /** 义务条延伸至权利侧，覆盖银行固收利息 */
+  bridgeBankRight?: boolean;
+  incomeUsd: number;
+  incomeStart: number;
+  incomeShare: number;
+  /** 同条多段（如代偿+保证金合并），颜色区分 */
+  segments?: {
+    id: string;
+    label: string;
+    start: number;
+    width: number;
+    color: "cyan" | "green" | "blue" | "orange" | "purple";
+    mark: string;
+  }[];
+};
+
+/**
+ * 本币贷款端权利义务瀑布：
+ * - 保函=保函/本金；保证金、小贷净资产按配置；银行风险敞口=缓释后剩余纯敞口
+ * - 银行出资行固定 0–100% 轴；保函/保证金可超出 100% 时仅拉伸下方叠层轴，非银行增出资
+ * - EL 仅作 Vintage 刻度线，不决定银行色块长度
+ * - 代偿备付落固收当量区（日常代偿，不占本金轴）
+ * - JV/小贷虚线延伸至权利侧覆盖银行固收
+ */
+function buildWaterfallLegs(
+  allocIn: AllocParams,
+  allocation: Allocation,
+  calc: Calc,
+  inputs: Inputs,
+): {
+  legs: MapLeg[];
+  interestOfLoan: number;
+  axisMin: number;
+  axisMax: number;
+  emptyReason?: string;
+} {
+  const alloc = normalizeAlloc(allocIn);
+  /** 真实助贷本金；为 0 时不画任何义务色块（避免 % 配置与 $0 脱节） */
+  const loanLive = Math.max(calc.loanPrincipalUsd, 0);
+  if (loanLive < 1e-6) {
+    return {
+      legs: [
+        {
+          id: "funding",
+          party: "bank",
+          label: "本金",
+          entityLabel: "银行",
+          oblRank: null,
+          rightRank: null,
+          rightLabel: "",
+          start: 0,
+          actual: 0,
+          scope: 0,
+          scopeStart: 0,
+          oblNote:
+            calc.guaranteeUsd < 1e-6
+              ? "保函金额为 0 → 助贷本金为 0 · 无义务/权利色块"
+              : "助贷本金为 0 · 无义务/权利色块",
+          incomeUsd: 0,
+          incomeStart: 0,
+          incomeShare: 0,
+        },
+      ],
+      interestOfLoan: 0,
+      axisMin: 0,
+      axisMax: 1,
+      emptyReason:
+        calc.guaranteeUsd < 1e-6
+          ? "保函归零，助贷本金联动为 0，色块已清空"
+          : "助贷本金为 0，色块已清空",
+    };
+  }
+
+  const loan = loanLive;
+  const bankInterest = Math.max(calc.loanCostUsd, 0);
+  const interestOfLoan = bankInterest / loan;
+
+  const c = Math.max(alloc.compensatoryPct, 0) / 100;
+  const mActual = Math.max(effectiveMarginPct(alloc, inputs), 0) / 100;
+  /** 保证色块厚度=保函/本金，可>100%（折扣<覆盖利率时） */
+  const gFromCalc = Math.max(calc.guaranteeUsd / loan, 0);
+  const g = alloc.placement === "none" ? 0 : gFromCalc;
+  const mfiWant = Math.max(alloc.mfiCreditPct, 0) / 100;
+
+  /**
+   * 本金轴：左=优先/银行，右=劣后。
+   * - 帮小贷（见示意图）：敞口 | 小贷信用 | [Vintage] | 保函 | 保证金（保函在 EL 右侧，把保证金往右推）
+   * - 帮银行：保证金 | 小贷净资产 | 保函 | 银行敞口
+   */
+  type Slot = {
+    id: string;
+    party: PartyKey;
+    label: string;
+    entityLabel: string;
+    start: number;
+    actual: number;
+    scope: number;
+    scopeStart: number;
+    oblRank: number;
+    oblNote?: string;
+    bridgeBankRight?: boolean;
+    segments?: MapLeg["segments"];
+  };
+
+  const slots: Slot[] = [];
+  let rank = 0;
+  const m = mActual;
+  const mfi = mfiWant;
+  const vintageLine = Math.max(0, Math.min(1, 1 - alloc.vintageElPct / 100));
+  const mFull =
+    alloc.placement === "help_mfi"
+      ? Math.max(alloc.marginWithoutGuaranteePct, 0) / 100
+      : m;
+  const marginRelief =
+    alloc.placement === "help_mfi" ? Math.max(mFull - m, 0) : 0;
+
+  if (alloc.placement === "help_mfi") {
+    const v = vintageLine;
+    const gStart = v;
+    const mStartJv = v + g;
+    const mfiStart = Math.max(0, v - mfi);
+    const bankResidual = 1 - m - mfi;
+
+    if (m > 0 || c > 0) {
+      rank += 1;
+      const segments: NonNullable<MapLeg["segments"]> = [];
+      if (m > 0) {
+        segments.push({
+          id: "margin",
+          label: "保证金",
+          start: mStartJv,
+          width: m,
+          color: "cyan",
+          mark: "",
+        });
+      }
+      slots.push({
+        id: "jv-first-loss",
+        party: "jv",
+        label: m > 0 ? "保证金" : "代偿备付",
+        entityLabel: "JV代小贷",
+        start: mStartJv,
+        actual: m,
+        scope: 0,
+        scopeStart: 0,
+        oblRank: rank,
+        bridgeBankRight: true,
+        segments: segments.length > 0 ? segments : undefined,
+        oblNote: [
+          m > 0
+            ? `保函在 EL 右侧 · 节降后 ${pct(m * 100, 1)}（无保函对照 ${pct(mFull * 100, 1)}）`
+            : "",
+          c > 0 ? `代偿备付 ${pct(c * 100, 1)} 在固收当量区` : "",
+        ]
+          .filter(Boolean)
+          .join(" · ") || undefined,
+      });
+    }
+
+    if (g > 0) {
+      rank += 1;
+      slots.push({
+        id: "guarantee",
+        party: "chuan",
+        label: "保证",
+        entityLabel: "保证主体",
+        start: gStart,
+        actual: g,
+        scope: 0,
+        scopeStart: 0,
+        oblRank: rank,
+        oblNote: `帮小贷 · 保函贴 EL 线右侧 ${pct(g * 100, 1)} · 置换保证金 ${pct(marginRelief * 100, 1)} · 不进银行敞口倒算`,
+      });
+    }
+
+    if (mfi > 0) {
+      rank += 1;
+      slots.push({
+        id: "mfi-credit",
+        party: "mfi",
+        label: "净资产",
+        entityLabel: "小贷",
+        start: mfiStart,
+        actual: mfi,
+        scope: 0,
+        scopeStart: 0,
+        oblRank: rank,
+        bridgeBankRight: true,
+        oblNote: `小贷信用 ${pct(mfi * 100, 1)} · EL 线左侧`,
+      });
+    }
+
+    if (bankResidual > 1e-9) {
+      rank += 1;
+      slots.push({
+        id: "bank-residual",
+        party: "bank",
+        label: "风险敞口",
+        entityLabel: "银行",
+        start: 0,
+        actual: bankResidual,
+        scope: 0,
+        scopeStart: 0,
+        oblRank: rank,
+        oblNote: `敞口 = 本金 − 节降后保证金 − 小贷净资产 → ${pct(bankResidual * 100, 1)}（保函不进倒算）`,
+      });
+    } else if (bankResidual < -1e-9) {
+      rank += 1;
+      slots.push({
+        id: "bank-residual",
+        party: "bank",
+        label: "负敞口",
+        entityLabel: "银行",
+        start: bankResidual,
+        actual: -bankResidual,
+        scope: 0,
+        scopeStart: 0,
+        oblRank: rank,
+        oblNote: `缓释合计超过本金 → 敞口 ${pct(bankResidual * 100, 1)}`,
+      });
+    }
+  } else {
+    const mStart = 1 - m;
+
+    if (m > 0 || c > 0) {
+      rank += 1;
+      const segments: NonNullable<MapLeg["segments"]> = [];
+      if (m > 0) {
+        segments.push({
+          id: "margin",
+          label: "保证金",
+          start: mStart,
+          width: m,
+          color: "cyan",
+          mark: "",
+        });
+      }
+      slots.push({
+        id: "jv-first-loss",
+        party: "jv",
+        label: m > 0 ? "保证金" : "代偿备付",
+        entityLabel: "JV代小贷",
+        start: mStart,
+        actual: m,
+        scope: 0,
+        scopeStart: 0,
+        oblRank: rank,
+        bridgeBankRight: true,
+        segments: segments.length > 0 ? segments : undefined,
+        oblNote: [
+          m > 0 && alloc.placement === "help_bank"
+            ? `全额 ${pct(m * 100, 1)}（保函不节降保证金）`
+            : m > 0
+              ? `保证金 ${pct(m * 100, 1)}`
+              : "",
+          c > 0 ? `代偿备付 ${pct(c * 100, 1)} 在固收当量区` : "",
+        ]
+          .filter(Boolean)
+          .join(" · ") || undefined,
+      });
+    }
+
+    if (mfi > 0) {
+      rank += 1;
+      const mfiStart = mStart - mfi;
+      slots.push({
+        id: "mfi-credit",
+        party: "mfi",
+        label: "净资产",
+        entityLabel: "小贷",
+        start: mfiStart,
+        actual: mfi,
+        scope: 0,
+        scopeStart: 0,
+        oblRank: rank,
+        bridgeBankRight: true,
+        oblNote: `配置净资产 ${pct(mfi * 100, 1)} · 义务延伸至银行固收`,
+      });
+    }
+
+    if (alloc.placement === "help_bank" && g > 0) {
+      rank += 1;
+      const gStart = mStart - mfi - g;
+      slots.push({
+        id: "guarantee",
+        party: "chuan",
+        label: "保证",
+        entityLabel: "保证主体",
+        start: gStart,
+        actual: g,
+        scope: 0,
+        scopeStart: 0,
+        oblRank: rank,
+        oblNote:
+          gStart < -1e-6
+            ? `帮银行缓释 · 保函 ${pct(g * 100, 1)}；左侧超出 ${pct(-gStart * 100, 1)}`
+            : `帮银行缓释 · 保函 ${pct(g * 100, 1)} · 挡在银行敞口前`,
+      });
+    }
+
+    const bankResidual =
+      alloc.placement === "help_bank" ? 1 - m - mfi - g : 1 - m - mfi;
+    if (bankResidual > 1e-9) {
+      rank += 1;
+      slots.push({
+        id: "bank-residual",
+        party: "bank",
+        label: "风险敞口",
+        entityLabel: "银行",
+        start: 0,
+        actual: bankResidual,
+        scope: 0,
+        scopeStart: 0,
+        oblRank: rank,
+        oblNote:
+          alloc.placement === "help_bank"
+            ? `缓释后纯敞口 = 本金 − 保证金 − 小贷净资产 − 保函 → ${pct(bankResidual * 100, 1)}`
+            : `缓释后纯敞口 = 本金 − 保证金 − 小贷净资产 → ${pct(bankResidual * 100, 1)}`,
+      });
+    } else if (bankResidual < -1e-9) {
+      rank += 1;
+      slots.push({
+        id: "bank-residual",
+        party: "bank",
+        label: "负敞口",
+        entityLabel: "银行",
+        start: bankResidual,
+        actual: -bankResidual,
+        scope: 0,
+        scopeStart: 0,
+        oblRank: rank,
+        oblNote: `缓释合计超过本金 → 敞口 ${pct(bankResidual * 100, 1)}（负向色块，向左超出 0%）`,
+      });
+    }
+  }
+
+  const order = ["jv-first-loss", "mfi-credit", "guarantee", "bank-residual"];
+  slots.sort(
+    (a, b) =>
+      order.indexOf(a.id) - order.indexOf(b.id) || a.start - b.start,
+  );
+  const byJunior = [...slots].sort(
+    (a, b) => b.start + b.actual - (a.start + a.actual),
+  );
+  byJunior.forEach((s, i) => {
+    s.oblRank = i + 1;
+  });
+
+  const jvService = (loan * Math.max(alloc.jvServiceFeePct, 0)) / 100;
+  const chuanFee =
+    alloc.placement === "none" ? 0 : Math.max(calc.guaranteeFeeUsd, 0);
+  const guarantorSpread =
+    alloc.placement === "none" ? 0 : Math.max(calc.spreadUsdSpot, 0);
+  const guarantorRight = chuanFee + guarantorSpread;
+
+  const bankGrossInterest = Math.max(calc.loanCostUsd, 0);
+  const rightOrder: {
+    party: PartyKey;
+    label: string;
+    amount: number;
+    rank: number;
+  }[] = [
+    { party: "bank", label: "固收利息", amount: bankGrossInterest, rank: 1 },
+    { party: "jv", label: "服务费（收入）", amount: jvService, rank: 2 },
+    { party: "chuan", label: "息差+风险收益", amount: guarantorRight, rank: 3 },
+  ].filter((x) => x.amount > 1e-9);
+
+  let cursor = 0;
+  const rightByParty = new Map<
+    PartyKey,
+    { start: number; share: number; amount: number; rank: number; label: string }
+  >();
+  for (const r of rightOrder) {
+    const share = r.amount / loan;
+    rightByParty.set(r.party, {
+      start: cursor,
+      share,
+      amount: r.amount,
+      rank: r.rank,
+      label: r.label,
+    });
+    cursor += share;
+  }
+
+  const bankRight = rightByParty.get("bank");
+
+  const funding: MapLeg = {
+    id: "funding",
+    party: "bank",
+    label: "本金",
+    entityLabel: "银行",
+    oblRank: null,
+    rightRank: bankRight?.rank ?? 1,
+    rightLabel: bankRight?.label ?? "固收利息",
+    start: 0,
+    actual: 1,
+    scope: 0,
+    scopeStart: 0,
+    incomeUsd: bankRight?.amount ?? 0,
+    incomeStart: bankRight?.start ?? 0,
+    incomeShare: bankRight?.share ?? 0,
+  };
+
+  const legs: MapLeg[] = [funding];
+  for (const p of slots) {
+    const rb = rightByParty.get(p.party);
+    const attachRight =
+      p.party === "jv"
+        ? p.id === "jv-first-loss"
+        : p.party === "bank"
+          ? false
+          : p.id === "guarantee";
+    const useRight = Boolean(attachRight && rb && rb.amount > 0);
+    legs.push({
+      id: p.id,
+      party: p.party,
+      label: p.label,
+      entityLabel: p.entityLabel,
+      oblRank: p.oblRank,
+      rightRank: useRight ? rb!.rank : null,
+      rightLabel: useRight ? rb!.label : "",
+      start: p.start,
+      actual: p.actual,
+      scope: p.scope,
+      scopeStart: p.scopeStart,
+      oblNote: p.oblNote,
+      bridgeBankRight: p.bridgeBankRight,
+      incomeUsd: useRight ? rb!.amount : 0,
+      incomeStart: useRight ? rb!.start : 0,
+      incomeShare: useRight ? rb!.share : 0,
+      segments: p.segments,
+    });
+  }
+
+  let axisMin = 0;
+  let axisMax = 1;
+  for (const leg of legs) {
+    if (leg.id === "funding") continue;
+    axisMin = Math.min(axisMin, leg.start);
+    axisMax = Math.max(axisMax, leg.start + leg.actual);
+    for (const seg of leg.segments ?? []) {
+      axisMin = Math.min(axisMin, seg.start);
+      axisMax = Math.max(axisMax, seg.start + seg.width);
+    }
+  }
+  // 略留左边距，负向色块不贴边
+  if (axisMin < -1e-9) axisMin = Math.min(axisMin * 1.05, axisMin - 0.02);
+
+  if (axisMax > 1.001) {
+    funding.oblNote = `银行出资仍为助贷本金 100%；轴延伸至 ${pct(axisMax * 100, 0)}% 仅因保函/保证金叠层（非银行增出资）`;
+  }
+
+  return { legs, interestOfLoan, axisMin, axisMax, emptyReason: undefined };
+}
+
+const OBL_COL_FR = 1;
+const RIGHT_COL_FR = 1;
+const FR_SUM = OBL_COL_FR + RIGHT_COL_FR;
+/** 义务/权利两轨之间：细缝即可，虚线跨列时不宜拉开 */
+const COL_GAP_PX = 4;
+const DIVIDER_W_PX = 1;
+const BRIDGE_GAP_PX = COL_GAP_PX * 2 + DIVIDER_W_PX;
+
+/**
+ * 权利轨与义务轨同轴：分母=助贷本金。
+ * 固收利息 share=贷款利息/本金（贷款价×天数/360，如 25%），条长应按 100:25 对齐本金条。
+ */
+function bankRightColFrac(bankIncomeShare: number): number {
+  return Math.min(Math.max(bankIncomeShare, 0), 1);
+}
+
+function bridgeSpanWidth(bankFracOnRightCol: number): string {
+  const obl = OBL_COL_FR / FR_SUM;
+  const right = RIGHT_COL_FR / FR_SUM;
+  return `calc((100% - ${BRIDGE_GAP_PX}px) * ${obl} + ${BRIDGE_GAP_PX}px + (100% - ${BRIDGE_GAP_PX}px) * ${right} * ${bankFracOnRightCol})`;
+}
+
+/** 虚线框内 · 本金侧（义务列宽度） */
+function bridgePrincipalZoneWidth(): string {
+  const obl = OBL_COL_FR / FR_SUM;
+  return `calc((100% - ${BRIDGE_GAP_PX}px) * ${obl})`;
+}
+
+/** 虚线框内 · 固收当量区（权利列银行固收段） */
+function bridgeInterestZoneWidth(bankFracOnRightCol: number): string {
+  const right = RIGHT_COL_FR / FR_SUM;
+  return `calc((100% - ${BRIDGE_GAP_PX}px) * ${right} * ${bankFracOnRightCol})`;
+}
+
+function bridgeInterestZoneLeft(bankFracOnRightCol: number): string {
+  const obl = OBL_COL_FR / FR_SUM;
+  return `calc((100% - ${BRIDGE_GAP_PX}px) * ${obl} + ${BRIDGE_GAP_PX}px)`;
+}
+
+function JvBridgeSegmentLayer({
+  bankRightFrac,
+  rankMark,
+  theme,
+  marginFrac,
+  marginStartFrac,
+  compensatoryFrac,
+  interestOfLoan,
+  axisMin = 0,
+  axisMax = 1,
+}: {
+  bankRightFrac: number;
+  rankMark: string;
+  theme: ReturnType<typeof useHostTheme>;
+  /** 保证金占助贷本金比例 0–1（节降后实缴） */
+  marginFrac: number;
+  /** 保证金起点（0–1）；默认贴右端 1−m */
+  marginStartFrac?: number;
+  /** 代偿备付占助贷本金比例 0–1 */
+  compensatoryFrac: number;
+  interestOfLoan: number;
+  axisMin?: number;
+  axisMax?: number;
+}) {
+  const barTop = 25;
+  const barH = 20;
+  const obl = OBL_COL_FR / FR_SUM;
+  const right = RIGHT_COL_FR / FR_SUM;
+  const m = Math.max(marginFrac, 0);
+  const c = Math.min(Math.max(compensatoryFrac, 0), 1);
+  const iol = Math.max(interestOfLoan, 1e-9);
+  const span = Math.max(axisMax - axisMin, 1e-9);
+  const mStart = marginStartFrac ?? 1 - m;
+  const mLeftFrac = (mStart - axisMin) / span;
+  const mWidthFrac = m / span;
+  const marginLeft = `calc((100% - ${BRIDGE_GAP_PX}px) * ${obl} * ${mLeftFrac})`;
+  const marginWidth = `calc((100% - ${BRIDGE_GAP_PX}px) * ${obl} * ${mWidthFrac})`;
+  const compInInterest = Math.min(c / iol, 1);
+  const compWidth = `calc((100% - ${BRIDGE_GAP_PX}px) * ${right} * ${bankRightFrac} * ${compInInterest})`;
+  /** 代偿备付画在银行固收当量区**左侧**，避免与 JV 服务费条贴在一起 */
+  const compLeft = `calc((100% - ${BRIDGE_GAP_PX}px) * ${obl} + ${BRIDGE_GAP_PX}px)`;
+
+  return (
+    <>
+      {m > 1e-9 ? (
+        <div
+          title={`保证金 ${pct(m * 100, 1)} · 本金侧`}
+          style={{
+            position: "absolute",
+            left: marginLeft,
+            top: barTop,
+            height: barH,
+            width: marginWidth,
+            background: theme.category.cyan,
+            borderRadius: 2,
+            zIndex: 2,
+            pointerEvents: "none",
+          }}
+        />
+      ) : null}
+      {c > 1e-9 ? (
+        <div
+          title={`代偿备付 ${pct(c * 100, 1)} · 义务备付（非收入），落固收当量区`}
+          style={{
+            position: "absolute",
+            left: compLeft,
+            top: barTop,
+            height: barH,
+            width: compWidth,
+            background: theme.category.green,
+            borderRadius: 2,
+            zIndex: 2,
+            pointerEvents: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            paddingLeft: 4,
+            boxSizing: "border-box",
+            overflow: "hidden",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              lineHeight: "12px",
+              color: theme.text.primary,
+              whiteSpace: "nowrap",
+            }}
+          >
+            代偿 {pct(c * 100, 1)}
+          </span>
+        </div>
+      ) : null}
+      {rankMark ? (
+        <span
+          style={{
+            position: "absolute",
+            left: marginLeft,
+            top: barTop + barH / 2,
+            transform: "translate(calc(-100% - 4px), -50%)",
+            fontSize: 11,
+            fontWeight: 700,
+            lineHeight: "14px",
+            color: theme.text.primary,
+            zIndex: 3,
+            pointerEvents: "none",
+          }}
+        >
+          {rankMark}
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+function BarRankLabel({
+  mark,
+  side,
+  anchorPct,
+}: {
+  mark: string;
+  side: "left" | "right";
+  anchorPct: number;
+}) {
+  const theme = useHostTheme();
+  if (!mark) return null;
+  const clamped = Math.min(Math.max(anchorPct, 0), 100);
+  return (
+    <span
+      style={{
+        position: "absolute",
+        top: "50%",
+        left: `${clamped}%`,
+        transform:
+          side === "left"
+            ? "translate(calc(-100% - 4px), -50%)"
+            : "translate(4px, -50%)",
+        fontSize: 11,
+        fontWeight: 700,
+        lineHeight: "14px",
+        color: theme.text.primary,
+        whiteSpace: "nowrap",
+        zIndex: 3,
+        pointerEvents: "none",
+      }}
+    >
+      {mark}
+    </span>
+  );
+}
+
+function WaterfallTrack({
+  kind,
+  party,
+  label,
+  rankMark,
+  start,
+  actual,
+  scope,
+  scopeStart,
+  amountLabel,
+  axisMin = 0,
+  axisMax,
+  vintagePct,
+  showVintage,
+  segments,
+  note,
+  negativeTone,
+}: {
+  kind: "obligation" | "right";
+  party: PartyKey;
+  label: string;
+  rankMark: string;
+  start: number;
+  actual: number;
+  scope: number;
+  scopeStart: number;
+  amountLabel: string;
+  axisMin?: number;
+  axisMax: number;
+  vintagePct: number;
+  showVintage: boolean;
+  segments?: MapLeg["segments"];
+  note?: string;
+  /** 负敞口：条纹提示 */
+  negativeTone?: boolean;
+}) {
+  const theme = useHostTheme();
+  const color = partyColor(party, theme);
+  const isObl = kind === "obligation";
+  const span = Math.max(axisMax - axisMin, 1e-9);
+  const toPct = (x: number) => ((x - axisMin) / span) * 100;
+  const segColor = (key: NonNullable<MapLeg["segments"]>[number]["color"]) =>
+    theme.category[key];
+  const barLeftPct =
+    segments && segments.length > 0
+      ? toPct(Math.min(...segments.map((s) => s.start)))
+      : toPct(start);
+  const barRightPct =
+    segments && segments.length > 0
+      ? toPct(
+          Math.max(...segments.map((s) => s.start + s.width)),
+        )
+      : toPct(start + actual);
+  const zeroPct = toPct(0);
+  const showZero = isObl && axisMin < -1e-6 && axisMax > 1e-6;
+
+  return (
+    <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+      <Row gap={6} align="center" wrap>
+        <Text size="small" weight="semibold">
+          {label}
+        </Text>
+        <Text size="small" tone="tertiary">
+          {amountLabel}
+        </Text>
+      </Row>
+      <div
+        style={{
+          position: "relative",
+          height: 30,
+          width: "100%",
+          borderRadius: 3,
+          background: theme.fill.tertiary,
+          boxSizing: "border-box",
+          overflow: "visible",
+        }}
+      >
+        {showZero ? (
+          <div
+            title="本金 0%"
+            style={{
+              position: "absolute",
+              left: `${zeroPct}%`,
+              top: 0,
+              bottom: 0,
+              borderLeft: `1.5px solid ${theme.stroke.primary}`,
+              pointerEvents: "none",
+              zIndex: 2,
+            }}
+          />
+        ) : null}
+        {isObl && scope > 0.0001 ? (
+          <div
+            style={{
+              position: "absolute",
+              left: `${toPct(scopeStart)}%`,
+              width: `${Math.max(toPct(scopeStart + Math.min(scope, span)) - toPct(scopeStart), 0.8)}%`,
+              top: 1,
+              bottom: 1,
+              border: `1.5px dashed ${color}`,
+              borderRadius: 2,
+              boxSizing: "border-box",
+              pointerEvents: "none",
+            }}
+          />
+        ) : null}
+        {segments && segments.length > 0
+          ? segments.map((seg) => (
+              <div
+                key={seg.id}
+                title={seg.label}
+                style={{
+                  position: "absolute",
+                  left: `${toPct(seg.start)}%`,
+                  width: `${Math.max(toPct(seg.start + seg.width) - toPct(seg.start), 0.8)}%`,
+                  top: 3,
+                  bottom: 3,
+                  background: segColor(seg.color),
+                  borderRadius: 2,
+                }}
+              />
+            ))
+          : actual > 0 ? (
+              <div
+                style={{
+                  position: "absolute",
+                  left: `${toPct(start)}%`,
+                  width: `${Math.max(toPct(start + actual) - toPct(start), 0.8)}%`,
+                  top: isObl && scope > 0.0001 ? 5 : 3,
+                  bottom: isObl && scope > 0.0001 ? 5 : 3,
+                  background: color,
+                  borderRadius: 2,
+                  opacity: negativeTone ? 0.75 : 1,
+                  outline: negativeTone
+                    ? `1.5px dashed ${theme.stroke.primary}`
+                    : undefined,
+                  outlineOffset: negativeTone ? -1 : undefined,
+                }}
+              />
+            ) : null}
+        {isObl && rankMark && (actual > 0 || (segments && segments.length > 0)) ? (
+          <BarRankLabel mark={rankMark} side="left" anchorPct={barLeftPct} />
+        ) : null}
+        {!isObl && rankMark && actual > 0 ? (
+          <BarRankLabel mark={rankMark} side="right" anchorPct={barRightPct} />
+        ) : null}
+        {showVintage && isObl ? (
+          <div
+            style={{
+              position: "absolute",
+              left: `${toPct(Math.max(0, 1 - vintagePct / 100))}%`,
+              top: 0,
+              bottom: 0,
+              borderLeft: `1.5px dashed ${theme.text.tertiary}`,
+              pointerEvents: "none",
+            }}
+          />
+        ) : null}
+      </div>
+      {note ? (
+        <Text size="small" tone="tertiary">
+          {note}
+        </Text>
+      ) : null}
+    </Stack>
+  );
+}
+
+function AxisScale({
+  leftLabel,
+  midLabel,
+  midAtPct,
+  rightLabel,
+}: {
+  leftLabel: string;
+  midLabel: string;
+  /** 中点位置 0–100；缺省 50 */
+  midAtPct?: number;
+  rightLabel: string;
+}) {
+  const theme = useHostTheme();
+  const midLeft = midAtPct ?? 50;
+  return (
+    <div
+      style={{
+        position: "relative",
+        height: 14,
+        marginTop: 2,
+        borderTop: `1px solid ${theme.stroke.tertiary}`,
+      }}
+    >
+      <Text
+        size="small"
+        tone="tertiary"
+        style={{ position: "absolute", left: 0, top: 2 }}
+      >
+        {leftLabel}
+      </Text>
+      {midLabel ? (
+        <Text
+          size="small"
+          tone="tertiary"
+          style={{
+            position: "absolute",
+            left: `${midLeft}%`,
+            top: 2,
+            transform: "translateX(-50%)",
+          }}
+        >
+          {midLabel}
+        </Text>
+      ) : null}
+      <Text
+        size="small"
+        tone="tertiary"
+        style={{ position: "absolute", right: 0, top: 2 }}
+      >
+        {rightLabel}
+      </Text>
+    </div>
+  );
+}
+
+function RightsObligationsMap({
+  alloc: allocIn,
+  allocation,
+  calc,
+  inputs,
+}: {
+  alloc: AllocParams;
+  allocation: Allocation;
+  calc: Calc;
+  inputs: Inputs;
+}) {
+  const theme = useHostTheme();
+  const alloc = normalizeAlloc(allocIn);
+  const { legs, interestOfLoan, axisMin, axisMax, emptyReason } = useMemo(
+    () => buildWaterfallLegs(alloc, allocation, calc, inputs),
+    [alloc, allocation, calc, inputs],
+  );
+  const parties: PartyKey[] = ["bank", "jv", "mfi", "chuan"];
+  const loan = Math.max(calc.loanPrincipalUsd, 0);
+  const bankLeg = legs.find((l) => l.id === "funding");
+  const bankRightFrac = bankRightColFrac(
+    bankLeg?.incomeShare ?? interestOfLoan,
+  );
+  const gFrac =
+    alloc.placement === "none" ? 0 : Math.max(calc.guaranteeUsd / Math.max(loan, 1e-9), 0);
+  const vintageLine = Math.max(0, Math.min(1, 1 - alloc.vintageElPct / 100));
+  const marginPctEff = effectiveMarginPct(alloc, inputs) / 100;
+  const axisSpan = Math.max(axisMax - axisMin, 1e-9);
+  const zeroAtPct = ((0 - axisMin) / axisSpan) * 100;
+  const principal100AtPct = ((1 - axisMin) / axisSpan) * 100;
+  const axisExtendsPast100 = axisMax > 1.001;
+  const oblLeftLabel =
+    axisMin < -1e-6 ? pct(axisMin * 100, 0) : "0%";
+  const oblMidLabel = axisMin < -1e-6 ? "0%" : axisExtendsPast100 ? "100%" : "50%";
+  const oblMidAtPct = axisMin < -1e-6 ? zeroAtPct : axisExtendsPast100 ? principal100AtPct : 50;
+  const oblRightLabel = axisExtendsPast100 ? pct(axisMax * 100, 0) : "100%";
+
+  if (emptyReason) {
+    return (
+      <Callout tone="warning" title="本金轴已清空">
+        {emptyReason}
+        。调高保函金额或开启利息前置并填入存款本金后，色块随助贷本金重新联动。
+      </Callout>
+    );
+  }
+
+  return (
+    <Stack gap={12}>
+      <Row gap={10} align="center" wrap style={{ rowGap: 6 }}>
+        <Text
+          size="small"
+          weight="semibold"
+          style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+        >
+          本币贷款端 · 权利义务瀑布
+        </Text>
+        <Text size="small" tone="tertiary" style={{ flexShrink: 0 }}>
+          ·
+        </Text>
+        {parties.map((p) => (
+          <Row key={p} gap={4} align="center" style={{ flexShrink: 0 }}>
+            <div
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: 2,
+                background: partyColor(p, theme),
+              }}
+            />
+            <Text size="small" tone="tertiary" style={{ whiteSpace: "nowrap" }}>
+              {partyName(p)}
+            </Text>
+          </Row>
+        ))}
+        {legs.some((l) => l.id === "jv-first-loss") ? (
+          <>
+            <Text size="small" tone="tertiary" style={{ flexShrink: 0 }}>
+              ·
+            </Text>
+            <Text
+              size="small"
+              tone="tertiary"
+              style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+            >
+              JV分段
+            </Text>
+            <Row gap={4} align="center" style={{ flexShrink: 0 }}>
+              <div
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 2,
+                  background: theme.category.cyan,
+                }}
+              />
+              <Text size="small" tone="tertiary" style={{ whiteSpace: "nowrap" }}>
+                保证金·本金轴 {pct(marginPctEff * 100, 1)}
+              </Text>
+            </Row>
+            <Row gap={4} align="center" style={{ flexShrink: 0 }}>
+              <div
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 2,
+                  background: theme.category.green,
+                }}
+              />
+              <Text size="small" tone="tertiary" style={{ whiteSpace: "nowrap" }}>
+                代偿备付（义务）{pct(alloc.compensatoryPct, 1)}
+              </Text>
+            </Row>
+          </>
+        ) : null}
+        <Spacer />
+        <Text
+          size="small"
+          tone="tertiary"
+          style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+        >
+          同轴=助贷本金 · 固收条长=贷款利息/本金（如 25%）
+        </Text>
+      </Row>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `108px minmax(0, ${OBL_COL_FR}fr) ${DIVIDER_W_PX}px minmax(0, ${RIGHT_COL_FR}fr)`,
+          columnGap: COL_GAP_PX,
+          alignItems: "end",
+        }}
+      >
+        <div />
+        <Stack gap={0}>
+          <Text size="small" weight="semibold">
+            义务 · 本金
+          </Text>
+          <AxisScale
+            leftLabel={oblLeftLabel}
+            midLabel={oblMidLabel}
+            midAtPct={oblMidAtPct}
+            rightLabel={oblRightLabel}
+          />
+        </Stack>
+        <div />
+        <Stack gap={0}>
+          <Text size="small" weight="semibold">
+            权利 · 同本金比例
+          </Text>
+          <AxisScale
+            leftLabel="0%"
+            midLabel=""
+            rightLabel={
+              interestOfLoan > 1e-6
+                ? `固收 ${pct(interestOfLoan * 100, 1)}`
+                : "100%"
+            }
+          />
+        </Stack>
+      </div>
+
+      <Stack gap={14}>
+        {legs.map((leg) => {
+          const oblMark =
+            leg.oblRank == null
+              ? ""
+              : CIRCLED[leg.oblRank - 1] ?? String(leg.oblRank);
+          const rightMark =
+            leg.rightRank != null
+              ? CIRCLED[leg.rightRank - 1] ?? String(leg.rightRank)
+              : "";
+          const oblAmt =
+            leg.id === "funding"
+              ? `100% · ${formatUsdWanStat(loan)}`
+              : leg.id === "guarantee"
+                ? `保函 ${pct(leg.actual * 100, 1)} · ${formatUsdWanStat(calc.guaranteeUsd)}`
+              : leg.id === "bank-residual" && leg.start < -1e-9
+                ? `−${pct(leg.actual * 100, 1)} · ${formatUsdWanStat(loan * leg.actual)}`
+              : leg.id === "jv-first-loss" && leg.segments
+                ? leg.segments
+                    .map((s) => `${s.label} ${pct(s.width * 100, 1)}`)
+                    .join(" · ")
+                : `${pct(leg.actual * 100, 1)} · ${formatUsdWanStat(loan * leg.actual)}`;
+          const rightAmt =
+            leg.incomeShare > 0
+              ? `${pct((leg.incomeUsd / loan) * 100, 2)} · ${formatUsdWanStat(leg.incomeUsd)}`
+              : "";
+
+          return (
+            <div
+              key={leg.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: `108px minmax(0, ${OBL_COL_FR}fr) ${DIVIDER_W_PX}px minmax(0, ${RIGHT_COL_FR}fr)`,
+                columnGap: COL_GAP_PX,
+                alignItems: "start",
+              }}
+            >
+              <Stack gap={2} style={{ paddingTop: 18 }}>
+                <Text size="small" weight="semibold">
+                  {leg.entityLabel}
+                </Text>
+                <Text size="small" tone="tertiary">
+                  {leg.rightRank != null
+                    ? leg.rightLabel
+                    : leg.id === "funding"
+                      ? "出资 100%"
+                        : leg.id === "bank-residual"
+                        ? leg.start < -1e-9
+                          ? "缓释超额·负敞口"
+                          : "缓释后纯敞口"
+                        : leg.id === "mfi-credit"
+                          ? "净资产（配置）"
+                          : leg.id === "jv-first-loss"
+                            ? "保证金 · 代偿备付"
+                            : "仅义务"}
+                </Text>
+              </Stack>
+              {leg.bridgeBankRight ? (
+                <div
+                  style={{
+                    gridColumn: "2 / 5",
+                    display: "flex",
+                    gap: COL_GAP_PX,
+                    alignItems: "start",
+                    position: "relative",
+                  }}
+                >
+                  <div style={{ flex: OBL_COL_FR, minWidth: 0 }}>
+                    <WaterfallTrack
+                      kind="obligation"
+                      party={leg.party}
+                      label={leg.label}
+                      rankMark={leg.id === "jv-first-loss" ? "" : oblMark}
+                      start={leg.id === "jv-first-loss" ? 0 : leg.start}
+                      actual={leg.id === "jv-first-loss" ? 0 : leg.actual}
+                      scope={0}
+                      scopeStart={0}
+                      amountLabel={oblAmt}
+                      axisMin={axisMin}
+                      axisMax={axisMax}
+                      vintagePct={alloc.vintageElPct}
+                      showVintage
+                      segments={
+                        leg.id === "jv-first-loss" ? undefined : leg.segments
+                      }
+                      note={leg.oblNote}
+                      negativeTone={
+                        leg.id === "bank-residual" && leg.start < -1e-9
+                      }
+                    />
+                  </div>
+                  <div
+                    style={{
+                      width: DIVIDER_W_PX,
+                      marginTop: 22,
+                      height: 30,
+                      background: theme.stroke.secondary,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div style={{ flex: RIGHT_COL_FR, minWidth: 0 }}>
+                    {leg.incomeShare > 0 ? (
+                      <WaterfallTrack
+                        kind="right"
+                        party={leg.party}
+                        label={leg.rightLabel}
+                        rankMark={rightMark}
+                        start={leg.incomeStart}
+                        actual={leg.incomeShare}
+                        scope={0}
+                        scopeStart={0}
+                        amountLabel={rightAmt}
+                        axisMax={1}
+                        vintagePct={0}
+                        showVintage={false}
+                        note={
+                          leg.id === "jv-first-loss" &&
+                          alloc.compensatoryPct > 1e-6
+                            ? `同轨左侧绿条=代偿备付 ${pct(alloc.compensatoryPct, 1)}（义务备付，非收入）`
+                            : undefined
+                        }
+                      />
+                  ) : (
+                    <div style={{ minHeight: 48 }} />
+                  )}
+                  </div>
+                  {leg.id === "jv-first-loss" ? (
+                    <JvBridgeSegmentLayer
+                      bankRightFrac={bankRightFrac}
+                      rankMark={oblMark}
+                      theme={theme}
+                      marginFrac={marginPctEff}
+                      marginStartFrac={
+                        alloc.placement === "help_mfi"
+                          ? vintageLine + gFrac
+                          : undefined
+                      }
+                      compensatoryFrac={Math.max(alloc.compensatoryPct, 0) / 100}
+                      interestOfLoan={interestOfLoan}
+                      axisMin={axisMin}
+                      axisMax={axisMax}
+                    />
+                  ) : null}
+                </div>
+              ) : (
+                <>
+                  <WaterfallTrack
+                    kind="obligation"
+                    party={leg.party}
+                    label={
+                      leg.id === "funding" ? `出资 · ${leg.label}` : leg.label
+                    }
+                    rankMark={oblMark}
+                    start={leg.start}
+                    actual={leg.actual}
+                    scope={leg.scope}
+                    scopeStart={leg.scopeStart}
+                    amountLabel={oblAmt}
+                    axisMin={leg.id === "funding" ? 0 : axisMin}
+                    axisMax={leg.id === "funding" ? 1 : axisMax}
+                    vintagePct={alloc.vintageElPct}
+                    showVintage={leg.id !== "funding"}
+                    segments={leg.segments}
+                    note={leg.oblNote}
+                    negativeTone={
+                      leg.id === "bank-residual" && leg.start < -1e-9
+                    }
+                  />
+                  <div
+                    style={{
+                      width: DIVIDER_W_PX,
+                      marginTop: 22,
+                      height: 30,
+                      background: theme.stroke.secondary,
+                      justifySelf: "center",
+                    }}
+                  />
+                  {leg.incomeShare > 0 ? (
+                    <WaterfallTrack
+                      kind="right"
+                      party={leg.party}
+                      label={leg.rightLabel}
+                      rankMark={rightMark}
+                      start={leg.incomeStart}
+                      actual={leg.incomeShare}
+                      scope={0}
+                      scopeStart={0}
+                      amountLabel={rightAmt}
+                      axisMax={1}
+                      vintagePct={0}
+                      showVintage={false}
+                    />
+                  ) : (
+                    <div style={{ minHeight: 48 }} />
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+      </Stack>
+
+      <Row gap={8} wrap>
+        <Text size="small" tone="tertiary">
+          义务序号=色条左 · 权利序号=色条右
+        </Text>
+        <Text size="small" tone="tertiary">
+          ·
+        </Text>
+        <Text size="small" tone="tertiary">
+          义务①=先损
+        </Text>
+        <Text size="small" tone="tertiary">
+          ·
+        </Text>
+        <Text size="small" tone="tertiary">
+          权利①=先分
+        </Text>
+        <Text size="small" tone="tertiary">
+          ·
+        </Text>
+        <Text size="small" tone="tertiary">
+          EL 竖虚线=Vintage 刻度 · 帮小贷：小贷在左、保函贴线右、保证金再右
+        </Text>
+      </Row>
     </Stack>
   );
 }
@@ -1532,6 +3833,7 @@ function BasisTable({
 
 export default function CrossBorderGuaranteeOnlend() {
   const theme = useHostTheme();
+  const scrollAnchorRef = usePreserveCanvasScroll();
   const [inputs, setInputs] = useCanvasState<Inputs>(
     "guarantee-onlend-v3",
     fromPreset(PRESETS.PH),
@@ -1546,6 +3848,10 @@ export default function CrossBorderGuaranteeOnlend() {
   const [chuanIncludeJv, setChuanIncludeJv] = useCanvasState(
     "guarantee-chuan-include-jv-v1",
     true,
+  );
+  const [allocParams, setAllocParams] = useCanvasState<AllocParams>(
+    "guarantee-alloc-v1",
+    DEFAULT_ALLOC,
   );
   const [ngBankId, setNgBankId] = useCanvasState("guarantee-ng-bank-v1", "uba");
   const [ngLoanTier, setNgLoanTier] = useCanvasState<NgLoanTier>(
@@ -1564,12 +3870,69 @@ export default function CrossBorderGuaranteeOnlend() {
     () => chuanMergeMetrics(calc, inputs, chuanIncludeJv, true),
     [calc, inputs, chuanIncludeJv],
   );
+  const allocNorm = useMemo(
+    () => normalizeAlloc(allocParams),
+    [allocParams],
+  );
+  const effectiveMargin = useMemo(
+    () => effectiveMarginPct(allocNorm, inputs),
+    [allocNorm, inputs],
+  );
+  const allocInputs = useMemo(
+    () => ({ ...inputs, marginPct: effectiveMargin }),
+    [inputs, effectiveMargin],
+  );
+  const allocCalc = useMemo(() => compute(allocInputs), [allocInputs]);
+  const allocation = useMemo(
+    () => computeAllocation(allocInputs, allocCalc, allocNorm),
+    [allocInputs, allocCalc, allocNorm],
+  );
+  const patchAlloc = (p: Partial<AllocParams>) =>
+    setAllocParams((prev) => normalizeAlloc({ ...prev, ...p }));
   const onlendPremiumPp = round2(inputs.onlendPct - calc.pairDiff * 100);
   const patch = (p: Partial<Inputs>) => setInputs((prev) => ({ ...prev, ...p }));
 
   const [fxLoading, setFxLoading] = useState(false);
   const [fxError, setFxError] = useState<string | null>(null);
   const [fxAsOf, setFxAsOf] = useState<string | null>(null);
+  const [exportFormat, setExportFormat] = useCanvasState<ExportFormat>(
+    "guarantee-export-format-v1",
+    "excel",
+  );
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+
+  const runExport = useCallback(() => {
+    try {
+      const msg = exportGuaranteeReport(
+        {
+          inputs: allocInputs,
+          calc: allocCalc,
+          allocation,
+          allocParams: allocNorm,
+          country,
+          chuanMerge,
+          chuanIncludeJv,
+          targetUsdYieldPct,
+          generatedAt: new Date().toLocaleString("zh-CN"),
+        },
+        exportFormat,
+      );
+      setExportNotice(msg);
+      window.setTimeout(() => setExportNotice(null), 8000);
+    } catch (e) {
+      setExportNotice(e instanceof Error ? e.message : "导出失败");
+    }
+  }, [
+    allocInputs,
+    allocCalc,
+    allocation,
+    allocNorm,
+    country,
+    chuanMerge,
+    chuanIncludeJv,
+    targetUsdYieldPct,
+    exportFormat,
+  ]);
 
   useEffect(() => {
     setFxAsOf(null);
@@ -1617,14 +3980,18 @@ export default function CrossBorderGuaranteeOnlend() {
         NG_BANK_QUOTES.find((b) => b.id === ngBankId) ??
         NG_BANK_QUOTES.find((b) => b.id === "uba")!;
       const loan = ngLoanPct(bank, ngLoanTier);
-      setInputs({
+      setInputs((prev) => ({
         ...fromPreset(PRESETS.NG),
         loanRatePct: loan,
         onlendPct: ngOnlendFromLoan(loan),
-      });
+        interestUpfront: prev.interestUpfront !== false,
+      }));
       return;
     }
-    setInputs(fromPreset(PRESETS[id]));
+    setInputs((prev) => ({
+      ...fromPreset(PRESETS[id]),
+      interestUpfront: prev.interestUpfront !== false,
+    }));
   };
 
   const countryCalcs = (Object.keys(PRESETS) as CountryId[]).map((id) => {
@@ -1645,12 +4012,12 @@ export default function CrossBorderGuaranteeOnlend() {
     Math.abs(calc.usdYield - phExcelYield) < 0.00005;
 
   return (
+    <div ref={scrollAnchorRef}>
     <Stack gap={20} style={{ padding: 24, maxWidth: 1120 }}>
       <Stack gap={8}>
         <H1>跨境保函项下转贷测算</H1>
         <Text tone="secondary">
-          出美元开保函、帮当地机构融本币。正向：给定转贷价算 CHUAN 综合收益率 / 全折美元收益率。倒推：锁 CHUAN 综合收益率门槛，反解本币融资对外转贷报价。公式对齐《保函测算菲律宾
-          2.xlsx》。换国家只换本币横梁与汇率；美元侧仍用保函存款报价。
+          出美元开保函、帮当地机构融本币。正向算 CHUAN 综合收益率；倒推锁门槛反解转贷报价。
         </Text>
         <Row gap={8} align="center" wrap>
           {(Object.keys(PRESETS) as CountryId[]).map((id) => (
@@ -1661,18 +4028,18 @@ export default function CrossBorderGuaranteeOnlend() {
             >
               {PRESETS[id].nameZh}
               {PRESETS[id].quoted
-                ? " · 表内报价"
+                ? " · 表内"
                 : id === "NG"
-                  ? " · CBN分项"
+                  ? " · CBN"
                   : " · 外推"}
             </Pill>
           ))}
           <Spacer />
           <Button variant="ghost" onClick={() => loadCountry(inputs.countryId)}>
-            恢复该国预设
+            恢复预设
           </Button>
         </Row>
-        <Row gap={8} wrap>
+        <Row gap={8} wrap align="center">
           <Pill size="sm" active={country.quoted || inputs.countryId === "NG"}>
             {country.quoted
               ? "已谈妥报价"
@@ -1687,8 +4054,43 @@ export default function CrossBorderGuaranteeOnlend() {
         </Row>
       </Stack>
 
+      <Stat
+        tone="success"
+        label={`CHUAN 综合收益率 · ${chuanMerge.suffix}`}
+        value={pct(chuanMerge.yieldPct * 100, 2)}
+      />
+
+      <Row gap={8} align="center" wrap>
+        <Text size="small" weight="semibold">
+          满意本次测算？
+        </Text>
+        <Pill
+          active={exportFormat === "excel"}
+          onClick={() => setExportFormat("excel")}
+        >
+          Excel · 含公式
+        </Pill>
+        <Pill active={exportFormat === "pdf"} onClick={() => setExportFormat("pdf")}>
+          PDF
+        </Pill>
+        <Button variant="secondary" onClick={runExport}>
+          生成测算表
+        </Button>
+        {exportNotice ? (
+          <Text size="small" tone="tertiary">
+            {exportNotice}
+          </Text>
+        ) : (
+          <Text size="small" tone="tertiary">
+            {exportFormat === "excel"
+              ? "下载 .xls，黄底可改参数、蓝底为公式"
+              : "打开打印预览后另存为 PDF"}
+          </Text>
+        )}
+      </Row>
+
       {inputs.countryId === "NG" ? (
-        <CollapsibleSection
+        <PersistCollapsibleSection
           title={`CBN 分项贷款报价 · ${NG_CBN_LENDING_SOURCE.dataMonth}`}
           defaultOpen={false}
           trailing={
@@ -1740,56 +4142,68 @@ export default function CrossBorderGuaranteeOnlend() {
               })}
             </Row>
           </Stack>
-        </CollapsibleSection>
+        </PersistCollapsibleSection>
       ) : null}
 
-      <Grid columns={3} gap={20}>
-        <LegKpiColumn
-          leg="usd"
-          title="美元侧 · 保函存款"
-          principal={formatUsdDepositPrincipal(inputs.depositUsd)}
-          principalLabel="保函存款本金"
-          income={formatUsdWanStat(calc.usdLegNetUsd)}
-          incomeLabel="保函存款利息 − 保函手续费"
-          yieldPct={calc.usdLegYield}
-        />
-        <LegKpiColumn
-          leg="deposit"
-          title={`本币存款端 · ${country.ccy} · JV`}
-          principal={
-            calc.marginLocal > 0
-              ? formatLocalWanStat(calc.marginLocal, inputs.countryId)
-              : "—"
-          }
-          principalUsd={
-            calc.marginLocal > 0
-              ? formatUsdWanStat(calc.marginLocal / inputs.fx)
-              : undefined
-          }
-          principalLabel="保证金本金"
-          income={
-            calc.marginLocal > 0
-              ? formatLocalWanStat(calc.marginInterestLocal, inputs.countryId)
-              : "—"
-          }
-          incomeUsd={
-            calc.marginLocal > 0 ? formatUsdWanStat(calc.marginInterestUsd) : undefined
-          }
-          incomeLabel="保证金存款利息（扣税）"
-          yieldPct={calc.marginLocal > 0 ? calc.localDepositLegYield : null}
-        />
-        <LegKpiColumn
-          leg="loan"
-          title={`本币贷款端 · ${country.ccy}`}
-          principal={formatLocalWanStat(calc.loanLocal, inputs.countryId)}
-          principalUsd={formatUsdWanStat(calc.loanPrincipalUsd)}
-          principalLabel="助贷本金"
-          income={formatLocalWanStat(calc.spreadLocal, inputs.countryId)}
-          incomeUsd={formatUsdWanStat(calc.spreadUsdSpot)}
-          incomeLabel="本币息差"
-          yieldPct={calc.loanLocal > 0 ? calc.localLoanLegYield : null}
-        />
-      </Grid>
+      <PersistCollapsibleSection
+        title="三端拆分"
+        defaultOpen={false}
+        trailing={
+          <Text size="small" tone="tertiary">
+            美元侧 · 本币存款 · 本币贷款
+          </Text>
+        }
+      >
+        <Grid columns={3} gap={20}>
+          <LegKpiColumn
+            leg="usd"
+            title="美元侧 · 保函存款"
+            principal={formatUsdDepositPrincipal(inputs.depositUsd)}
+            principalLabel="保函存款本金"
+            income={formatUsdWanStat(calc.usdLegNetUsd)}
+            incomeLabel="保函存款利息 − 保函手续费"
+            yieldPct={calc.usdLegYield}
+          />
+          <LegKpiColumn
+            leg="deposit"
+            title={`本币存款端 · ${country.ccy} · JV`}
+            principal={
+              calc.marginLocal > 0
+                ? formatLocalWanStat(calc.marginLocal, inputs.countryId)
+                : "—"
+            }
+            principalUsd={
+              calc.marginLocal > 0
+                ? formatUsdWanStat(calc.marginLocal / inputs.fx)
+                : undefined
+            }
+            principalLabel="保证金本金"
+            income={
+              calc.marginLocal > 0
+                ? formatLocalWanStat(calc.marginInterestLocal, inputs.countryId)
+                : "—"
+            }
+            incomeUsd={
+              calc.marginLocal > 0
+                ? formatUsdWanStat(calc.marginInterestUsd)
+                : undefined
+            }
+            incomeLabel="保证金存款利息（扣税）"
+            yieldPct={calc.marginLocal > 0 ? calc.localDepositLegYield : null}
+          />
+          <LegKpiColumn
+            leg="loan"
+            title={`本币贷款端 · ${country.ccy}`}
+            principal={formatLocalWanStat(calc.loanLocal, inputs.countryId)}
+            principalUsd={formatUsdWanStat(calc.loanPrincipalUsd)}
+            principalLabel="助贷本金"
+            income={formatLocalWanStat(calc.spreadLocal, inputs.countryId)}
+            incomeUsd={formatUsdWanStat(calc.spreadUsdSpot)}
+            incomeLabel="本币息差"
+            yieldPct={calc.loanLocal > 0 ? calc.localLoanLegYield : null}
+          />
+        </Grid>
+      </PersistCollapsibleSection>
 
       <Divider />
 
@@ -1879,7 +4293,360 @@ export default function CrossBorderGuaranteeOnlend() {
         </CardBody>
       </Card>
 
-      <CollapsibleSection
+      <Divider />
+
+      <Stack gap={12}>
+        <Stack gap={4}>
+          <H2>分配侧 · 权利义务对照</H2>
+          <Text tone="secondary">
+            左义务、右权利；同色=同一主体。价格/折扣在「定价横梁」，保函面额在「结构参数」——此处配分配、缓释与保证金。
+          </Text>
+        </Stack>
+
+        <Row gap={8} wrap align="center">
+          {(
+            [
+              { id: "none" as const, label: "不开保函" },
+              { id: "help_mfi" as const, label: "帮小贷劣后" },
+              { id: "help_bank" as const, label: "帮银行缓释" },
+            ] as const
+          ).map((opt) => (
+            <Pill
+              key={opt.id}
+              active={allocParams.placement === opt.id}
+              onClick={() => patchAlloc({ placement: opt.id })}
+            >
+              {opt.label}
+            </Pill>
+          ))}
+          <Pill
+            active={isInterestUpfront(inputs)}
+            onClick={() =>
+              patch({ interestUpfront: !isInterestUpfront(inputs) })
+            }
+          >
+            利息前置
+          </Pill>
+          <Spacer />
+          <Text size="small" tone="tertiary">
+            {allocParams.placement === "none"
+              ? "无保证义务 · 无风险收益"
+              : allocParams.placement === "help_mfi"
+                ? "保函节降 JV 保证金 · 应向小贷收更高报价"
+                : "保函缓释银行 · JV 保证金不节降"}
+            {isInterestUpfront(inputs)
+              ? " · 面额含息"
+              : " · 面额不含息（开不出含息保函）"}
+          </Text>
+        </Row>
+
+        <Grid columns={4} gap={12}>
+          <Stack gap={4}>
+            <Text size="small" tone="tertiary">
+              保函面额
+            </Text>
+            <Text size="small" weight="semibold">
+              {formatUsdWanStat(calc.guaranteeUsd)}
+            </Text>
+            <Text size="small" tone="tertiary">
+              改「结构参数」
+            </Text>
+          </Stack>
+          <Stack gap={4}>
+            <Text size="small" tone="tertiary">
+              折扣率
+            </Text>
+            <Text size="small" weight="semibold">
+              {pct(inputs.discountPct, 0)}
+            </Text>
+            <Text size="small" tone="tertiary">
+              改「定价横梁」
+            </Text>
+          </Stack>
+          <Stack gap={4}>
+            <Text size="small" tone="tertiary">
+              助贷本金（联动）
+            </Text>
+            <Text size="small" weight="semibold">
+              {formatUsdWanStat(calc.loanPrincipalUsd)}
+            </Text>
+            <Text size="small" tone="tertiary">
+              = 保函×折扣÷(1+贷款价×天/365)
+            </Text>
+          </Stack>
+          <Stack gap={4}>
+            <Text size="small" tone="tertiary">
+              保函/本金
+            </Text>
+            <Text size="small" weight="semibold">
+              {pct(
+                (calc.guaranteeUsd / Math.max(calc.loanPrincipalUsd, 1e-9)) *
+                  100,
+                1,
+              )}
+            </Text>
+            <Text size="small" tone="tertiary">
+              保证色块厚度（测算）
+            </Text>
+          </Stack>
+        </Grid>
+        <Row gap={8} wrap align="center">
+          {allocParams.placement === "help_mfi" ? (
+            <Pill size="sm">
+              节降后保证金 {pct(inputs.marginPct, 0)}（定价横梁）· 保证金{" "}
+              {pct(allocParams.marginWithoutGuaranteePct, 0)} · 节降{" "}
+              {pct(allocation.marginReliefPp, 0)}
+            </Pill>
+          ) : allocParams.placement === "help_bank" ? (
+            <Pill size="sm">
+              JV 全额保证金 {pct(effectiveMargin, 0)}（保函不节降）
+            </Pill>
+          ) : (
+            <Pill size="sm">
+              保证金 {pct(inputs.marginPct, 0)}
+            </Pill>
+          )}
+          <Pill size="sm">
+            贷款 {pct(inputs.loanRatePct)} · 转贷 {pct(inputs.onlendPct)}
+          </Pill>
+          {allocCalc.marginLocal > 0 ? (
+            <Text size="small" tone="tertiary">
+              保证金本金 {num(allocCalc.marginLocal, 2)} 万{country.ccyName}
+            </Text>
+          ) : null}
+        </Row>
+        <Grid columns={4} gap={12}>
+          <Field
+            label="保证金"
+            suffix="%·助贷本金"
+            value={
+              allocParams.placement === "help_mfi" ||
+              allocParams.placement === "help_bank"
+                ? allocParams.marginWithoutGuaranteePct
+                : inputs.marginPct
+            }
+            step={1}
+            onChange={(n) => {
+              if (
+                allocParams.placement === "help_mfi" ||
+                allocParams.placement === "help_bank"
+              ) {
+                patchAlloc({ marginWithoutGuaranteePct: n });
+              } else {
+                patch({ marginPct: Math.max(0, n) });
+              }
+            }}
+            hint={
+              allocParams.placement === "help_mfi"
+                ? `保函可节降 → 实缴 ${pct(inputs.marginPct, 0)} 在定价横梁`
+                : allocParams.placement === "help_bank"
+                  ? "JV 按此全额缴，保函不节降"
+                  : "JV 代存保证金"
+            }
+          />
+          <Field
+            label="EL"
+            suffix="%·本金"
+            value={allocParams.vintageElPct}
+            onChange={(n) => patchAlloc({ vintageElPct: n })}
+            hint="Vintage 预期损失刻度；不决定银行色块"
+          />
+          <Field
+            label="小贷净资产"
+            suffix="%·助贷本金"
+            value={allocParams.mfiCreditPct}
+            onChange={(n) => patchAlloc({ mfiCreditPct: n })}
+            hint="按实际情况配置"
+          />
+          <Field
+            label="代偿备付"
+            suffix="%·助贷本金"
+            value={allocParams.compensatoryPct}
+            onChange={(n) => patchAlloc({ compensatoryPct: n })}
+            hint="日常代偿；落固收当量区，不占本金轴"
+          />
+        </Grid>
+        <Grid columns={1} gap={12}>
+          <Field
+            label="JV 服务费"
+            suffix="%·助贷本金"
+            value={allocParams.jvServiceFeePct ?? 0.2}
+            step={0.1}
+            onChange={(n) => patchAlloc({ jvServiceFeePct: n })}
+            hint="默认 0.2%"
+          />
+        </Grid>
+        <Row gap={12} wrap align="center">
+          <Text size="small" tone="tertiary">
+            银行风险敞口（倒算）
+          </Text>
+          <Text size="small" weight="semibold">
+            {pct(
+              100 -
+                effectiveMargin -
+                allocParams.mfiCreditPct -
+                (allocParams.placement === "help_bank"
+                  ? (allocCalc.guaranteeUsd /
+                      Math.max(allocation.loanUsd, 1e-9)) *
+                    100
+                  : 0),
+              1,
+            )}
+          </Text>
+          <Text size="small" tone="tertiary">
+            {allocParams.placement === "help_mfi"
+              ? "= 本金 − 保证金 − 小贷净资产（保函不进银行倒算）"
+              : allocParams.placement === "help_bank"
+                ? "= 本金 − 保证金 − 小贷净资产 − 保函"
+                : "= 本金 − 保证金 − 小贷净资产"}
+          </Text>
+        </Row>
+
+        <RightsObligationsMap
+          alloc={allocNorm}
+          allocation={allocation}
+          calc={allocCalc}
+          inputs={allocInputs}
+        />
+
+        <H3>三主体当期（折美元）</H3>
+        <Text size="small" tone="secondary">
+          按收入从高到低。保证主体赚转贷相对银行报价的差价；JV 赚服务费与或有保证金利息；银行收入=发放本金固收利息，成本=代付保证金存款利息。
+        </Text>
+        <Grid columns={3} gap={12}>
+          {allocation.parties.map((p) => (
+            <Card key={p.party}>
+              <CardHeader
+                trailing={
+                  <Pill size="sm">
+                    {p.party === "chuan"
+                      ? "保证"
+                      : p.party === "jv"
+                        ? "服务"
+                        : "息差"}
+                  </Pill>
+                }
+              >
+                {p.nameZh}
+              </CardHeader>
+              <CardBody>
+                <Stack gap={8}>
+                  <Stat
+                    value={formatUsdWanStat(p.incomeUsd)}
+                    label="收入 · 万美元"
+                    tone="success"
+                  />
+                  {p.costUsd > 1e-9 ? (
+                    <Stat
+                      value={formatUsdWanStat(p.costUsd)}
+                      label={
+                        p.party === "bank"
+                          ? "成本 · 保证金存款利息"
+                          : "成本 · 万美元"
+                      }
+                      tone="warning"
+                    />
+                  ) : null}
+                  {p.costUsd > 1e-9 ? (
+                    <Stat
+                      value={formatUsdWanStat(p.netUsd)}
+                      label="净额 · 万美元"
+                      tone="info"
+                    />
+                  ) : null}
+                  <Row gap={8} wrap>
+                    {p.riskPremiumUsd > 1e-9 ? (
+                      <Pill size="sm">
+                        风险溢价 {formatUsdWanStat(p.riskPremiumUsd)}
+                      </Pill>
+                    ) : null}
+                    <Pill size="sm">
+                      {p.party === "bank" ? "息差" : "Carry"}{" "}
+                      {formatUsdWanStat(p.carryUsd)}
+                    </Pill>
+                  </Row>
+                  <Text size="small" tone="secondary">
+                    出资：{p.fundingRole}
+                  </Text>
+                  <Text size="small" tone="secondary">
+                    信用：{p.creditRole}
+                  </Text>
+                  {p.note ? (
+                    <Text size="small" tone="tertiary">
+                      {p.note}
+                    </Text>
+                  ) : null}
+                </Stack>
+              </CardBody>
+            </Card>
+          ))}
+        </Grid>
+
+        <Table
+          headers={[
+            "主体",
+            "收入",
+            "成本",
+            "净额",
+            "其中风险溢价",
+            "出资义务",
+            "信用义务",
+          ]}
+          columnAlign={[
+            "left",
+            "right",
+            "right",
+            "right",
+            "right",
+            "left",
+            "left",
+          ]}
+          striped
+          rows={allocation.parties.map((p) => [
+            p.nameZh,
+            formatUsdWanStat(p.incomeUsd),
+            formatUsdWanStat(p.costUsd),
+            formatUsdWanStat(p.netUsd),
+            formatUsdWanStat(p.riskPremiumUsd),
+            p.fundingRole,
+            p.creditRole,
+          ])}
+        />
+
+        <PersistCollapsibleSection title="分配口径" defaultOpen={false}>
+          <Table
+            headers={["项", "口径"]}
+            rows={[
+              [
+                "列示顺序",
+                "三主体按当期收入从高到低排列。",
+              ],
+              [
+                "保证主体",
+                "开保函参与银行风险 → 收入=转贷相对银行贷款报价的差价 + 保函存款利息 + 保函费（风险溢价）。不定向指具体机构。",
+              ],
+              [
+                "JV",
+                "收入=本地服务费（助贷本金×可配比例）+ 或有保证金存款利息（视谈判）。",
+              ],
+              [
+                "本地银行",
+                "收入=发放本金的贷款固收利息；成本=代付 JV 保证金存款利息（可核验存款成本）；净额=固收·场景息差。不含无法考证的吸储成本。",
+              ],
+              [
+                "保函位置",
+                "帮小贷劣后：保函节降 JV 代缴保证金（无保函对照 % → 定价横梁节降后 %），保函不进银行敞口倒算。帮银行缓释：JV 按无保函对照全额缴保证金，保函挡在银行敞口前。",
+              ],
+              [
+                "图读法",
+                "助贷本金=保函×折扣÷(1+贷款价×天/365)。保证色块=保函/本金。银行敞口=缓释后剩余。",
+              ],
+            ]}
+          />
+        </PersistCollapsibleSection>
+      </Stack>
+
+      <PersistCollapsibleSection
         title="预设收益率的本币融资对外报价"
         defaultOpen={false}
         trailing={
@@ -1915,7 +4682,7 @@ export default function CrossBorderGuaranteeOnlend() {
                 {chuanIncludeJv
                   ? `当前 CHUAN 综合收益率 ${pct(chuanMerge.yieldPct * 100, 2)}（含 JV · 股权 ${pct((inputs.chuanJvPct ?? 70), 0)}）。`
                   : `当前 CHUAN 综合收益率 ${pct(chuanMerge.yieldPct * 100, 2)}（不含 JV）。`}
-                ▲▼ 收益率步长 {pct(TARGET_YIELD_STEP)}
+                +/− 收益率步长 {pct(TARGET_YIELD_STEP)}
               </Text>
             </Stack>
             <Stack gap={10}>
@@ -1960,11 +4727,11 @@ export default function CrossBorderGuaranteeOnlend() {
             </Row>
           ) : null}
         </Stack>
-      </CollapsibleSection>
+      </PersistCollapsibleSection>
 
-      <CollapsibleSection
+      <PersistCollapsibleSection
         title="定价横梁"
-        defaultOpen={true}
+        defaultOpen={false}
         trailing={
           <Text size="small" tone="tertiary">
             存 {pct(inputs.depositRatePct)} · 费 {pct(inputs.guaranteeFeePct)} · 贷{" "}
@@ -1973,496 +4740,370 @@ export default function CrossBorderGuaranteeOnlend() {
           </Text>
         }
       >
-        <Stack gap={12}>
+        <Stack gap={16}>
           <Text size="small" tone="secondary">
-            四条价格 + 保函折扣率 + 本币保证金 + 综合成本参照。改横梁即重算。保函存款与展业国无关；保证金按转贷金额比例存当地行，争取较好本币存款利率。
+            四条价格 + 保函折扣 + 本币保证金（全页唯一入口）。改横梁即重算；保函存款与展业国无关。
           </Text>
-          <Grid columns={5} gap={12}>
-        <Card>
-          <CardHeader trailing={<Text size="small">保函存款</Text>}>
-            存款价格
-          </CardHeader>
-          <CardBody>
+          <Grid columns={4} gap={12}>
             <Field
-              label="年利率"
-              suffix="%"
+              label="存款价格"
+              suffix="% · 保函存款"
               value={inputs.depositRatePct}
+              step={0.1}
               onChange={(n) => patch({ depositRatePct: n })}
-              hint="表内 4.50% · 量级不同利率不同"
+              hint="表内 4.50%"
             />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader trailing={<Text size="small">保函行</Text>}>
-            保函手续费
-          </CardHeader>
-          <CardBody>
             <Field
-              label="费率"
-              suffix="%"
+              label="保函手续费"
+              suffix="% · 保函行"
               value={inputs.guaranteeFeePct}
+              step={0.1}
               onChange={(n) => patch({ guaranteeFeePct: n })}
-              hint="无质押 1.5–2%；全额质押 0.8–1.0%"
+              hint="全额质押约 0.8–1.0%"
             />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader trailing={<Text size="small">{country.ccy}</Text>}>
-            贷款价格
-          </CardHeader>
-          <CardBody>
             <Field
-              label="年利率"
+              label={`贷款价格 · ${country.ccy}`}
               suffix="%"
               value={inputs.loanRatePct}
+              step={0.1}
               onChange={(n) => patch({ loanRatePct: n })}
               hint={
                 inputs.countryId === "NG"
-                  ? `${selectedNgBank.name} · ${ngLoanTier === "prime" ? "prime" : "max"} · CBN ${NG_CBN_LENDING_SOURCE.dataMonth}`
+                  ? `${selectedNgBank.name} · ${ngLoanTier}`
                   : country.quoted
-                    ? "表内已给定 6.20%"
+                    ? "表内 6.20%"
                     : `外推 ${country.localPolicyPct}%+1.45pp`
               }
             />
-            {depLoanCheck.applies ? (
-              <Text size="small" tone="tertiary">
-                同存同贷基准 · 贷款 {pct(inputs.loanRatePct)}
-                {depLoanCheck.inverted
-                  ? ` · 存贷倒挂 ${pct(Math.abs(depLoanCheck.spreadPp))}`
-                  : ` · 存贷利差 ${pct(depLoanCheck.spreadPp)}`}
-              </Text>
-            ) : null}
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader trailing={<Text size="small">借款客户</Text>}>
-            转贷价格
-          </CardHeader>
-          <CardBody>
-            <Stack gap={8}>
-              <Field
-                label="年利率"
-                suffix="%"
-                value={inputs.onlendPct}
-                onChange={(n) => patch({ onlendPct: n })}
-                hint={
-                  implied
-                    ? `倒推 ${pct(implied.impliedOnlendPct)} 可写入`
-                    : inputs.countryId === "NG"
-                      ? `默认 贷款+5.80pp → ${pct(inputs.onlendPct)}`
-                      : country.quoted
-                        ? "表内靠谈 12%"
-                        : "外推 贷款+5.80pp"
-                }
-              />
-              <Text size="small" tone="secondary">
-                加点基准 · {country.ccy}/USD 政策利差{" "}
-                {pct(calc.pairDiff * 100, 2)} · 加点{" "}
-                {onlendPremiumPp >= 0 ? "+" : ""}
-                {pct(onlendPremiumPp, 2)}
-              </Text>
-            </Stack>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader trailing={<Text size="small">参照物</Text>}>
-            货币对利差
-          </CardHeader>
-          <CardBody>
-            <Stack gap={8}>
-              <Field
-                label={`${country.regulator} 政策利率`}
-                suffix="%"
-                value={inputs.localPolicyPct}
-                onChange={(n) => patch({ localPolicyPct: n })}
-              />
-              <Field
-                label="USD 政策利率"
-                suffix="%"
-                value={inputs.usdPolicyPct}
-                onChange={(n) => patch({ usdPolicyPct: n })}
-                hint="TE 美国 3.75%（2026-07）"
-              />
-              <Text weight="semibold">差值 {pct(calc.pairDiff * 100, 2)}</Text>
-            </Stack>
-          </CardBody>
-        </Card>
-      </Grid>
-
-      <Grid columns={3} gap={12}>
-        <Card>
-          <CardHeader trailing={<Text size="small">{country.ccy}</Text>}>
-            保函折扣率
-          </CardHeader>
-          <CardBody>
             <Field
-              label="折扣"
+              label="转贷价格"
+              suffix="% · 借款客户"
+              value={inputs.onlendPct}
+              step={0.1}
+              onChange={(n) => patch({ onlendPct: n })}
+              hint={
+                implied
+                  ? `倒推 ${pct(implied.impliedOnlendPct)} 可写入`
+                  : `政策利差 ${pct(calc.pairDiff * 100, 2)} · 加点 ${onlendPremiumPp >= 0 ? "+" : ""}${pct(onlendPremiumPp, 2)}`
+              }
+            />
+          </Grid>
+          <Grid columns={4} gap={12}>
+            <Field
+              label={`${country.regulator} 政策利率`}
+              suffix="%"
+              value={inputs.localPolicyPct}
+              step={0.1}
+              onChange={(n) => patch({ localPolicyPct: n })}
+            />
+            <Field
+              label="USD 政策利率"
+              suffix="%"
+              value={inputs.usdPolicyPct}
+              step={0.1}
+              onChange={(n) => patch({ usdPolicyPct: n })}
+              hint={`利差 ${pct(calc.pairDiff * 100, 2)}`}
+            />
+            <Field
+              label="保函折扣率"
               suffix="%"
               value={inputs.discountPct}
+              step={10}
               onChange={(n) => patch({ discountPct: n })}
-              hint={`折扣在覆盖贷款行利息之前：名义可放 = 保函面额 × 折扣（默认 ${pct(DISCOUNT, 0)}）→ 约 ${num(calc.guaranteeUsd * (inputs.discountPct / 100))} 万美元；助贷本金再 ÷ (1+贷款利率×天数÷365) → 实际 ${num(calc.loanLocal, 2)} 万${country.ccyName}（≈ ${formatUsdWanStat(calc.loanPrincipalUsd)}）`}
+              hint={`助贷本金 ≈ ${formatUsdWanStat(calc.loanPrincipalUsd)}`}
             />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader trailing={<Text size="small">{country.ccy}</Text>}>
-            本币保证金
-          </CardHeader>
-          <CardBody>
             <Field
-              label="保证金比例"
+              label="本币保证金比例"
               suffix="%"
               value={inputs.marginPct}
+              step={1}
               onChange={(n) => patch({ marginPct: Math.max(0, n) })}
-              hint={`基数 = 转贷金额 ${num(calc.loanLocal, 2)} 万${country.ccyName} → 保证金 ${num(calc.marginLocal, 2)} 万`}
+              hint={`→ ${num(calc.marginLocal, 2)} 万${country.ccyName}`}
             />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader trailing={<Text size="small">当地议定 · {country.ccy}</Text>}>
-            保证金存款利率
-          </CardHeader>
-          <CardBody>
-            <Stack gap={8}>
-              <Field
-                label="年利率"
-                suffix="%"
-                value={inputs.localDepositRatePct}
-                onChange={(n) => patch({ localDepositRatePct: Math.max(0, n) })}
-                hint={
-                  inputs.marginPct <= 0
-                    ? "设保证金比例后生效；须低于同家银行贷款价"
-                    : depLoanCheck.inverted
-                      ? `高于贷款价 ${pct(inputs.loanRatePct)}，请调低或确认是否跨行报价`
-                      : `须低于贷款价 ${pct(inputs.loanRatePct)}（利差 ${pct(depLoanCheck.spreadPp)}）；税前利息 ${num(calc.marginInterestGrossLocal, 2)} 万 → 扣税后 ${num(calc.marginInterestLocal, 2)} 万${country.ccyName} ≈ ${num(calc.marginInterestUsd, 2)} 万美元`
-                }
-              />
-              <Field
-                label="利息税率"
-                suffix="%"
-                value={
-                  inputs.marginInterestTaxPct ??
-                  country.marginInterestTaxPct ??
-                  0
-                }
-                onChange={(n) =>
-                  patch({ marginInterestTaxPct: Math.max(0, Math.min(100, n)) })
-                }
-                hint={`国别默认 ${pct(country.marginInterestTaxPct)} · 待当地税则核验；当前税 ${num(calc.marginInterestTaxLocal, 2)} 万${country.ccyName}`}
-              />
-            </Stack>
-          </CardBody>
-        </Card>
-      </Grid>
-
-      {depLoanCheck.inverted ? (
-        <Callout tone="danger" title="本币存贷价倒挂 · 同一银行">
-          保证金存款利率 {pct(inputs.localDepositRatePct)} 不低于贷款价格{" "}
-          {pct(inputs.loanRatePct)}
-          {inputs.countryId === "NG"
-            ? `（${selectedNgBank.name} · ${ngLoanTier}）`
-            : ""}
-          。同存同贷时吸储价应低于放款价，否则银行息差为负；请下调存款利率、上调贷款价，或确认两项来自不同行/不同产品口径。测算仍继续，但结果不宜直接对外。
-        </Callout>
-      ) : depLoanCheck.tight ? (
-        <Callout tone="warning" title="本币存贷利差偏窄">
-          贷款 {pct(inputs.loanRatePct)} vs 保证金存款 {pct(inputs.localDepositRatePct)}，利差仅{" "}
-          {pct(depLoanCheck.spreadPp)}（一般建议 ≥ {pct(LOCAL_DEP_LOAN_MIN_SPREAD_PP)}）。
-          请核对是否同一家行、同一客户档位的报价。
-        </Callout>
-      ) : null}
-
-      {country.quoted && matchesExcel ? (
-        <Callout tone="success" title="与菲律宾 Excel 对账一致">
-          美元收益率 9.05%（表内 C19）。利息金额 27.38 万美元；保函面额 627.38
-          万；贷款约 33,699.62 万比索。
-        </Callout>
-      ) : null}
-        </Stack>
-      </CollapsibleSection>
-
-      <Card>
-        <CardHeader>汇率冲击（息差折回时点）</CardHeader>
-        <CardBody>
-          <Stack gap={8}>
+          </Grid>
+          <Grid columns={2} gap={12}>
             <Field
-              label="本币贬值"
-              suffix="%（正=更多本币兑 1 美元）"
-              value={inputs.fxShockPct}
-              onChange={(n) => patch({ fxShockPct: n })}
-              hint={`${country.fxVolHint}。Excel 用同一挂钩汇率折回，隐含汇率不变。`}
+              label={`保证金存款利率 · ${country.ccy}`}
+              suffix="%"
+              value={inputs.localDepositRatePct}
+              step={0.1}
+              onChange={(n) => patch({ localDepositRatePct: Math.max(0, n) })}
+              hint={
+                inputs.marginPct <= 0
+                  ? "设保证金比例后生效"
+                  : depLoanCheck.inverted
+                    ? `高于贷款价 ${pct(inputs.loanRatePct)}`
+                    : `须低于贷款价（利差 ${pct(depLoanCheck.spreadPp)}）`
+              }
             />
-            <Grid columns={2} gap={12}>
-              <Stat
-                value={
-                  <Row gap={10} align="center">
-                    <StatValue>
-                      {formatUsdWanStat(chuanMergeShock.netUsd)}
-                    </StatValue>
-                    <IncomeLegMiniPie
-                      usdLegUsd={chuanMergeShock.usdLegUsd}
-                      marginUsd={chuanMergeShock.marginChuanUsd}
-                      spreadUsd={chuanMergeShock.spreadUsd}
-                      localCcy={country.ccy}
-                    />
-                  </Row>
-                }
-                label={`CHUAN 口径净收益 · ${chuanMergeShock.suffix} · 三端占比 · 冲击后`}
-                tone="success"
-              />
-              <Stat
-                value={pct(chuanMergeShock.yieldPct * 100, 2)}
-                label={`CHUAN 综合收益率 · ${chuanMergeShock.suffix} · 冲击后`}
-                tone={
-                  chuanMergeShock.yieldPct >= chuanMerge.yieldPct
-                    ? "success"
-                    : "warning"
-                }
-              />
-            </Grid>
-          </Stack>
-        </CardBody>
-      </Card>
-
-      <H2>收益分列 · 计息基数</H2>
-      <Text size="small" tone="secondary">
-        本币拆成存款端（保证金利息税前 − 利息税）与贷款端（转贷 − 贷款利息）；保函存款为美元侧。全折美元图单独列出利息税折回。
-      </Text>
-      <CollapsibleSection title="计息基数对照" defaultOpen={false}>
-        <BasisTable calc={calc} inputs={inputs} country={country} />
-      </CollapsibleSection>
-      <Grid columns={2} gap={16}>
-        <PnlWaterfall
-          title={`本币存款端 · ${country.ccy}`}
-          valueUnit={`万${country.ccyName}`}
-          steps={buildLocalDepositPnlWaterfall(calc, country.ccyName)}
-        />
-        <PnlWaterfall
-          title={`本币贷款端 · ${country.ccy}`}
-          valueUnit={`万${country.ccyName}`}
-          steps={buildLocalLoanPnlWaterfall(calc, country.ccyName)}
-        />
-        <PnlWaterfall
-          title="美元侧收益"
-          valueUnit="万美元"
-          steps={buildUsdLegWaterfall(calc, inputs.depositUsd)}
-        />
-        <PnlWaterfall
-          title="全折美元（当期汇率）"
-          valueUnit="万美元"
-          steps={buildCombinedUsdWaterfall(calc, country.ccyName, inputs.fx)}
-        />
-      </Grid>
-      <Callout tone="neutral" title="口径对照">
-        美元侧 = 保函存款利息 − 保函手续费（{pct(calc.usdLegYield * 100, 2)} ÷ 保函存款本金）。本币贷款端{" "}
-        {num(calc.spreadLocal, 2)} 万 + 本币存款端扣税后 {num(calc.marginInterestLocal, 2)} 万（税前{" "}
-        {num(calc.marginInterestGrossLocal, 2)} − 税 {num(calc.marginInterestTaxLocal, 2)}）→ 折美元{" "}
-        {num(calc.localLegNetUsd, 2)} 万。全折美元净收益 {formatUsdWanStat(calc.netUsdFull)}，收益率{" "}
-        {pct(calc.usdYieldFull * 100, 2)}。CHUAN 综合收益率按 JV 股权 {pct(calc.chuanJvShare * 100, 0)} 折算存款端 →{" "}
-        {pct(calc.usdYieldChuan * 100, 2)}。
-      </Callout>
-
-      <Grid columns={2} gap={16}>
-        <CollapsibleSection title="Excel 流水（当前国）" defaultOpen={false}>
-          <Stack gap={8}>
-            <Table
-              headers={["项目", "机构", "数值", "计息基数", "口径"]}
-              columnAlign={["left", "left", "right", "left", "left"]}
-              striped
-              stickyHeader
-              rows={[
-                ["保函存款本金", "CHUAN", `${num(inputs.depositUsd)} 万美元`, "—", "可配置本金"],
-                ["保函存款利率", "存款行", pct(inputs.depositRatePct), "保函存款本金", "保函存款报价"],
-                ["存款天数", "存款行", String(inputs.depositDays), "—", "固定约定"],
-                [
-                  "利息金额",
-                  "—",
-                  `${num(calc.depositInterestUsd)} 万美元`,
-                  `${num(inputs.depositUsd)} 万美元`,
-                  "本金×利率×天数÷360",
-                ],
-                [
-                  "保函金额（前置）",
-                  "—",
-                  `${num(calc.guaranteeUsd)} 万美元`,
-                  "存款+利息",
-                  "本金+利息，按可前置",
-                ],
-                [
-                  "保函手续费",
-                  "保函行",
-                  `${num(calc.guaranteeFeeUsd)} 万美元`,
-                  `${num(calc.guaranteeUsd)} 万美元`,
-                  "保函金额×费率",
-                ],
-                ["贷款利率", "贷款行", pct(inputs.loanRatePct), "贷款金额", `${country.ccy} 年化`],
-                ["贷款天数", "贷款行", String(inputs.loanDays), "—", "存款 365 天、操作 5 天"],
-                [
-                  `挂钩汇率（${country.ccyName}/美元）`,
-                  "贷款行",
-                  num(inputs.fx, inputs.fx >= 100 ? 0 : 2),
-                  "息差折美元",
-                  country.quoted ? "表内 60；TE 约 60.67" : country.asOf,
-                ],
-                ["保函折扣率", "贷款行", pct(inputs.discountPct, 0), "保函面额", "覆盖利息前；实际本金再÷(1+贷款利率×天÷365)"],
-                ["转贷利率", "借款客户", pct(inputs.onlendPct), "转贷金额=贷款金额", "靠谈"],
-                [
-                  `贷款/转贷金额（万${country.ccyName}）`,
-                  "—",
-                  num(calc.loanLocal, 2),
-                  "保函×折扣×汇率÷(1+贷款利率×天数/365)",
-                  "助贷本金与贷款本金相同",
-                ],
-                [
-                  `转贷利息（万${country.ccyName}）`,
-                  "—",
-                  num(calc.onlendInterestLocal, 2),
-                  `${num(calc.loanLocal, 2)} 万${country.ccyName}`,
-                  "贷款金额×转贷利率×天数÷360",
-                ],
-                [
-                  `贷款利息（万${country.ccyName}）`,
-                  "—",
-                  num(calc.loanInterestLocal, 2),
-                  `${num(calc.loanLocal, 2)} 万${country.ccyName}`,
-                  "贷款金额×贷款利率×天数÷360",
-                ],
-              [
-                `本币贷款端（万${country.ccyName}）`,
-                "—",
-                num(calc.spreadLocal, 2),
-                "转贷−贷款利息",
-                "转贷利息−贷款利息",
-              ],
-              [
-                `保证金（万${country.ccyName}）`,
-                "贷款行",
-                num(calc.marginLocal, 2),
-                `${pct(inputs.marginPct)} × 转贷金额`,
-                "转贷金额×保证金比例",
-              ],
-              [
-                `本币存款端（万${country.ccyName}）`,
-                "贷款行",
-                num(calc.marginInterestLocal, 2),
-                `${num(calc.marginLocal, 2)} 万${country.ccyName}`,
-                "保证金×本币存款利率×天数÷360",
-              ],
-              [
-                `本币两侧合计（万${country.ccyName}）`,
-                "—",
-                num(calc.localLegNetLocal, 2),
-                "本币贷款端+本币存款端",
-                "合计后折美元",
-              ],
-              [
-                "本币两侧折万美元",
-                "—",
-                num(calc.localLegNetUsd, 2),
-                `${num(calc.localLegNetLocal, 2)} 万${country.ccyName}`,
-                "÷当期挂钩汇率",
-              ],
-                [
-                  "美元侧净收益",
-                  "—",
-                  `${num(calc.usdLegNetUsd)} 万美元`,
-                  "保函存款本金/保函金额",
-                  "保函存款利息−保函手续费",
-                ],
-              [
-                "全折美元净收益",
-                "—",
-                `${num(calc.depositInterestUsd + calc.localLegNetUsd - calc.guaranteeFeeUsd, 2)} 万美元`,
-                "美元侧+本币两侧折回",
-                `(利息+本币两侧−保函费)÷保函存款本金 = ${pct(calc.usdYield * 100, 4)}`,
-              ],
-              ]}
+            <Field
+              label="保证金利息税率"
+              suffix="%"
+              value={
+                inputs.marginInterestTaxPct ??
+                country.marginInterestTaxPct ??
+                0
+              }
+              step={1}
+              onChange={(n) =>
+                patch({ marginInterestTaxPct: Math.max(0, Math.min(100, n)) })
+              }
+              hint={`国别默认 ${pct(country.marginInterestTaxPct)}`}
             />
-            <Text size="small" tone="tertiary">
-              表内混用 360/365：利息用 360，贷款本金覆盖用 365。本画布不改日算，便于对账。
-            </Text>
-          </Stack>
-        </CollapsibleSection>
+          </Grid>
 
-        <CollapsibleSection title="综合成本衡量" defaultOpen={false}>
-          <Stack gap={8}>
-            <Text size="small" tone="secondary">
-              参照物是货币对基础利率差（当地政策利率 − 美元政策利率）。结构赚的是全折美元收益率，不是把奈拉/比索利差直接装进口袋——除非息差留在本币、不即期折回。
-            </Text>
+          {depLoanCheck.inverted ? (
+            <Callout tone="danger" title="本币存贷价倒挂 · 同一银行">
+              保证金存款利率 {pct(inputs.localDepositRatePct)} 不低于贷款价格{" "}
+              {pct(inputs.loanRatePct)}
+              {inputs.countryId === "NG"
+                ? `（${selectedNgBank.name} · ${ngLoanTier}）`
+                : ""}
+              。同存同贷时吸储价应低于放款价；测算仍继续，但结果不宜直接对外。
+            </Callout>
+          ) : depLoanCheck.tight ? (
+            <Callout tone="warning" title="本币存贷利差偏窄">
+              贷款 {pct(inputs.loanRatePct)} vs 保证金存款{" "}
+              {pct(inputs.localDepositRatePct)}，利差仅 {pct(depLoanCheck.spreadPp)}
+              （一般建议 ≥ {pct(LOCAL_DEP_LOAN_MIN_SPREAD_PP)}）。
+            </Callout>
+          ) : null}
+
+          {country.quoted && matchesExcel ? (
+            <Callout tone="success" title="与菲律宾 Excel 对账一致">
+              美元收益率 9.05%（表内 C19）。
+            </Callout>
+          ) : null}
+        </Stack>
+      </PersistCollapsibleSection>
+
+      <PersistCollapsibleSection
+        title="汇率冲击"
+        defaultOpen={false}
+        trailing={
+          <Text size="small" tone="tertiary">
+            贬值 {pct(inputs.fxShockPct, 1)} · 冲击后{" "}
+            {pct(chuanMergeShock.yieldPct * 100, 2)}
+          </Text>
+        }
+      >
+        <Stack gap={12}>
+          <Field
+            label="本币贬值"
+            suffix="%（正=更多本币兑 1 美元）"
+            value={inputs.fxShockPct}
+            step={1}
+            onChange={(n) => patch({ fxShockPct: n })}
+            hint={country.fxVolHint}
+          />
+          <Grid columns={2} gap={12}>
+            <Stat
+              value={formatUsdWanStat(chuanMergeShock.netUsd)}
+              label={`CHUAN 净收益 · ${chuanMergeShock.suffix} · 冲击后`}
+              tone="success"
+            />
+            <Stat
+              value={pct(chuanMergeShock.yieldPct * 100, 2)}
+              label={`CHUAN 综合收益率 · 冲击后`}
+              tone={
+                chuanMergeShock.yieldPct >= chuanMerge.yieldPct
+                  ? "success"
+                  : "warning"
+              }
+            />
+          </Grid>
+        </Stack>
+      </PersistCollapsibleSection>
+
+      <PersistCollapsibleSection
+        title="收益分列 · 计息基数"
+        defaultOpen={false}
+        trailing={
+          <Text size="small" tone="tertiary">
+            四端瀑布 · Excel 流水
+          </Text>
+        }
+      >
+        <Stack gap={16}>
+          <Text size="small" tone="secondary">
+            本币拆存款端与贷款端；保函存款为美元侧。
+          </Text>
+          <PersistCollapsibleSection title="计息基数对照" defaultOpen={false}>
+            <BasisTable calc={calc} inputs={inputs} country={country} />
+          </PersistCollapsibleSection>
+          <Grid columns={2} gap={16}>
+            <PnlWaterfall
+              title={`本币存款端 · ${country.ccy}`}
+              valueUnit={`万${country.ccyName}`}
+              steps={buildLocalDepositPnlWaterfall(calc, country.ccyName)}
+            />
+            <PnlWaterfall
+              title={`本币贷款端 · ${country.ccy}`}
+              valueUnit={`万${country.ccyName}`}
+              steps={buildLocalLoanPnlWaterfall(calc, country.ccyName)}
+            />
+            <PnlWaterfall
+              title="美元侧收益"
+              valueUnit="万美元"
+              steps={buildUsdLegWaterfall(calc, inputs.depositUsd)}
+            />
+            <PnlWaterfall
+              title="全折美元（当期汇率）"
+              valueUnit="万美元"
+              steps={buildCombinedUsdWaterfall(calc, country.ccyName, inputs.fx)}
+            />
+          </Grid>
+          <Callout tone="neutral" title="口径对照">
+            美元侧 {pct(calc.usdLegYield * 100, 2)} ÷ 保函存款本金；全折美元{" "}
+            {pct(calc.usdYieldFull * 100, 2)}；CHUAN（JV 股权{" "}
+            {pct(calc.chuanJvShare * 100, 0)}）→ {pct(calc.usdYieldChuan * 100, 2)}。
+          </Callout>
+          <PersistCollapsibleSection title="Excel 流水（当前国）" defaultOpen={false}>
+            <Stack gap={8}>
+              <Table
+                headers={["项目", "机构", "数值", "计息基数", "口径"]}
+                columnAlign={["left", "left", "right", "left", "left"]}
+                striped
+                stickyHeader
+                rows={[
+                  [
+                    "保函存款本金",
+                    "CHUAN",
+                    `${num(inputs.depositUsd)} 万美元`,
+                    "—",
+                    "可配置本金",
+                  ],
+                  [
+                    "保函存款利率",
+                    "存款行",
+                    pct(inputs.depositRatePct),
+                    "保函存款本金",
+                    "保函存款报价",
+                  ],
+                  [
+                    "利息金额",
+                    "—",
+                    `${num(calc.depositInterestUsd)} 万美元`,
+                    `${num(inputs.depositUsd)} 万美元`,
+                    "本金×利率×天数÷360",
+                  ],
+                  [
+                    isInterestUpfront(inputs)
+                      ? "保函金额（利息前置）"
+                      : "保函金额（未前置）",
+                    "—",
+                    `${num(calc.guaranteeUsd)} 万美元`,
+                    isInterestUpfront(inputs) ? "存款+利息" : "仅存款本金",
+                    isInterestUpfront(inputs)
+                      ? "本金+利息，按可前置"
+                      : "利息未前置则面额不含息",
+                  ],
+                  [
+                    "保函手续费",
+                    "保函行",
+                    `${num(calc.guaranteeFeeUsd)} 万美元`,
+                    `${num(calc.guaranteeUsd)} 万美元`,
+                    "保函金额×费率",
+                  ],
+                  [
+                    `贷款/转贷金额（万${country.ccyName}）`,
+                    "—",
+                    num(calc.loanLocal, 2),
+                    "保函×折扣×汇率÷(1+贷款利率×天数/365)",
+                    "助贷本金",
+                  ],
+                  [
+                    "全折美元净收益",
+                    "—",
+                    `${num(calc.depositInterestUsd + calc.localLegNetUsd - calc.guaranteeFeeUsd, 2)} 万美元`,
+                    "美元侧+本币两侧折回",
+                    pct(calc.usdYield * 100, 4),
+                  ],
+                ]}
+              />
+              <Text size="small" tone="tertiary">
+                表内混用 360/365：利息用 360，贷款本金覆盖用 365。
+              </Text>
+            </Stack>
+          </PersistCollapsibleSection>
+          <PersistCollapsibleSection title="综合成本衡量" defaultOpen={false}>
             <Table
               headers={["尺子", "读数", "怎么读"]}
               columnAlign={["left", "right", "left"]}
               striped
               rows={[
-                ["全折美元收益率", pct(calc.usdYield * 100), "结构全部折回美元后的账本收益"],
-                ["存款价格", pct(inputs.depositRatePct), "不做保函、只放保函存款的机会成本"],
-                ["USD 政策利率", pct(inputs.usdPolicyPct), "无风险美元底"],
-                [`${country.ccy}/USD 政策利差`, pct(calc.pairDiff * 100), "教科书套息；未对冲汇率"],
-                ["贷款−当地政策", pct(calc.loanOverPolicy * 100), "保函项下相对政策的点差"],
-                ["转贷−贷款", pct(calc.onlendOverLoan * 100), "对借款客户的净利差（本币）"],
-              ...(inputs.marginPct > 0
-                ? [
-                    [
-                      "保证金比例",
-                      pct(inputs.marginPct),
-                      "× 转贷金额，存当地行",
-                    ],
-                    [
-                      "保证金存款利率",
-                      pct(inputs.localDepositRatePct),
-                      `本币利息 ${num(calc.marginInterestLocal, 2)} 万${country.ccyName}`,
-                    ],
-                  ]
-                : []),
-                ...(implied
-                  ? [
-                      [
-                        `倒推报价（锁 ${pct(targetUsdYieldPct)} 美元）`,
-                        pct(implied.impliedOnlendPct),
-                        "给当地机构的本币融资对外报价",
-                      ],
-                      [
-                        "倒推报价 − 政策利率",
-                        pct(implied.impliedOnlendPct - inputs.localPolicyPct),
-                        "对外报价相对当地政策的点差",
-                      ],
-                    ]
-                  : []),
-                ["超额 vs 存款", pct(calc.excessVsDeposit * 100), "做这单比只存款多赚多少"],
                 [
-                  "超额 vs 货币对利差",
-                  pct(calc.excessVsPairDiff * 100),
-                  "正值=美元账本收益高于套息差；高息国常为负——利差在本币侧",
+                  "全折美元收益率",
+                  pct(calc.usdYield * 100),
+                  "结构全部折回美元后的账本收益",
+                ],
+                ["存款价格", pct(inputs.depositRatePct), "只放保函存款的机会成本"],
+                [
+                  `${country.ccy}/USD 政策利差`,
+                  pct(calc.pairDiff * 100),
+                  "教科书套息；未对冲汇率",
                 ],
                 [
-                  "相对菲律宾的本金折损",
-                  pct(calc.principalHaircutVsPh * 100),
-                  "同样保函、更高贷款利率 → 可放本金更薄",
+                  "超额 vs 存款",
+                  pct(calc.excessVsDeposit * 100),
+                  "做这单比只存款多赚多少",
                 ],
               ]}
             />
-          </Stack>
-        </CollapsibleSection>
-      </Grid>
+          </PersistCollapsibleSection>
+        </Stack>
+      </PersistCollapsibleSection>
 
       <H2>结构参数</H2>
+      <Text size="small" tone="secondary">
+        保函存款本金/面额、天数与汇率。面额联动助贷本金；折扣与保证金在「定价横梁」。
+      </Text>
       <Grid columns={4} gap={12}>
         <Field
           label="保函存款本金"
           suffix="万美元"
-          value={inputs.depositUsd}
+          value={round2(inputs.depositUsd)}
+          step={10}
           onChange={(n) => patch({ depositUsd: n })}
+          hint={
+            isInterestUpfront(inputs)
+              ? "调高→保函金额=本金+利息同步变大"
+              : "调高→保函金额=本金（利息未进面额）"
+          }
+        />
+        <Field
+          label="保函金额"
+          suffix="万美元"
+          value={round2(calc.guaranteeUsd)}
+          step={10}
+          onChange={(n) =>
+            patch({
+              depositUsd: depositUsdFromGuaranteeFace(
+                n,
+                inputs.depositRatePct,
+                inputs.depositDays,
+                isInterestUpfront(inputs),
+              ),
+            })
+          }
+          hint={
+            isInterestUpfront(inputs)
+              ? "调高→反解保函存款本金（÷(1+存款价×天/360)）"
+              : "调高→同步存款本金（利息未前置，面额=本金）"
+          }
         />
         <Field
           label="保函存款天数"
           suffix="天"
           value={inputs.depositDays}
+          step={1}
           onChange={(n) => patch({ depositDays: n })}
         />
         <Field
           label="贷款天数"
           suffix="天"
           value={inputs.loanDays}
+          step={1}
           onChange={(n) => patch({ loanDays: n })}
         />
         <FxSpotField
@@ -2478,7 +5119,7 @@ export default function CrossBorderGuaranteeOnlend() {
 
       <Divider />
 
-      <CollapsibleSection
+      <PersistCollapsibleSection
         title="五国预设对照"
         count={5}
         trailing={<Text size="small" tone="tertiary">各用本国横梁 · 未含未保存改动</Text>}
@@ -2563,12 +5204,16 @@ export default function CrossBorderGuaranteeOnlend() {
             ])}
           />
         </Stack>
-      </CollapsibleSection>
+      </PersistCollapsibleSection>
 
-      <CollapsibleSection title="口径与信源" defaultOpen={false}>
+      <PersistCollapsibleSection title="口径与信源" defaultOpen={false}>
         <Table
           headers={["项", "口径"]}
           rows={[
+            [
+              "分配侧",
+              "助贷本金横向资金条。保函位置 none / help_mfi / help_bank。三主体按收入列示：保证主体拿转贷差价，JV 拿服务费与或有存款利息，银行拿场景息差。",
+            ],
             ["结构", "CHUAN 离岸美元存款 → 利息可前置进保函面额 → 当地行按折扣放本币 → 转贷；另按转贷金额比例存本币保证金"],
           [
             "本币保证金",
@@ -2589,7 +5234,7 @@ export default function CrossBorderGuaranteeOnlend() {
             ],
             [
               "宏观利率/汇率",
-              "Atlas COUNTRY_MACRO / Trading Economics 2026-06–08：PH BSP 4.75% · NG CBN MPR 26.5% · ID BI 5.75% · MX Banxico 6.5% · KE CBK 8.75% · US 3.75%；FX PHP 60.67 / NGN 1362 / IDR 17916 / MXN 17.25 / KES 129",
+              "Atlas COUNTRY_MACRO / Trading Economics 2026-06–08：PH BSP 4.75% · NG CBN MPR 26.5% · ID BI 5.75% · MX Banxico 6.5% · KE CBK 8.75% · RU CBR 14% · US 3.75%；FX PHP 60.67 / NGN 1362 / IDR 17916 / MXN 17.25 / KES 129 / RUB 82.3",
             ],
             [
               "外推规则",
@@ -2605,10 +5250,11 @@ export default function CrossBorderGuaranteeOnlend() {
             ],
           ]}
         />
-      </CollapsibleSection>
+      </PersistCollapsibleSection>
       <Text size="small" tone="tertiary" style={{ color: theme.text.tertiary }}>
         改数会保存在画布侧车，刷新后仍在。点「恢复该国预设」回到该国默认横梁。
       </Text>
     </Stack>
+    </div>
   );
 }

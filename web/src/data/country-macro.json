@@ -27,8 +27,12 @@
     "gasolineRetail": "约0.97美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.075美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约12.9（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约15%（乘用车MFN示意）〔24〕",
-    "nevLocalVat": "一般税率13%（增值税；购置税减免另轨）〔24〕"
+    "nevImportTariff": "约15%（HS8703 CBU·乘用车MFN示意）〔24〕",
+    "nevLocalVat": "一般税率13%（增值税；购置税减免另轨）〔24〕",
+    "nevPurchaseIncentive": "已退坡 · 中央购置现金补贴已退；购置税减免仍另轨（非关税）〔24〕",
+    "nevHsCkd": "约0–15%（CKD/散件·加工贸易与一般贸易分化·待税则核）·组装路径〔24〕",
+    "nevHsBattery": "约10–12%（HS8507.60 锂离子蓄电池 MFN示意·待税则核）〔24〕",
+    "nevHsMotor": "约5–12%（HS8501 电动机示意·功率档分化·待税则核）〔24〕"
   },
   "TW": {
     "asOf": "2026-08对照·TE中国台湾·汽油/电价续补",
@@ -85,8 +89,12 @@
     "gasolineRetail": "约4.17美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.181美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约23.0（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约0%（一般无进口关税；首次登记税FRT另计）〔24〕",
-    "nevLocalVat": "约0%（无一般VAT/GST）〔24〕"
+    "nevImportTariff": "约0%（HS8703 CBU·一般无进口关税；首次登记税FRT另计）〔24〕",
+    "nevLocalVat": "约0%（无一般VAT/GST）〔24〕",
+    "nevPurchaseIncentive": "税费减免 · 电动车首次登记税（FRT）宽免/优惠路径；非现金购置补贴〔24〕",
+    "nevHsCkd": "约0%（一般无进口关税；组装路径同）〔24〕",
+    "nevHsBattery": "约0%（HS8507.60；一般无进口关税）〔24〕",
+    "nevHsMotor": "约0%（HS8501；一般无进口关税）〔24〕"
   },
   "JP": {
     "asOf": "2026-08对照·TE日本·汽油/电价续补",
@@ -116,7 +124,7 @@
     "gasolineRetail": "约1.04美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.202美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约5.1（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约0%（乘用车关税常见示意；EPA覆盖另计）〔24〕",
+    "nevImportTariff": "约0%（HS8703 CBU·乘用车关税常见示意；EPA覆盖另计）〔24〕",
     "nevLocalVat": "一般税率10%（消费税）〔24〕"
   },
   "KR": {
@@ -147,7 +155,7 @@
     "gasolineRetail": "约1.29美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.131美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约9.8（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约8%（乘用车关税示意）〔24〕",
+    "nevImportTariff": "约8%（HS8703 CBU·乘用车关税示意）〔24〕",
     "nevLocalVat": "一般税率10%（VAT）〔24〕"
   },
   "MN": {
@@ -204,8 +212,12 @@
     "gasolineRetail": "约0.55美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.089美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约6.2（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约50%（合资格0%激励至2025-12已到期·MFN/CBU示意·续期待PMK核）〔24〕",
-    "nevLocalVat": "一般税率11%（PPN；政策路径向12%抬升待核）〔24〕"
+    "nevImportTariff": "约50%（HS8703 CBU·合资格0%激励至2025-12已到期·MFN/CBU示意·续期待PMK核）〔24〕",
+    "nevLocalVat": "一般税率11%（PPN；政策路径向12%抬升待核）〔24〕",
+    "nevPurchaseIncentive": "已退坡 · CBU零关税激励窗口至2025-12已到期（进口端）；购车现金补贴待核〔24〕",
+    "nevHsCkd": "约0–15%（CKD/SKD 激励路径·常远低于CBU约50%·待PMK核）〔24〕",
+    "nevHsBattery": "约0–15%（HS8507.60·本土化政策窗口分化·待税则核）〔24〕",
+    "nevHsMotor": "约5–15%（HS8501·待税则核）〔24〕"
   },
   "VN": {
     "asOf": "2026-08对照·TE越南·汽油/电价续补",
@@ -235,8 +247,12 @@
     "gasolineRetail": "约0.73美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.073美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约10.0（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约25%（CBU激励窗口0–50%分化中位示意·待税则核）〔24〕",
-    "nevLocalVat": "约10%（VAT一般税率·部分窗口8%）〔24〕"
+    "nevImportTariff": "约25%（HS8703 CBU·CBU激励窗口0–50%分化中位示意·待税则核）〔24〕",
+    "nevLocalVat": "约10%（VAT一般税率·部分窗口8%）〔24〕",
+    "nevPurchaseIncentive": "税费减免 · CBU/组装激励窗口分化；购车现金补贴待核〔24〕",
+    "nevHsCkd": "约0–25%（CKD激励窗口常低于CBU中位·待税则核）〔24〕",
+    "nevHsBattery": "约0–10%（HS8507.60·待税则核）〔24〕",
+    "nevHsMotor": "约0–10%（HS8501·待税则核）〔24〕"
   },
   "MY": {
     "asOf": "2026-08对照·TE马来西亚·汽油/电价续补",
@@ -266,8 +282,12 @@
     "gasolineRetail": "约0.49美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.049美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约10.0（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约30%（CBU示意；CKD/组装激励分化大）〔24〕",
-    "nevLocalVat": "约10%（机动车销售税SST示意·非完整VAT）〔24〕"
+    "nevImportTariff": "约30%（HS8703 CBU·CBU示意；CKD/组装激励分化大）〔24〕",
+    "nevLocalVat": "约10%（机动车销售税SST示意·非完整VAT）〔24〕",
+    "nevPurchaseIncentive": "税费减免 · EV关税/销售税激励窗口（CBU与CKD分化大）〔24〕",
+    "nevHsCkd": "约0–10%（CKD激励常远低于CBU约30%·待税则核）〔24〕",
+    "nevHsBattery": "约0–10%（HS8507.60·待税则核）〔24〕",
+    "nevHsMotor": "约0–10%（HS8501·待税则核）〔24〕"
   },
   "TH": {
     "asOf": "2026-08对照·TE泰国·汽油/电价续补",
@@ -297,8 +317,12 @@
     "gasolineRetail": "约1.08美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.126美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约8.6（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约40%（MFN示意；BEV3.5合资格2024–25可大幅减免）〔24〕",
-    "nevLocalVat": "一般税率7%（VAT）〔24〕"
+    "nevImportTariff": "约40%（HS8703 CBU·MFN示意；BEV3.5合资格2024–25可大幅减免）〔24〕",
+    "nevLocalVat": "一般税率7%（VAT）〔24〕",
+    "nevPurchaseIncentive": "税费减免 · 合资格BEV消费税/关税激励与购车端交织（窗口制·待税则核）〔24〕",
+    "nevHsCkd": "约0–20%（CKD/本地化激励窗口常远低于CBU·BOI路径·待税则核）〔24〕",
+    "nevHsBattery": "约0–10%（HS8507.60·激励/MFN分化·待税则核）〔24〕",
+    "nevHsMotor": "约0–10%（HS8501·待税则核）〔24〕"
   },
   "PH": {
     "asOf": "2026-08对照·TE菲律宾+BSP/SEC/R&M信源包·汽油/电价续补",
@@ -328,8 +352,12 @@
     "gasolineRetail": "约0.92美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.196美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约4.7（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约0%（EO/EVIDA路径·BEV等零关税延至2028）〔24〕",
-    "nevLocalVat": "一般税率12%（VAT；纯电购置税另有优惠）〔24〕"
+    "nevImportTariff": "约0%（HS8703 CBU·EO/EVIDA路径·BEV等零关税延至2028）〔24〕",
+    "nevLocalVat": "一般税率12%（VAT；纯电购置税另有优惠）〔24〕",
+    "nevPurchaseIncentive": "税费减免 · EVIDA路径下BEV关税/税惠延至约2028（偏进口/注册端）〔24〕",
+    "nevHsCkd": "约0–10%（EVIDA/CKD 路径示意·常低于一般CBU·待税则核）〔24〕",
+    "nevHsBattery": "约0–5%（HS8507.60·EVIDA税惠交织·待税则核）〔24〕",
+    "nevHsMotor": "约0–5%（HS8501·待税则核）〔24〕"
   },
   "IN": {
     "asOf": "2026-08对照·TE印度·汽油/电价续补",
@@ -359,8 +387,12 @@
     "gasolineRetail": "约1.07美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.076美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约14.1（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约70%（一般CBU高税示意；合格大额投资人可条件降至约15%）〔24〕",
-    "nevLocalVat": "约5%（EV适用GST优惠示意；燃油乘用车常28%档）〔24〕"
+    "nevImportTariff": "约70%（HS8703 CBU·一般CBU高税示意；合格大额投资人可条件降至约15%）〔24〕",
+    "nevLocalVat": "约5%（EV适用GST优惠示意；燃油乘用车常28%档）〔24〕",
+    "nevPurchaseIncentive": "已退坡 · FAME等购置激励大体退坡；生产端PLI另轨〔24〕",
+    "nevHsCkd": "约15–35%（CKD/散件档常低于一般CBU约70%·PLI/投资人路径分化·待税则核）〔24〕",
+    "nevHsBattery": "约5–15%（HS8507.60·电芯/模组档分化·待税则核）〔24〕",
+    "nevHsMotor": "约7.5–15%（HS8501·待税则核）〔24〕"
   },
   "BD": {
     "asOf": "2026-08对照·TE孟加拉·汽油/电价续补",
@@ -608,8 +640,12 @@
     "gasolineRetail": "约1.36美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.095美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约14.3（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约50%（2026-01起·非FTA乘用车含BEV；USMCA等FTA另计）〔24〕",
-    "nevLocalVat": "一般税率16%（LIVA·出厂/销售同率；北部边境刺激8%未默认）〔24〕"
+    "nevImportTariff": "约50%（HS8703 CBU·2026-01起·非FTA乘用车含BEV；USMCA等FTA另计）〔24〕",
+    "nevLocalVat": "一般税率16%（LIVA·出厂/销售同率；北部边境刺激8%未默认）〔24〕",
+    "nevPurchaseIncentive": "待核 · 联邦购车现金补贴非常态；近以关税与USMCA来源差为主〔24〕",
+    "nevHsCkd": "约0–20%（CKD/USMCA原产地路径与非FTA分化大·待LIGIE核）〔24〕",
+    "nevHsBattery": "约0–15%（HS8507.60·USMCA vs 非FTA分化·待税则核）〔24〕",
+    "nevHsMotor": "约0–10%（HS8501·待税则核）〔24〕"
   },
   "BR": {
     "asOf": "2026-08对照·TE巴西·汽油/电价续补",
@@ -639,8 +675,12 @@
     "gasolineRetail": "约1.28美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.125美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约10.2（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约35%（2026-07起·CBU新能源与燃油统一示意；配额外）〔24〕",
-    "nevLocalVat": "约18%（州ICMS示意·联邦PIS/COFINS/IPI另计；双VAT改革目标约28%待落地）〔24〕"
+    "nevImportTariff": "约35%（HS8703 CBU·2026-07起·CBU新能源与燃油统一示意；配额外）〔24〕",
+    "nevLocalVat": "约18%（州ICMS示意·联邦PIS/COFINS/IPI另计；双VAT改革目标约28%待落地）〔24〕",
+    "nevPurchaseIncentive": "待核 · 近以关税统一与工业政策为主；购车补贴非常态〔24〕",
+    "nevHsCkd": "约0–20%（CKD/工业政策路径·可低于统一CBU约35%·待CAMEX核）〔24〕",
+    "nevHsBattery": "约12–18%（HS8507.60示意·待税则核）〔24〕",
+    "nevHsMotor": "约12–18%（HS8501示意·待税则核）〔24〕"
   },
   "CO": {
     "asOf": "2026-08对照·TE哥伦比亚·汽油/电价续补",
@@ -670,7 +710,7 @@
     "gasolineRetail": "约1.29美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.199美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约6.5（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约35%（乘用车关税示意）〔24〕",
+    "nevImportTariff": "约35%（HS8703 CBU·乘用车关税示意）〔24〕",
     "nevLocalVat": "一般税率19%（IVA）〔24〕"
   },
   "AR": {
@@ -701,7 +741,7 @@
     "gasolineRetail": "约1.38美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.018美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约76.7（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约35%（乘用车关税示意）〔24〕",
+    "nevImportTariff": "约35%（HS8703 CBU·乘用车关税示意）〔24〕",
     "nevLocalVat": "一般税率21%（IVA）〔24〕"
   },
   "PE": {
@@ -732,7 +772,7 @@
     "gasolineRetail": "约1.23美元/升（2026-06）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.186美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约6.6（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约6%（乘用车/FTA分化示意）〔24〕",
+    "nevImportTariff": "约6%（HS8703 CBU·乘用车/FTA分化示意）〔24〕",
     "nevLocalVat": "一般税率18%（IGV）〔24〕"
   },
   "CL": {
@@ -763,7 +803,7 @@
     "gasolineRetail": "约1.54美元/升（2026-08）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.157美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约9.8（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约6%（乘用车关税示意）〔24〕",
+    "nevImportTariff": "约6%（HS8703 CBU·乘用车关税示意）〔24〕",
     "nevLocalVat": "一般税率19%（IVA）〔24〕"
   },
   "EG": {
@@ -794,7 +834,7 @@
     "gasolineRetail": "约0.44美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.018美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约24.4（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约40%（乘用车关税示意·待税则核）〔24〕",
+    "nevImportTariff": "约40%（HS8703 CBU·乘用车关税示意·待税则核）〔24〕",
     "nevLocalVat": "一般税率14%（VAT）〔24〕"
   },
   "MA": {
@@ -962,7 +1002,7 @@
     "gasolineRetail": "约0.62美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.053美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约11.7（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约5%（GCC关税示意）〔24〕",
+    "nevImportTariff": "约5%（HS8703 CBU·GCC关税示意）〔24〕",
     "nevLocalVat": "一般税率15%（VAT）〔24〕"
   },
   "AE": {
@@ -993,7 +1033,7 @@
     "gasolineRetail": "约0.9美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.080美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约11.2（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约5%（GCC关税示意）〔24〕",
+    "nevImportTariff": "约5%（HS8703 CBU·GCC关税示意）〔24〕",
     "nevLocalVat": "一般税率5%（VAT）〔24〕"
   },
   "BH": {
@@ -1362,7 +1402,7 @@
     "gasolineRetail": "约0.92美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.033美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约27.9（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约35%（乘用车关税示意·待税则核）〔24〕",
+    "nevImportTariff": "约35%（HS8703 CBU·乘用车关税示意·待税则核）〔24〕",
     "nevLocalVat": "一般税率7.5%（VAT）〔24〕"
   },
   "KE": {
@@ -1393,7 +1433,7 @@
     "gasolineRetail": "约1.65美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.256美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约6.4（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约25%（乘用车关税示意·东非共同体分化）〔24〕",
+    "nevImportTariff": "约25%（HS8703 CBU·乘用车关税示意·东非共同体分化）〔24〕",
     "nevLocalVat": "一般税率16%（VAT）〔24〕"
   },
   "GH": {
@@ -1453,7 +1493,7 @@
     "gasolineRetail": "约1.56美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.175美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约8.9（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约25%（乘用车关税示意）〔24〕",
+    "nevImportTariff": "约25%（HS8703 CBU·乘用车关税示意）〔24〕",
     "nevLocalVat": "一般税率15%（VAT）〔24〕"
   },
   "TZ": {
@@ -2024,8 +2064,12 @@
     "gasolineRetail": "约1.04美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.184美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约5.7（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约100%（对华BEV·301附加示意；其他来源显著更低）〔24〕",
-    "nevLocalVat": "约0%（无联邦VAT；州销售税约0–10%另计）〔24〕"
+    "nevImportTariff": "约100%（HS8703 CBU·对华BEV·301附加示意；其他来源显著更低）〔24〕",
+    "nevLocalVat": "约0%（无联邦VAT；州销售税约0–10%另计）〔24〕",
+    "nevPurchaseIncentive": "现金或抵免 · IRA等购车税收抵免（资格/本土与电池成分门槛严格）〔24〕",
+    "nevHsCkd": "约2.5%（车身/散件MFN示意；对华301/附加另计·待税则核）·组装路径〔24〕",
+    "nevHsBattery": "约3.4%+对华301附加（HS8507.60·合计可显著抬升·待税则核）〔24〕",
+    "nevHsMotor": "约2.4–4%（HS8501 MFN示意；对华附加另计·待税则核）〔24〕"
   },
   "CA": {
     "asOf": "2026-08对照·TE加拿大·汽油/电价续补",
@@ -2055,7 +2099,7 @@
     "gasolineRetail": "约1.32美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.119美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约11.1（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约100%（对华EV附加示意；USMCA来源显著更低）〔24〕",
+    "nevImportTariff": "约100%（HS8703 CBU·对华EV附加示意；USMCA来源显著更低）〔24〕",
     "nevLocalVat": "约5%（联邦GST；省HST/QST另计约0–10%）〔24〕"
   },
   "GB": {
@@ -2086,7 +2130,7 @@
     "gasolineRetail": "约2.1美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.345美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约6.1（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约10%（乘用车关税示意；对华措施另核）〔24〕",
+    "nevImportTariff": "约10%（HS8703 CBU·乘用车关税示意；对华措施另核）〔24〕",
     "nevLocalVat": "一般税率20%（VAT）〔24〕"
   },
   "DE": {
@@ -2117,8 +2161,12 @@
     "gasolineRetail": "约2.49美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.341美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约7.3（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约27%（对华BEV·MFN约10%+反补贴合计中位示意；厂商附加7.8–35.3%）〔24〕",
-    "nevLocalVat": "一般税率19%（MwSt）〔24〕"
+    "nevImportTariff": "约27%（HS8703 CBU·对华BEV·MFN约10%+反补贴合计中位示意；厂商附加7.8–35.3%）〔24〕",
+    "nevLocalVat": "一般税率19%（MwSt）〔24〕",
+    "nevPurchaseIncentive": "已退坡 · 联邦环境奖金购车补贴已停；税收优惠另核〔24〕",
+    "nevHsCkd": "约4.5%（欧盟散件/车身示意·低于对华BEV合计；待TARIC核）〔24〕",
+    "nevHsBattery": "约1.3–2.7%（HS8507.60 欧盟MFN示意；对华措施另核）〔24〕",
+    "nevHsMotor": "约2.7%（HS8501 欧盟MFN示意·待TARIC核）〔24〕"
   },
   "FR": {
     "asOf": "2026-08对照·TE法国·汽油/电价续补",
@@ -2148,8 +2196,12 @@
     "gasolineRetail": "约2.33美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.294美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约7.9（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约27%（对华BEV·欧盟MFN+反补贴合计中位示意）〔24〕",
-    "nevLocalVat": "一般税率20%（TVA）〔24〕"
+    "nevImportTariff": "约27%（HS8703 CBU·对华BEV·欧盟MFN+反补贴合计中位示意）〔24〕",
+    "nevLocalVat": "一般税率20%（TVA）〔24〕",
+    "nevPurchaseIncentive": "现金或抵免 · 生态奖金等购车激励仍存但收紧（收入/价位门槛）〔24〕",
+    "nevHsCkd": "约4.5%（欧盟散件/车身示意·待TARIC核）〔24〕",
+    "nevHsBattery": "约1.3–2.7%（HS8507.60 欧盟MFN示意；对华措施另核）〔24〕",
+    "nevHsMotor": "约2.7%（HS8501 欧盟MFN示意·待TARIC核）〔24〕"
   },
   "NL": {
     "asOf": "2026-08对照·TE荷兰·汽油/电价续补",
@@ -2208,7 +2260,7 @@
     "gasolineRetail": "约1.94美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.211美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约9.2（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约27%（对华BEV·欧盟合计中位示意）〔24〕",
+    "nevImportTariff": "约27%（HS8703 CBU·对华BEV·欧盟合计中位示意）〔24〕",
     "nevLocalVat": "一般税率21%（IVA）〔24〕"
   },
   "PT": {
@@ -2268,7 +2320,7 @@
     "gasolineRetail": "约2.35美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.427美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约5.5（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约27%（对华BEV·欧盟合计中位示意）〔24〕",
+    "nevImportTariff": "约27%（HS8703 CBU·对华BEV·欧盟合计中位示意）〔24〕",
     "nevLocalVat": "一般税率22%（IVA）〔24〕"
   },
   "SE": {
@@ -2415,7 +2467,32 @@
     "gasolineRetail": "约3.34美元/升（2026-07）·TE零售汽油〔1〕〔23〕",
     "electricityResidential": "约0.240美元/kWh（2026-01）·GlobalPetrolPrices居民电价〔22〕",
     "fuelToPowerRatio": "约13.9（1升汽油≈可购居民电kWh）·汽油÷电价·TE/GPP〔1〕〔22〕〔23〕",
-    "nevImportTariff": "约0%（关税；ARF/COE等另计）〔24〕",
-    "nevLocalVat": "一般税率9%（GST）〔24〕"
+    "nevImportTariff": "约0%（HS8703 CBU·关税；ARF/COE等另计）〔24〕",
+    "nevLocalVat": "一般税率9%（GST）〔24〕",
+    "nevPurchaseIncentive": "税费减免 · ARF/道路税等电动车优惠路径（非现金购置补贴）〔24〕",
+    "nevHsCkd": "约0%（关税；ARF/注册费另计）〔24〕",
+    "nevHsBattery": "约0%（HS8507.60）〔24〕",
+    "nevHsMotor": "约0%（HS8501）〔24〕"
+  },
+  "GN": {
+    "asOf": "2026-08对照·Trading Economics·几内亚",
+    "gdpYoY": "5.6%（2024-12）",
+    "gdpUsdBn": "约28.35亿美元（2025-12）",
+    "gdpPerCapitaUsd": "约1098美元（2025-12）·低于2000美元阈值",
+    "incomePerCapita": "约4217美元（2025）·世行GNI/人PPP·TE·非住户可支配收入",
+    "inflation": "6.1%（2026-06）",
+    "policyRate": "9.5%（2026-07）",
+    "unemployment": "5.2%（2025-12）",
+    "population": "约1436万（2025-12）",
+    "employmentNote": "官方失业率较低；非正式就业/青年失业待ILO交叉",
+    "sectorMix": "矿业分项48909（2024）·农业86473·服务67393·GNF十亿·TE分项",
+    "currentAccount": "经常账户约-1.17亿美元（2025-09）；CA/GDP约-1.55%（2024-12）",
+    "fxTrend": "本币对美元约8786（2026-08·TE货币）",
+    "fxHint": "约8786（TE货币·2026-08）",
+    "debtToGdp": "政府债务/GDP约48.1%（2025-12）",
+    "creditNote": "信贷过热组：家庭债务/非银增速/NPL待监管名录续核",
+    "cashLoanVerdict": "人均GDP＜2000阈值；矿业出口依赖高。准入先过牌照/利率上限与汇兑评估。",
+    "privCreditOrConsumer": "私营信贷存量待央行/BCEAO口径续采",
+    "consumerConfidence": "—·TE无消费者信心序列"
   }
 }

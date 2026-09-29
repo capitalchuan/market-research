@@ -298,7 +298,10 @@
           "收入占比约 17%。",
           "市场：印尼+菲律宾；观望 MX/TH。"
         ]
-      }
+      },
+      "titleEn": "Chuhai Blackboard: FinVolution 2023 overseas from annual report",
+      "summaryEn": "FinVolution overseas origination ~RMB78.5bn in 2023 (+84.7% YoY); overseas ~17% of group revenue (~RMB21.3bn). Core markets remain Indonesia + Philippines; author stresses licensed compliance first, watching Mexico/Thailand.",
+      "thesisEn": "FinVolution overseas origination ~RMB78.5bn in 2023 (+84.7% YoY); overseas ~17% of group revenue (~RMB21.3bn). Core markets remain Indonesia + Philippines; author stresses licensed compliance first, watching Mexico/Thailand."
     },
     {
       "id": "chuhai-finv-2022-overseas",
@@ -372,7 +375,10 @@
           "余额 8 亿/+167%",
           "ID 本地资金 63%"
         ]
-      }
+      },
+      "titleEn": "Chuhai Blackboard: FinVolution 2022 overseas from annual report",
+      "summaryEn": "FinVolution overseas origination ~RMB43bn in 2022 (+16.2%); overseas AUM ~RMB8bn (+166.7%, longer tenor). Indonesia AdaKami / Philippines JuanHand; Indonesia funding localization rose to ~63%.",
+      "thesisEn": "FinVolution overseas origination ~RMB43bn in 2022 (+16.2%); overseas AUM ~RMB8bn (+166.7%, longer tenor). Indonesia AdaKami / Philippines JuanHand; Indonesia funding localization rose to ~63%."
     },
     {
       "id": "chuhai-finv-2021-overseas",
@@ -435,7 +441,10 @@
           "放款约 37 亿人民币量级",
           "附印尼利率/牌照观察"
         ]
-      }
+      },
+      "titleEn": "Chuhai Blackboard: FinVolution 2021 overseas from annual report",
+      "summaryEn": "FinVolution overseas acquisitions ~1.4m in 2021 (+122.6%); overseas origination ~RMB36.7bn (vs ~RMB10.6bn in 2020). Early disclosure covers Indonesia and Philippines.",
+      "thesisEn": "FinVolution overseas acquisitions ~1.4m in 2021 (+122.6%); overseas origination ~RMB36.7bn (vs ~RMB10.6bn in 2020). Early disclosure covers Indonesia and Philippines."
     },
     {
       "id": "chuhai-id-ojk-rate-cap-2023",
@@ -542,7 +551,10 @@
           "2025 千二",
           "2026 千一"
         ]
-      }
+      },
+      "titleEn": "Chuhai Blackboard: Indonesia enters the ‘0.3% era’ rate-cap path",
+      "summaryEn": "OJK SEOJK 19/06/2023: personal consumer-loan daily rate caps step down to 0.3% (2024), 0.2% (2025), 0.1% (2026). Collections and emergency-contact rules tighten in parallel.",
+      "thesisEn": "OJK SEOJK 19/06/2023: personal consumer-loan daily rate caps step down to 0.3% (2024), 0.2% (2025), 0.1% (2026). Collections and emergency-contact rules tighten in parallel."
     },
     {
       "id": "diandian-2026h1-overseas-cashloan",
@@ -1158,7 +1170,8 @@
           "actions": "Q2发版12次；5/25–6/2 DiDi Card Hot Sale 10%返现；6/23 服务升级覆盖信贷/卡/支付",
           "cashLoanHint": "场景入口+卡促转化；拉美断层龙头，对标时勿用独立现金贷App均值直接比",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "LatAm cash-loan actives #1: 2026H1 mean MAU ~3.9m, +~10.6% MoM, ~2.1× #2 Aplazo."
         },
         {
           "nameZh": "Aplazo",
@@ -1171,7 +1184,8 @@
           ],
           "metric": "拉美活跃第2：月活均值约186万，环比升约9.6%。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "LatAm actives #2: mean MAU ~1.86m, +~9.6% MoM."
         },
         {
           "nameZh": "MexiCash/快牛",
@@ -1185,7 +1199,8 @@
           "metric": "拉美活跃第8：月活均值约94万，环比升约30.9%，名次上升3位。",
           "cashLoanHint": "H1活跃环比高增；仍属流量侧，资产质量待监管/债项交叉",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "LatAm actives #8: mean MAU ~0.94m, +~30.9% MoM, rank +3."
         },
         {
           "nameZh": "Credmex",
@@ -1199,7 +1214,8 @@
           ],
           "metric": "拉美活跃第7：月活均值约97万，环比降约3.7%。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "LatAm actives #7: mean MAU ~0.97m, −~3.7% MoM."
         },
         {
           "nameZh": "Tala",
@@ -1215,7 +1231,8 @@
           "actions": "iOS于2026-05-15下架；报告称冒名欺诈冲击活跃与下载",
           "cashLoanHint": "压力样本：商店下架+欺诈叙事下活跃收缩",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "LatAm actives #10: mean MAU ~0.71m, −~23.2% MoM, rank −1."
         },
         {
           "nameZh": "Stori",
@@ -1228,7 +1245,8 @@
           ],
           "metric": "拉美活跃第6：月活均值约104万，环比升约0.5%。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "LatAm actives #6: mean MAU ~1.04m, +~0.5% MoM."
         },
         {
           "nameZh": "Plata",
@@ -1242,7 +1260,8 @@
           "metric": "2026年初获批银行牌照，报告将其作为平台银行化主线。",
           "cashLoanHint": "数字银行牌照落地→现金贷流量从独立App外溢至银行/支付入口",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "Bank license approved early 2026; report frames platform bankization narrative."
         },
         {
           "nameZh": "Mercado Pago",
@@ -1257,7 +1276,8 @@
           "metric": "银行牌照申请接近获批，出自点点2026上半年报告叙述。",
           "cashLoanHint": "支付/电商入口银行化；与独立现金贷App分流",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "Bank license application near approval per Diandian 2026H1 narrative."
         },
         {
           "nameZh": "Kredivo",
@@ -1273,7 +1293,8 @@
           "actions": "DBS Indonesia channeling 提至Rp3万亿；2026-05收购越南数字银行Timo，越南Kredivo更名Timo Credit",
           "cashLoanHint": "BNPL+现金贷场景龙头；区域扩张看越南Timo Credit生态",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "SEA actives #1: mean MAU ~10.68m, +~5.2% MoM, stays 10m+."
         },
         {
           "nameZh": "Adapundi",
@@ -1286,7 +1307,8 @@
           ],
           "metric": "东南亚活跃第2：月活均值约284万，环比升约14.3%。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "SEA actives #2: mean MAU ~2.84m, +~14.3% MoM."
         },
         {
           "nameZh": "Easycash",
@@ -1301,7 +1323,8 @@
           "metric": "东南亚活跃第3：月活均值约145万，环比降约24.4%。",
           "cashLoanHint": "体量仍前三但H1活跃明显收缩，需与印尼出清/风控收紧交叉",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "SEA actives #3: mean MAU ~1.45m, −~24.4% MoM."
         },
         {
           "nameZh": "AdaKami",
@@ -1315,7 +1338,8 @@
           ],
           "metric": "东南亚活跃第8：月活均值约101万，环比降约23.6%。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "SEA actives #8: mean MAU ~1.01m, −~23.6% MoM."
         },
         {
           "nameZh": "Kredit Pintar",
@@ -1493,7 +1517,14 @@
           "优先跟踪：DiDi Finanzas、Kredivo、JazzCash、FairMoney、Sea 旗下信贷、Grab 贷款本金、Plata 银行化。",
           "压力样本：Tala 下架与欺诈问题，以及印尼 Easycash、AdaKami、Kredit Pintar 活跃下滑。",
           "不要用下载修复直接推导资产已好转；先核对牌照和留存。"
-        ]
+        ],
+        "bulletsEn": [
+          "Traffic boards track downloads & actives; credit rulers are origination, outstanding, NPL & funding; scene platforms also track loan principal.",
+          "Watchlist: DiDi Finanzas, Kredivo, JazzCash, FairMoney, Sea credit arms, Grab loan principal, Plata bankization.",
+          "Pressure samples: Tala delisting/fraud issues; Indonesia Easycash, AdaKami, Kredit Pintar MAU declines.",
+          "Do not infer asset healing from download recovery alone — check licenses and retention first."
+        ],
+        "verdictEn": "Overseas cash loans are shifting from download/spend races to running credit inside regulatory frameworks. Downloads recover somewhat while active users contract; demand moves into wallets, installments and scene entries. Compliance cleanup raises barriers; licensed leaders and scene platforms benefit most."
       },
       "docKind": "research_report",
       "docKindLabel": "研报",
@@ -1532,6 +1563,14 @@
             "报告政策段非法网贷关停交叉"
           ]
         }
+      ],
+      "titleEn": "2026 Overseas Cash-Loan Market Report H1 (mid-year update)",
+      "summaryEn": "Overseas cash loans are shifting from download/spend races to running credit inside regulatory frameworks. Downloads recover somewhat while active users contract; demand moves into wallets, installments and scene entries. Compliance cleanup raises barriers; licensed leaders and scene platforms benefit most.",
+      "thesisEn": "Overseas cash loans are shifting from download/spend races to running credit inside regulatory frameworks. Downloads recover somewhat while active users contract; demand moves into wallets, installments and scene entries. Compliance cleanup raises barriers; licensed leaders and scene platforms benefit most.",
+      "policyBulletsEn": [
+        "Indonesia: regulators & task forces shut ~951 illegal online lenders Jan–Apr 2026; finance apps listing up, but new cash-loan app survival ~8.78%.",
+        "Philippines: SEC memo to reopen OLP registration path while raising bars.",
+        "Many markets tie unlicensed cleanup to licensed operation — traffic no longer substitutes for licenses."
       ]
     },
     {
@@ -1632,7 +1671,8 @@
           "metric": "截至 2024-12 APP 指数印尼现金贷第一；累计下载与月活亦居 TOP。",
           "cashLoanHint": "流量侧领先≠余额主尺；须核 OJK 持牌。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "As of 2024-12, #1 Indonesia cash-loan APP index; cumulative downloads & MAU also TOP."
         },
         {
           "nameZh": "AdaKami",
@@ -1646,7 +1686,8 @@
           ],
           "metric": "APP 指数印尼第二；信也海外样本之一。媒体称信也 2024 海外放款约 29 亿元（含 PH）。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "APP index #2 Indonesia; FinVolution overseas sample. Media: FinVolution 2024 overseas origination ~RMB2.9bn (incl. PH)."
         },
         {
           "nameZh": "JuanHand",
@@ -1660,7 +1701,8 @@
           "metric": "截至 2024-12 菲律宾现金贷 APP 指数第一；月活约 122 万领先。",
           "cashLoanHint": "须核 SEC CA/OLP。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "As of 2024-12, #1 Philippines cash-loan APP index; MAU ~1.22m leads."
         },
         {
           "nameZh": "Kredit Pintar",
@@ -1673,7 +1715,8 @@
           ],
           "metric": "印尼累计下载 TOP3、月活前列。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "Indonesia cumulative downloads TOP3; MAU among leaders."
         },
         {
           "nameZh": "DiDi Finanzas",
@@ -1687,7 +1730,8 @@
           "metric": "2023–2024 墨西哥累计下载约 1229.7 万断层领先；媒体转述 2024 下载超 1200 万、月活超 128 万。",
           "cashLoanHint": "场景导流样本；放贷主体须核 SOFOM/银行牌照。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "2023–2024 Mexico cumulative downloads ~12.3m far ahead; media: 2024 downloads >12m, MAU >1.28m."
         },
         {
           "nameZh": "Tala",
@@ -1702,7 +1746,8 @@
           ],
           "metric": "菲律宾下载超 700 万、月活第二；墨西哥亦在指数榜。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "Philippines downloads >7m, MAU #2; also on Mexico index boards."
         }
       ],
       "analysis": {
@@ -1713,8 +1758,24 @@
           "菲 JuanHand 领先",
           "墨 DiDi 下载断层",
           "全文 PDF 已落盘（替换公开摘要页）"
-        ]
-      }
+        ],
+        "bulletsEn": [
+          "Market size ~RMB1.67tn (2024).",
+          "Indonesia: Easycash / AdaKami as dual leaders.",
+          "Philippines: JuanHand leads cash-loan apps.",
+          "Mexico: DiDi downloads far ahead of peers.",
+          "Full PDF archived (replaces public abstract page)."
+        ],
+        "verdictEn": "Diandian 2025: overseas cash loans driven by demographics, credit gaps, digital rails and policy; 2024 global size ~RMB1.67tn. SEA remains the China-player core but traffic costs rise; LatAm/Africa add growth. Compete on localization, risk, compliance and scene ecosystems. Traffic metrics — not loan-book primary."
+      },
+      "titleEn": "2025 Overseas Cash-Loan Market Research Report",
+      "summaryEn": "Diandian 2025: overseas cash loans driven by demographics, credit gaps, digital rails and policy; 2024 global size ~RMB1.67tn. SEA remains the China-player core but traffic costs rise; LatAm/Africa add growth. Compete on localization, risk, compliance and scene ecosystems. Traffic metrics — not loan-book primary.",
+      "thesisEn": "Diandian 2025: overseas cash loans driven by demographics, credit gaps, digital rails and policy; 2024 global size ~RMB1.67tn. SEA remains the China-player core but traffic costs rise; LatAm/Africa add growth. Compete on localization, risk, compliance and scene ecosystems. Traffic metrics — not loan-book primary.",
+      "policyBulletsEn": [
+        "Indonesia OJK: licensing + periodic reporting; major China players mostly on licensed paths.",
+        "Philippines: foreign ownership capped — local partners needed for financing/lending licenses; credit-bureau access encouraged.",
+        "Mexico CNBV: simplified microcredit license narrative (media/report — verify on official site)."
+      ]
     },
     {
       "id": "diandian-2026-annual-overseas-cashloan",
@@ -1819,7 +1880,8 @@
           "metric": "OJK 现金贷+数字银行牌照叙事；2025 年末 MAU 约 1040.53 万；下载承压于场景 PayLater 竞争。",
           "cashLoanHint": "BNPL 获客 + 现金分期收入结构；利率上限压利差。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "OJK cash-loan + digital-bank license narrative; YE2025 MAU ~10.41m; downloads pressured by scene PayLater."
         },
         {
           "nameZh": "DiDi Finanzas",
@@ -1832,7 +1894,8 @@
           ],
           "metric": "2025 墨贷款申请 +30%、支付用户 +55%、MAU 约 362.8 万（较年初 +38.7%）；CAT 高定价覆盖风险的市场主流区间叙事。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "2025 Mexico loan applications +30%, payment users +55%, MAU ~3.63m (+38.7% YTD); high-CAT pricing covers risk in mainstream bands."
         },
         {
           "nameZh": "OKash",
@@ -1846,7 +1909,8 @@
           "metric": "2025 累计下载约 916 万；5/8 月单月下载超 100 万叙事。",
           "cashLoanHint": "须核尼日利亚放贷/DEON 合规。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "2025 cumulative downloads ~9.16m; May/Aug monthly downloads >1m narrative."
         },
         {
           "nameZh": "Sea/Monee",
@@ -1864,7 +1928,8 @@
           ],
           "metric": "年报叙事下电商场景贷挤压独立平台获客；与 H1/20-F 交叉。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "Annual narrative: e-commerce scene loans squeeze standalone apps; cross-check H1/20-F."
         }
       ],
       "analysis": {
@@ -1874,8 +1939,23 @@
           "亚大 42%、非中东增速约 20%",
           "Kredivo/DiDi/OKash 标杆",
           "与 2026H1 PDF 分窗并用"
-        ]
-      }
+        ],
+        "bulletsEn": [
+          "RMB1.82tn / CAGR 11.7%.",
+          "Asia-Pacific ~42%; Africa/ME growth ~20%.",
+          "Benchmarks: Kredivo / DiDi / OKash.",
+          "Use alongside 2026H1 PDF (separate window)."
+        ],
+        "verdictEn": "Diandian 2026 spring annual: global cash loans grew from RMB1.05tn (2020) to RMB1.82tn (2025), CAGR 11.7%; regulation shifted from encouraging innovation to prudent inclusion. Pair with in-library 2026H1 mid-year PDF: annual skews global landscape; H1 skews operating pulse."
+      },
+      "titleEn": "2026 Overseas Cash-Loan Market Report (annual / spring edition)",
+      "summaryEn": "Diandian 2026 spring annual: global cash loans grew from RMB1.05tn (2020) to RMB1.82tn (2025), CAGR 11.7%; regulation shifted from encouraging innovation to prudent inclusion. Pair with in-library 2026H1 mid-year PDF: annual skews global landscape; H1 skews operating pulse.",
+      "thesisEn": "Diandian 2026 spring annual: global cash loans grew from RMB1.05tn (2020) to RMB1.82tn (2025), CAGR 11.7%; regulation shifted from encouraging innovation to prudent inclusion. Pair with in-library 2026H1 mid-year PDF: annual skews global landscape; H1 skews operating pulse.",
+      "policyBulletsEn": [
+        "Indonesia OJK: daily-rate ladder down to ~0.1% and paid-in capital raise narrative (media relay).",
+        "Philippines SEC: monthly rate cap ~12% and capital raise narrative.",
+        "Nigeria DEON, Kenya NDTC/P expansion: from bans toward active governance."
+      ]
     },
     {
       "id": "id-ph-bnpl-p2p-source-pack-2026",
@@ -2113,7 +2193,10 @@
         ]
       },
       "docKind": "regulator_pack",
-      "docKindLabel": "监管/信源包"
+      "docKindLabel": "监管/信源包",
+      "titleEn": "Indonesia · Philippines BNPL/P2P regulatory & market source pack",
+      "summaryEn": "Indonesia: separate P2P outstanding (current rules + regulator balances) from BNPL eligibility after banks/multifinance are brought in. Philippines third-party BNPL size is order-of-magnitude only; hard constraints are SEC online-lending platform rules and BSP rate caps.",
+      "thesisEn": "Indonesia: separate P2P outstanding (current rules + regulator balances) from BNPL eligibility after banks/multifinance are brought in. Philippines third-party BNPL size is order-of-magnitude only; hard constraints are SEC online-lending platform rules and BSP rate caps."
     },
     {
       "id": "bsp-2024-e-payments-measurement",
@@ -2183,7 +2266,8 @@
           "metric": "处于 BSP 数字支付渗透过半的国民级钱包赛道；本报告不披露单钱包份额。",
           "cashLoanHint": "支付渗透抬升有利钱包场景贷，但仍受 SEC OLP/利率上限约束。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "National wallet in BSP majority-digital payments rail; this report does not disclose single-wallet share."
         },
         {
           "nameZh": "Maya",
@@ -2197,7 +2281,8 @@
           ],
           "metric": "同属菲数字支付基建参与方；份额须另找公开材料。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "Also a PH digital-payments rail participant; share needs other public sources."
         }
       ],
       "analysis": {
@@ -2206,8 +2291,21 @@
           "2024 数字支付笔数占比 57.4%，同比约 +4.6pct",
           "金额占比 59.0%，月均约 US$136B",
           "超过 PDP 2023–2028 对 2024 年 52–54% 的目标区间"
-        ]
-      }
+        ],
+        "bulletsEn": [
+          "2024 digital payments ~57.4% by count, ~+4.6pct YoY.",
+          "Value share 59.0%; monthly avg ~US$136B.",
+          "Above PDP 2023–2028 2024 target band of 52–54%."
+        ],
+        "verdictEn": "Philippine retail payments are majority-digital: 2024 monthly digital share ~57.4% by count / ~59.0% by value; average monthly digital payments ~US$136bn, still above PDP 2023–2028 yearly targets."
+      },
+      "titleEn": "BSP 2024 Philippines E-Payments Measurement report",
+      "summaryEn": "Philippine retail payments are majority-digital: 2024 monthly digital share ~57.4% by count / ~59.0% by value; average monthly digital payments ~US$136bn, still above PDP 2023–2028 yearly targets.",
+      "thesisEn": "Philippine retail payments are majority-digital: 2024 monthly digital share ~57.4% by count / ~59.0% by value; average monthly digital payments ~US$136bn, still above PDP 2023–2028 yearly targets.",
+      "policyBulletsEn": [
+        "Official annual recheck of digital-payment penetration — hard read for PH wallets / online-credit scene rails.",
+        "Separate from SEC OLP rules: payment penetration ≠ online-lending license cleanup."
+      ]
     },
     {
       "id": "rbi-digital-lending-dlg-pack-2022-2023",
@@ -2282,7 +2380,8 @@
           "metric": "凡 App 获客的消费贷须挂靠持牌 RE；LSP 仅可做获客/催收等外包，不可过账。",
           "cashLoanHint": "建档时先填 RE 牌照与 DLA 名录，再挂流量伙伴。",
           "confidence": "高",
-          "applyToCrm": false
+          "applyToCrm": false,
+          "metricEn": "Any app-sourced consumer loan must sit on licensed RE; LSP may only do acquisition/collections etc., not fund flow."
         }
       ],
       "analysis": {
@@ -2291,8 +2390,23 @@
           "外包 LSP 不减损 RE 责任。",
           "冷静期与全口径 APR 为强制披露。",
           "与 NBFC 名录交叉后才能谈上量。"
-        ]
-      }
+        ],
+        "bulletsEn": [
+          "Outsourced LSPs do not reduce RE accountability.",
+          "Cooling-off and all-in APR are mandatory disclosures.",
+          "Cross NBFC registries before talking scale-up."
+        ],
+        "verdictEn": "Hard rules for India online cash loans: lending must sit on regulated entities (RE); LSP/DLA must not intercept funds; full APR/KFS disclosure and cooling-off required. DLG has separate caps and provisioning rules."
+      },
+      "titleEn": "India RBI digital lending & default-loss guarantee (DLG) pack",
+      "summaryEn": "Hard rules for India online cash loans: lending must sit on regulated entities (RE); LSP/DLA must not intercept funds; full APR/KFS disclosure and cooling-off required. DLG has separate caps and provisioning rules.",
+      "thesisEn": "Hard rules for India online cash loans: lending must sit on regulated entities (RE); LSP/DLA must not intercept funds; full APR/KFS disclosure and cooling-off required. DLG has separate caps and provisioning rules.",
+      "policyBulletsEn": [
+        "Guidelines on Digital Lending (2022-09-02): funds must flow RE↔borrower direct; no pooling.",
+        "Key Fact Statement required; all-in APR disclosure; cooling/look-back period.",
+        "Guidelines on Default Loss Guarantee in Digital Lending (2023-06-08): loss-sharing must fit RE provisioning & capital rules.",
+        "RE outsourcing to LSP/DLA does not reduce own compliance duties."
+      ]
     },
     {
       "id": "grab-20f-fy2025-fintech",
@@ -2414,7 +2528,10 @@
           "支付竞品含电商系钱包，存在闭环倾斜风险。",
           "数字银行与在位行/新锐数字银行同场。"
         ]
-      }
+      },
+      "titleEn": "Grab 20-F FY2025: fintech competition & segment disclosure",
+      "summaryEn": "Grab lists deliveries, mobility and digital financial services as super-app pillars; financial services revenue ~US$347M in 2025. Payments compete with ShopeePay, Google Pay, Dana, GoPay, Touch ’n Go, MAE; digital bank via GXS / GX Bank.",
+      "thesisEn": "Grab lists deliveries, mobility and digital financial services as super-app pillars; financial services revenue ~US$347M in 2025. Payments compete with ShopeePay, Google Pay, Dana, GoPay, Touch ’n Go, MAE; digital bank via GXS / GX Bank."
     },
     {
       "id": "nu-20f-fy2025-latam-bank",
@@ -2489,7 +2606,10 @@
           "竞争叙事锚定在位大行服务差与费率高。",
           "宏观变量进入 ECL 模型。"
         ]
-      }
+      },
+      "titleEn": "Nu Holdings 20-F FY2025: LatAm digital bank & credit expansion",
+      "summaryEn": "Nu frames high-concentration LatAm banking (Brazil/Mexico/Colombia HHI above US/EU) and digital UX share gains. 2025 revenue ~US$15.8B, net income ~US$2.9B; interest-earning assets keep expanding — Mexico as LatAm comparator outside the six invested markets.",
+      "thesisEn": "Nu frames high-concentration LatAm banking (Brazil/Mexico/Colombia HHI above US/EU) and digital UX share gains. 2025 revenue ~US$15.8B, net income ~US$2.9B; interest-earning assets keep expanding — Mexico as LatAm comparator outside the six invested markets."
     },
     {
       "id": "moteng-sea-food-delivery-6-2025",
@@ -2564,7 +2684,8 @@
           ],
           "metric": "墨腾公开摘要：2025 外卖区域份额约 55%，巩固领先。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "Momentum public summary: 2025 food-delivery regional share ~55%, consolidating lead."
         },
         {
           "nameZh": "ShopeeFood",
@@ -2582,7 +2703,8 @@
           ],
           "metric": "公开摘要称 ShopeeFood 在 GMV 口径超过 Foodpanda，印尼单量亦追上 Gojek 叙事需与完整报告交叉。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "Public summary: ShopeeFood overtakes Foodpanda on GMV; Indonesia order volume catching Gojek — cross-check full report."
         }
       ],
       "analysis": {
@@ -2591,8 +2713,18 @@
           "区域 GMV 约 227 亿美元、+18%。",
           "Grab 份额约 55%。",
           "完整付费报告未整页入库，只留公开摘要。"
-        ]
-      }
+        ],
+        "bulletsEn": [
+          "Regional GMV ~US$22.7bn, +18%.",
+          "Grab share ~55%.",
+          "Full paid report not ingested page-by-page — public summary only."
+        ],
+        "verdictEn": "SEA food-delivery platform GMV ~US$22.7B in 2025 (~+18% YoY). Grab regional share ~55%; ShopeeFood surpasses Foodpanda on GMV. Scene entries still matter for payments/credit cross-sell, but share is not a cash-loan primary ruler."
+      },
+      "titleEn": "Momentum Works SEA Food Delivery Report 6.0 — public summary",
+      "summaryEn": "SEA food-delivery platform GMV ~US$22.7B in 2025 (~+18% YoY). Grab regional share ~55%; ShopeeFood surpasses Foodpanda on GMV. Scene entries still matter for payments/credit cross-sell, but share is not a cash-loan primary ruler.",
+      "thesisEn": "SEA food-delivery platform GMV ~US$22.7B in 2025 (~+18% YoY). Grab regional share ~55%; ShopeeFood surpasses Foodpanda on GMV. Scene entries still matter for payments/credit cross-sell, but share is not a cash-loan primary ruler.",
+      "policyBulletsEn": []
     },
     {
       "id": "lexin-20f-fy2025-consumer-finance",
@@ -2647,7 +2779,8 @@
           "metric": "FY2025 20-F 披露消费信贷科技模式与合作机构/担保相关风险；表内贷款余额增长影响拨备。",
           "cashLoanHint": "出海对照其助贷/担保结构，勿直接套用中国余额到展业国。",
           "confidence": "高",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "FY2025 20-F: consumer-credit tech model and partner/guarantee risks; on-balance loan growth drives provisions."
         }
       ],
       "analysis": {
@@ -2656,8 +2789,20 @@
           "风险章强调担保与伙伴依赖。",
           "表内余额变动影响拨备叙事。",
           "与展业国监管包分轨使用。"
-        ]
-      }
+        ],
+        "bulletsEn": [
+          "Risk chapter stresses guarantee & partner dependence.",
+          "On-balance balances drive provisioning narrative.",
+          "Use separately from invested-market regulatory packs."
+        ],
+        "verdictEn": "Lexin as a China consumer-credit tech listed sample; 20-F stresses risks around financing guarantees/partners and competition; on-balance loan growth drives assets. Useful pre-overseas compliance/partner template — not SEA loan-book primary."
+      },
+      "titleEn": "Lexin 20-F FY2025: consumer-finance platform disclosure",
+      "summaryEn": "Lexin as a China consumer-credit tech listed sample; 20-F stresses risks around financing guarantees/partners and competition; on-balance loan growth drives assets. Useful pre-overseas compliance/partner template — not SEA loan-book primary.",
+      "thesisEn": "Lexin as a China consumer-credit tech listed sample; 20-F stresses risks around financing guarantees/partners and competition; on-balance loan growth drives assets. Useful pre-overseas compliance/partner template — not SEA loan-book primary.",
+      "policyBulletsEn": [
+        "Risk factors name third-party guarantee cos & partners, industry competition, and China / other regulatory policy."
+      ]
     },
     {
       "id": "ph-sec-olp-mc20-2026-pack",
@@ -2741,7 +2886,8 @@
           "metric": "新规提高数字平台资本与披露门槛，并限制单主体 OLP 数量；存量需过渡达标。",
           "cashLoanHint": "展业先核 Certificate of Authority 与 OLP 登记，再谈投放。",
           "confidence": "中",
-          "applyToCrm": false
+          "applyToCrm": false,
+          "metricEn": "New rules raise digital-platform capital & disclosure bars and cap OLPs per entity; stock must transition to compliance."
         }
       ],
       "analysis": {
@@ -2750,8 +2896,24 @@
           "解禁不等于放松。",
           "资本阶梯与 5 平台上限是硬约束。",
           "媒体口径标中置信，待 SEC 原文。"
-        ]
-      }
+        ],
+        "bulletsEn": [
+          "Unfreeze ≠ deregulation.",
+          "Capital ladders and 5-platform cap are hard constraints.",
+          "Media claims marked medium confidence — pending SEC primary text."
+        ],
+        "verdictEn": "SEC Memorandum Circular No. 20 (2026) lifts the ~5-year OLP new-license freeze (from ~2026-08-01), raises paid-in capital ladders for financing/lending cos’ digital platforms, caps 5 OLPs per entity, and tightens disclosure."
+      },
+      "titleEn": "Philippines SEC MC 20 (2026): OLP unfreeze & new rules pack",
+      "summaryEn": "SEC Memorandum Circular No. 20 (2026) lifts the ~5-year OLP new-license freeze (from ~2026-08-01), raises paid-in capital ladders for financing/lending cos’ digital platforms, caps 5 OLPs per entity, and tightens disclosure.",
+      "thesisEn": "SEC Memorandum Circular No. 20 (2026) lifts the ~5-year OLP new-license freeze (from ~2026-08-01), raises paid-in capital ladders for financing/lending cos’ digital platforms, caps 5 OLPs per entity, and tightens disclosure.",
+      "policyBulletsEn": [
+        "Lifts MC 10 s.2021 new-OLP ban; manages under MC 20 s.2026 framework.",
+        "Financing cos: 1 OLP ~₱20M paid-in, up to 5 ~₱100M (media — pending official).",
+        "Lending cos: 1 OLP ~₱10M, up to 5 ~₱50M (media — pending official).",
+        "Max 5 OLPs per entity; ~12-month transition for incumbents.",
+        "Tightens pre-loan disclosure (total, net proceeds, rate/EIR, fees, tenor) and CIC registration."
+      ]
     },
     {
       "id": "ojk-p2p-mar2026-iru-update",
@@ -2830,7 +2992,10 @@
           "TWP90 4.52% < 5% 但已抬升。",
           "统计渠道切换到 Data Portal。"
         ]
-      }
+      },
+      "titleEn": "OJK IRU: Indonesia P2P/multifinance industry update Mar-2026",
+      "summaryEn": "As of 2026-03, Indonesia P2P (LPBBTI) outstanding ~IDR101.03T (+26.25% YoY), TWP90 ~4.52% (below 5% threshold). Multifinance outstanding ~IDR514.09T, gross NPF ~2.83%. Use to refresh Indonesia P2P balances.",
+      "thesisEn": "As of 2026-03, Indonesia P2P (LPBBTI) outstanding ~IDR101.03T (+26.25% YoY), TWP90 ~4.52% (below 5% threshold). Multifinance outstanding ~IDR514.09T, gross NPF ~2.83%. Use to refresh Indonesia P2P balances."
     },
     {
       "id": "bot-personal-loan-nano-pack",
@@ -2911,7 +3076,8 @@
           "metric": "须满足 BOT 利率/费用合计上限与授信额度规则；禁止类提前还款费见近期通告交叉。",
           "cashLoanHint": "泰定价主尺看 BOT 上限，勿用区域均值替代。",
           "confidence": "高",
-          "applyToCrm": false
+          "applyToCrm": false,
+          "metricEn": "Must meet BOT combined rate/fee caps and credit-limit rules; early-repay fee bans — cross recent circulars."
         }
       ],
       "analysis": {
@@ -2920,8 +3086,22 @@
           "P-Loan≈25%、Nano≈33%、信用卡≈16%",
           "英文 Nano/个人贷通告已下载",
           "与禁止提前还款费快讯对照"
-        ]
-      }
+        ],
+        "bulletsEn": [
+          "P-Loan≈25%, Nano≈33%, cards≈16%.",
+          "English Nano/personal-loan circulars downloaded.",
+          "Cross-check with early-repay fee ban flash."
+        ],
+        "verdictEn": "Thailand P-Loan and Nano Finance have effective rate caps: public tables show P-Loan ~25%/yr (~24% with vehicle title), Nano ~33%/yr, cards ~16%/yr; English Nano/personal-loan circulars also bind non-banks and banks."
+      },
+      "titleEn": "Bank of Thailand: personal loan / Nano Finance rate-cap pack",
+      "summaryEn": "Thailand P-Loan and Nano Finance have effective rate caps: public tables show P-Loan ~25%/yr (~24% with vehicle title), Nano ~33%/yr, cards ~16%/yr; English Nano/personal-loan circulars also bind non-banks and banks.",
+      "thesisEn": "Thailand P-Loan and Nano Finance have effective rate caps: public tables show P-Loan ~25%/yr (~24% with vehicle title), Nano ~33%/yr, cards ~16%/yr; English Nano/personal-loan circulars also bind non-banks and banks.",
+      "policyBulletsEn": [
+        "P-Loan / Nano / card effective rate caps on BOT public rate tables.",
+        "Nano Finance circulars (e.g. สนส. 13/2563) push combined interest+fee cap to ~33% effective rate.",
+        "Personal-loan circulars stress income-based limits to curb over-indebtedness; emergency limits separate."
+      ]
     },
     {
       "id": "hkma-digital-bank-pack-2024",
@@ -3000,7 +3180,10 @@
           "2024 更名 Digital Bank",
           "暂不新发叙事见年报章节"
         ]
-      }
+      },
+      "titleEn": "HKMA: digital bank authorization & license policy pack",
+      "summaryEn": "HKMA’s Virtual/Digital Bank Authorization Guideline frames local digital-bank licenses; 2024 renamed Virtual Bank → Digital Bank and judged current license count adequate with no push for new ones. Banks have MLO rate exemptions but still face banking-code / high-rate reasonableness constraints.",
+      "thesisEn": "HKMA’s Virtual/Digital Bank Authorization Guideline frames local digital-bank licenses; 2024 renamed Virtual Bank → Digital Bank and judged current license count adequate with no push for new ones. Banks have MLO rate exemptions but still face banking-code / high-rate reasonableness constraints."
     },
     {
       "id": "sea-20f-fy2025-monee",
@@ -3076,7 +3259,8 @@
           "metric": "FY2025 贷款本金余额约 US$9.2B；Monee 首借用户 >20M。",
           "cashLoanHint": "电商场景贷主尺看贷款本金/逾期，勿用 GMV 替代。",
           "confidence": "高",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "FY2025 loan principal outstanding ~US$9.2B; Monee first-time borrowers >20M."
         },
         {
           "nameZh": "Grab",
@@ -3094,7 +3278,8 @@
           ],
           "metric": "同属东南亚超级 App 金融化对照样本（见 Grab 20-F 条目）。",
           "confidence": "中",
-          "applyToCrm": true
+          "applyToCrm": true,
+          "metricEn": "SEA super-app financialization comparator (see Grab 20-F entry)."
         }
       ],
       "analysis": {
@@ -3103,8 +3288,21 @@
           "贷款本金约 US$9.2B（+80%）",
           "集团收入扩至约 US$22.9B",
           "竞争与监管风险在 20-F 单列"
-        ]
-      }
+        ],
+        "bulletsEn": [
+          "Loan principal ~US$9.2B (+80%).",
+          "Group revenue scales to ~US$22.9B.",
+          "Competition & regulatory risks separately listed in 20-F."
+        ],
+        "verdictEn": "Sea rebranded SeaMoney to Monee; FY2025 group revenue ~US$22.9bn scale (20-F: US$13.1bn in 2023 → US$22.9bn in 2025). Earnings note consumer+SME loan principal ~US$9bn+ as of 2025-12-31."
+      },
+      "titleEn": "Sea Limited 20-F / FY2025: Monee digital finance & credit scale",
+      "summaryEn": "Sea rebranded SeaMoney to Monee; FY2025 group revenue ~US$22.9bn scale (20-F: US$13.1bn in 2023 → US$22.9bn in 2025). Earnings note consumer+SME loan principal ~US$9bn+ as of 2025-12-31.",
+      "thesisEn": "Sea rebranded SeaMoney to Monee; FY2025 group revenue ~US$22.9bn scale (20-F: US$13.1bn in 2023 → US$22.9bn in 2025). Earnings note consumer+SME loan principal ~US$9bn+ as of 2025-12-31.",
+      "policyBulletsEn": [
+        "20-F stresses digital-finance regulatory & credit risk; competition from online/offline consumer/SME finance.",
+        "Credit ruler = loan principal outstanding & asset quality — do not mix with Shopee GMV."
+      ]
     },
     {
       "id": "mx-cnbv-fintech-itf-pack",
@@ -3181,7 +3379,10 @@
           "CNBV 规范页可核验",
           "本机 PDF 因网络重置未落盘，摘要页可回链"
         ]
-      }
+      },
+      "titleEn": "Mexico CNBV / Congress: Fintech Law (ITF) regulatory pack",
+      "summaryEn": "Mexico’s Fintech Institutions Law defines ITFs (crowdfunding / e-money); CNBV authorization required. ITF/wallet licenses ≠ direct lending rights — credit usually via banks or SOFOM channels, with Condusef consumer-protection on a separate track.",
+      "thesisEn": "Mexico’s Fintech Institutions Law defines ITFs (crowdfunding / e-money); CNBV authorization required. ITF/wallet licenses ≠ direct lending rights — credit usually via banks or SOFOM channels, with Condusef consumer-protection on a separate track."
     },
     {
       "id": "rbi-nbfc-revolving-credit-draft-202608",
@@ -3275,7 +3476,10 @@
           "征求意见窗至 08-28",
           "本机直链 PDF 常 403，已落摘要页回链官网"
         ]
-      }
+      },
+      "titleEn": "RBI draft: ban NBFC revolving credit (term loans only; card NBFCs excepted)",
+      "summaryEn": "RBI draft amendments to NBFC—Credit Facilities (2026): NBFCs may offer term loans only; revolving credit banned except card-authorized NBFCs. Removes Demand/Call Loans chapter and defines term facilities.",
+      "thesisEn": "RBI draft amendments to NBFC—Credit Facilities (2026): NBFCs may offer term loans only; revolving credit banned except card-authorized NBFCs. Removes Demand/Call Loans chapter and defines term facilities."
     },
     {
       "id": "ojk-pindar-bnpl-jun2026-rdk-pack",
@@ -3368,7 +3572,10 @@
           "MF BNPL 13.4T、银行 BNPL ~30.7T",
           "非法平台持续清退"
         ]
-      }
+      },
+      "titleEn": "OJK RDK: Pindar/BNPL outstanding update Jun-2026",
+      "summaryEn": "OJK July RDK (2026-08-04): as of 2026-06, Pindar outstanding ~IDR105.14T (+25.88% YoY), TWP90 ~4.26%; multifinance BNPL ~IDR13T+ scale — use to refresh Indonesia BNPL/P2P balances.",
+      "thesisEn": "OJK July RDK (2026-08-04): as of 2026-06, Pindar outstanding ~IDR105.14T (+25.88% YoY), TWP90 ~4.26%; multifinance BNPL ~IDR13T+ scale — use to refresh Indonesia BNPL/P2P balances."
     }
   ],
   "lastChecked": "2026-08-17"

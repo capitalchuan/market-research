@@ -22,17 +22,27 @@ import {
   buildCashLoanMacroGroups,
   collectCountryMacroCiteNos,
 } from "./data/countryMacro";
-import { formatCountryLanguageLine, getCountryLanguage } from "./data/countryLanguage";
+import {
+  countryProductHint,
+  formatCountryLanguageLine,
+} from "./data/countryLanguage";
 import {
   resolveFxSeries,
   FX_CHG_PERIODS,
   type FxChgPeriodId,
   sliceFxPointsByMonths,
   fxLocalStrengthChgPct,
-  fxPointsSpanLabel,
 } from "./data/fxHistory";
+import {
+  fxChgPeriodLabel,
+  fxPointsSpanLabelUi,
+  localizeCashLoanMacroGroups,
+  localizeMacroText,
+} from "./data/macroTextUi";
 import { MapMacroKV, MacroSourcesBlock, CitedText } from "./SourceCite";
 import { citeMark } from "./data/sourceCitations";
+import { briTradeSummaryLine } from "./data/countryBriReference";
+import { detectBrowserUiLang, type UiLang } from "./uiI18n";
 
 /** 宽屏 Natural Earth 画幅；窄屏改矮胖比，避免 SVG height:auto 被压成一条 */
 export const MAP_ASPECT_WIDE = 2.05;
@@ -141,22 +151,38 @@ export function ScreenSegChip({
   label,
   active,
   clearable,
+  disabled,
   onClick,
   title,
 }: {
   label: string;
   active?: boolean;
   clearable?: boolean;
+  disabled?: boolean;
   onClick: () => void;
   title?: string;
 }) {
   const theme = useHostTheme();
   const accent = theme.accent.primary;
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   return (
     <button
       type="button"
-      title={title ?? (active && clearable ? "点击清除" : undefined)}
-      onClick={onClick}
+      disabled={disabled}
+      title={
+        title ??
+        (disabled
+          ? en
+            ? "Unavailable"
+            : "当前不可用"
+          : active && clearable
+            ? en
+              ? "Click to clear"
+              : "点击清除"
+            : undefined)
+      }
+      onClick={disabled ? undefined : onClick}
       style={{
         margin: 0,
         height: 30,
@@ -171,17 +197,18 @@ export function ScreenSegChip({
         fontWeight: active ? 600 : 500,
         letterSpacing: "0.03em",
         fontVariantNumeric: "tabular-nums",
-        cursor: "pointer",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.45 : 1,
         whiteSpace: "nowrap",
         transition: "background 120ms ease, color 120ms ease, border-color 120ms ease",
       }}
       onMouseEnter={(e) => {
-        if (active) return;
+        if (active || disabled) return;
         e.currentTarget.style.background = theme.fill.quaternary;
         e.currentTarget.style.color = theme.text.secondary;
       }}
       onMouseLeave={(e) => {
-        if (active) return;
+        if (active || disabled) return;
         e.currentTarget.style.background = "transparent";
         e.currentTarget.style.color = theme.text.tertiary;
       }}
@@ -352,7 +379,7 @@ export function MapDetailShell({
   title,
   subtitle,
   onClose,
-  closeLabel = "返回全球",
+  closeLabel,
   children,
   overlay = false,
 }: {
@@ -366,6 +393,8 @@ export function MapDetailShell({
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const closeText = closeLabel ?? (uiLang === "en" ? "Back to world" : "返回全球");
   const { narrow, compact } = useMapViewport(overlay);
   return (
     <div
@@ -431,7 +460,7 @@ export function MapDetailShell({
           ) : null}
         </div>
         <Button variant="secondary" size="sm" onClick={onClose}>
-          {closeLabel}
+          {closeText}
         </Button>
       </div>
       {children}
@@ -732,7 +761,7 @@ export function RankBarList({
   items,
   onSelect,
   compact = false,
-  scaleHint = "条长 ∝ 数值（相对列表最大值）",
+  scaleHint,
   maxVisible,
 }: {
   items: RankBarItem[];
@@ -744,6 +773,10 @@ export function RankBarList({
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
+  const hintText =
+    scaleHint ?? (en ? "Bar length ∝ value (vs list max)" : "条长 ∝ 数值（相对列表最大值）");
   if (!items.length) return null;
   const shown = maxVisible && maxVisible > 0 ? items.slice(0, maxVisible) : items;
   const max = Math.max(...shown.map((i) => i.value), Number.EPSILON);
@@ -760,7 +793,7 @@ export function RankBarList({
           lineHeight: 1.4,
         }}
       >
-        {scaleHint}
+        {hintText}
       </div>
       <div
         style={{
@@ -854,7 +887,9 @@ export function RankBarList({
       </div>
       {maxVisible && items.length > shown.length ? (
         <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 6 }}>
-          另有 {items.length - shown.length} 国未展示；点地图或放大国家查看
+          {en
+            ? `${items.length - shown.length} more countries not shown — tap the map or zoom in`
+            : `另有 ${items.length - shown.length} 国未展示；点地图或放大国家查看`}
         </div>
       ) : null}
     </div>
@@ -870,14 +905,15 @@ export function MapCountryMacroBrief({ code, dense = false }: { code: string; de
   const snap = getCountryMacro(code);
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const [uiLang] = useCanvasState<UiLang>("uiLang1", detectBrowserUiLang());
+  const en = uiLang === "en";
   if (!snap) {
     return (
-      <MapSection title="宏观因子" dense={dense}>
-        <MapMuted>暂无宏观快照</MapMuted>
+      <MapSection title={en ? "Macro factors" : "宏观因子"} dense={dense}>
+        <MapMuted>{en ? "No macro snapshot" : "暂无宏观快照"}</MapMuted>
       </MapSection>
     );
   }
-  const lang = getCountryLanguage(code);
   const fx = resolveFxSeries(code, {
     fxTrend: snap.fxTrend,
     fxHint: snap.fxHint,
@@ -889,10 +925,14 @@ export function MapCountryMacroBrief({ code, dense = false }: { code: string; de
     () => (fx?.points?.length ? sliceFxPointsByMonths(fx.points, fxPeriodMeta.months) : []),
     [fx?.points, fxPeriodMeta.months],
   );
-  const groups = buildCashLoanMacroGroups(snap);
-  const brief = dense ? "" : synthesizeCashLoanBrief(snap);
-  const note = displayCreditNote(snap);
+  const groups = localizeCashLoanMacroGroups(buildCashLoanMacroGroups(snap), uiLang);
+  const briefRaw = dense ? "" : synthesizeCashLoanBrief(snap);
+  const brief = localizeMacroText(briefRaw, uiLang);
+  const note = localizeMacroText(displayCreditNote(snap) || "", uiLang) || undefined;
   const citeNos = collectCountryMacroCiteNos(snap);
+  const productHint = countryProductHint(code, uiLang);
+  const langLine = formatCountryLanguageLine(code, uiLang);
+  const briLine = briTradeSummaryLine(code, uiLang);
 
   let spark: ReactNode = null;
   if (fx && fxPts.length >= 2) {
@@ -917,15 +957,25 @@ export function MapCountryMacroBrief({ code, dense = false }: { code: string; de
     const FX_DOWN = "#1B8F4A";
     const stroke = flat ? c.accent : up ? FX_UP : FX_DOWN;
     const arrow = flat ? "–" : up ? "▲" : "▼";
-    const word = flat ? "持平" : up ? "本币升" : "本币贬";
-    const spanHint = fxPointsSpanLabel(pts, fx.synthetic && fxPeriod === "all");
+    const word = en
+      ? flat
+        ? "flat"
+        : up
+          ? "local FX up"
+          : "local FX down"
+      : flat
+        ? "持平"
+        : up
+          ? "本币升"
+          : "本币贬";
+    const spanHint = fxPointsSpanLabelUi(pts, uiLang, fx.synthetic && fxPeriod === "all");
     const fxCite = fx.synthetic ? "" : citeMark(13);
     spark = (
       <div style={{ marginBottom: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, color: c.textTertiary, marginBottom: 4 }}>
           <span>
-            汇率走势 · {fx.pair}
-            {fx.synthetic ? "（示意）" : ""}
+            {en ? "FX trend" : "汇率走势"} · {fx.pair}
+            {fx.synthetic ? (en ? " (illustrative)" : "（示意）") : ""}
             {fxCite ? <CitedText text={` ${fxCite}`} size="small" dense /> : null}
           </span>
           <span
@@ -946,7 +996,9 @@ export function MapCountryMacroBrief({ code, dense = false }: { code: string; de
               <span style={{ fontWeight: 400 }}>{word}</span>
             </span>
             <span style={{ fontWeight: 500, color: c.textTertiary, fontSize: 10 }}>
-              {spanHint}累计 · {fxPeriodMeta.label}
+              {spanHint}
+              {en ? " cum. · " : "累计 · "}
+              {fxChgPeriodLabel(fxPeriodMeta, uiLang)}
             </span>
           </span>
         </div>
@@ -971,7 +1023,7 @@ export function MapCountryMacroBrief({ code, dense = false }: { code: string; de
                   fontWeight: active ? 600 : 500,
                 }}
               >
-                {p.label}
+                {fxChgPeriodLabel(p, uiLang)}
               </button>
             );
           })}
@@ -984,13 +1036,19 @@ export function MapCountryMacroBrief({ code, dense = false }: { code: string; de
   }
 
   return (
-    <MapSection title="信贷宏观" dense={dense}>
+    <MapSection title={en ? "Credit macro" : "信贷宏观"} dense={dense}>
       {spark}
-      <MapMacroKV k="对照时点" v={snap.asOf || "—"} dense={dense} />
-      {!dense && formatCountryLanguageLine(code) ? (
-        <MapMacroKV k="语言区" v={formatCountryLanguageLine(code)!} dense={dense} />
+      <MapMacroKV
+        k={en ? "As of" : "对照时点"}
+        v={localizeMacroText(snap.asOf || "—", uiLang)}
+        dense={dense}
+      />
+      {!dense && langLine ? (
+        <MapMacroKV k={en ? "Language zone" : "语言区"} v={langLine} dense={dense} />
       ) : null}
-      {!dense && lang?.productHint ? <MapMacroKV k="产品常用语" v={lang.productHint} dense={dense} /> : null}
+      {!dense && productHint ? (
+        <MapMacroKV k={en ? "Product language" : "产品常用语"} v={productHint} dense={dense} />
+      ) : null}
       {brief ? (
         <div style={{ margin: "8px 0", fontSize: 12, lineHeight: 1.5, color: c.textSecondary }}>
           <CitedText text={brief} size="small" dense={dense} />
@@ -1016,7 +1074,10 @@ export function MapCountryMacroBrief({ code, dense = false }: { code: string; de
           ))}
         </div>
       ))}
-      {!dense && note ? <MapMacroKV k="补充" v={note} dense={dense} /> : null}
+      {!dense && note ? <MapMacroKV k={en ? "Note" : "补充"} v={note} dense={dense} /> : null}
+      {!dense && briLine ? (
+        <MapMacroKV k={en ? "China trade (BRI)" : "对华贸易（一带一路网）"} v={briLine} dense={dense} />
+      ) : null}
       <MacroSourcesBlock citeNos={citeNos} dense={dense} />
     </MapSection>
   );
