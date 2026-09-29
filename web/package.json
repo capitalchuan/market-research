@@ -9,7 +9,7 @@
     "typecheck": "tsc -b",
     "lint": "oxlint",
     "preview": "vite preview",
-    "deploy": "npm run build && gh-pages -d dist -b gh-pages -r https://github.com/alliancechuan/market-research.git -m \"Deploy web build to gh-pages\"",
+    "deploy": "npm run build && gh-pages -d dist -b gh-pages -r https://github.com/capitalchuan/market-research.git -m \"Deploy web build to gh-pages\"",
     "deploy:site": "npm run deploy"
   },
   "dependencies": {

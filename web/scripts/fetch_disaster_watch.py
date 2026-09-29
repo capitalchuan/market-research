@@ -28,7 +28,7 @@ CST = timezone(timedelta(hours=8))
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "src/data/disaster-watch-digest.json"
 UA = (
-    "Mozilla/5.0 (compatible; AtlasDisasterWatch/1.0; +https://alliancechuan.github.io/market-research/)"
+    "Mozilla/5.0 (compatible; AtlasDisasterWatch/1.0; +https://capitalchuan.github.io/market-research/)"
 )
 
 # ISO → (lat_min, lat_max, lon_min, lon_max) 粗框，用于震中落点

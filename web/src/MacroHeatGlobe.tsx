@@ -265,6 +265,7 @@ export function MacroHeatGlobe({
   const width = mapFrameWidth(height, aspect);
   const bottomLegend = fill || legendPlacement === "bottom";
   const place: MapLegendPlacement = bottomLegend ? "bottom" : "side";
+  const headerFlow = !fill && bottomLegend;
   const [imfFilter] = useCanvasState<string>("screenImfFilter2", "all");
   const [wbFilter] = useCanvasState<string>("screenWbFilter2", "all");
   const regionSet = useMemo(
@@ -333,6 +334,7 @@ export function MacroHeatGlobe({
   }, []);
 
   const [focus, setFocus] = useState<string | null>(null);
+  const mapTopPad = focus ? 12 : fill || !bottomLegend ? MAP_TOP_CHROME + 4 : 12;
   const [hover, setHover] = useState<HoverInfo | null>(null);
   const [yaw, setYaw] = useState(0);
   const dragRef = useRef<{
@@ -378,7 +380,7 @@ export function MacroHeatGlobe({
       const rightPad = bottomLegend || compact ? Math.round(width * focusRightFrac) : 24;
       proj.fitExtent(
         [
-          [24, MAP_TOP_CHROME + 4],
+          [24, mapTopPad],
           [Math.max(width - rightPad, width * focusMapMinFrac), height - 24],
         ],
         focusFeature,
@@ -386,7 +388,7 @@ export function MacroHeatGlobe({
     } else if (regionFeature) {
       proj.fitExtent(
         [
-          [28, 68],
+          [28, mapTopPad + 4],
           [width - 28, height - 28],
         ],
         regionFeature,
@@ -395,7 +397,7 @@ export function MacroHeatGlobe({
       proj.rotate([yaw, 0, 0]);
       proj.fitExtent(
         [
-          [12, MAP_TOP_CHROME + 4],
+          [12, mapTopPad],
           [width - 12, height - 12],
         ],
         { type: "Sphere" },
@@ -408,7 +410,7 @@ export function MacroHeatGlobe({
       graticulePath: path(geoGraticule10()) ?? "",
       projection: proj,
     };
-  }, [focusFeature, regionFeature, width, height, yaw, bottomLegend, compact, focusRightFrac, focusMapMinFrac]);
+  }, [focusFeature, regionFeature, width, height, yaw, bottomLegend, compact, focusRightFrac, focusMapMinFrac, mapTopPad]);
 
   const investedBadges = useMemo(() => {
     if (!showInvested) return [] as { a2: string; x: number; y: number; n: number }[];
@@ -428,6 +430,27 @@ export function MacroHeatGlobe({
     return out;
   }, [showInvested, projection, width, height, regionSet]);
 
+  const mapMetricsInner = !focus ? (
+    <div style={{ minWidth: 0 }}>
+      <MapMetricBlock
+        label={metric.label}
+        value={`${formatMacroValue(factor, metric.min)} – ${formatMacroValue(factor, metric.max)}`}
+      />
+      <div
+        style={{
+          fontSize: 10,
+          color: c.textTertiary,
+          marginTop: 3,
+          letterSpacing: "0.02em",
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        {metric.unit} · 有读数 {metric.count} 国
+        {showInvested ? " · 展业锚点开" : ""}
+      </div>
+    </div>
+  ) : null;
+
   return (
     <div
       style={
@@ -440,10 +463,30 @@ export function MacroHeatGlobe({
               overflow: "hidden",
             }
           : bottomLegend
-            ? { display: "flex", flexDirection: "column", width: "100%", gap: 12 }
+            ? { display: "flex", flexDirection: "column", width: "100%", gap: headerFlow ? 8 : 12, flexShrink: 0 }
             : { display: "flex", flexWrap: "wrap", gap: 20, alignItems: "stretch" }
       }
     >
+      {headerFlow && mapMetricsInner ? (
+        <div
+          data-no-drag
+          style={{
+            position: "relative",
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            padding: "4px 0 8px",
+            boxSizing: "border-box",
+          }}
+        >
+          {mapMetricsInner}
+          {mapCorner ? (
+            <div style={{ flexShrink: 0, display: "flex", gap: 2, alignItems: "center" }}>{mapCorner}</div>
+          ) : null}
+        </div>
+      ) : null}
       <div
         style={
           fill
@@ -451,8 +494,8 @@ export function MacroHeatGlobe({
                 position: "absolute",
                 inset: 0,
                 overflow: "hidden",
-                borderRadius: 4,
-                border: `1px solid ${c.panelBorder}`,
+                borderRadius: 0,
+                border: "none",
                 cursor: focus ? "default" : "grab",
                 touchAction: "none",
                 background: c.mapBg,
@@ -460,14 +503,14 @@ export function MacroHeatGlobe({
             : {
                 position: "relative",
                 width: "100%",
-                maxWidth: width,
-                margin: "0 auto",
-                flex: bottomLegend ? undefined : "1 1 560px",
+                flex: bottomLegend ? "0 0 auto" : "1 1 560px",
+                flexShrink: 0,
                 cursor: focus ? "default" : "grab",
-                touchAction: "none",
-                borderRadius: 4,
-                border: `1px solid ${c.panelBorder}`,
-                overflow: "hidden",
+                touchAction: "pan-y",
+                border: "none",
+                borderRadius: 0,
+                overflow: "visible",
+                background: "transparent",
               }
         }
         onPointerDown={(e) => {
@@ -537,7 +580,7 @@ export function MacroHeatGlobe({
           e.currentTarget.style.cursor = focus ? "default" : "grab";
         }}
       >
-        {!focus ? (
+        {!headerFlow && mapMetricsInner ? (
           <div
             data-no-drag
             style={{
@@ -551,33 +594,15 @@ export function MacroHeatGlobe({
               alignItems: "center",
               padding: "8px 44px 8px 14px",
               boxSizing: "border-box",
-              background: c.panelBg,
-              borderBottom: `1px solid ${c.panelBorder}`,
+              background: "transparent",
               pointerEvents: "none",
             }}
           >
-            <div style={{ minWidth: 0 }}>
-              <MapMetricBlock
-                label={metric.label}
-                value={`${formatMacroValue(factor, metric.min)} – ${formatMacroValue(factor, metric.max)}`}
-              />
-              <div
-                style={{
-                  fontSize: 10,
-                  color: c.textTertiary,
-                  marginTop: 3,
-                  letterSpacing: "0.02em",
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                {metric.unit} · 有读数 {metric.count} 国
-                {showInvested ? " · 展业锚点开" : ""}
-              </div>
-            </div>
+            {mapMetricsInner}
           </div>
         ) : null}
 
-        {mapCorner ? (
+        {mapCorner && (!headerFlow || focus) ? (
           <div
             data-no-drag
             style={{
