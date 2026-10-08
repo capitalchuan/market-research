@@ -182,7 +182,7 @@ function MicroloanDeskBody() {
   return (
     <Stack gap={14}>
       <Row gap={12} align="center" wrap>
-        <span className="cashloan-title">个人现金贷</span>
+        <span className="cashloan-title">消费信贷</span>
         <ScreenSegTrack>
           <ScreenSegChip label="国家总览" active={step === "size"} onClick={() => setStep("size")} />
           <ScreenSegChip
