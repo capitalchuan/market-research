@@ -1,0 +1,4090 @@
+{
+  "note": "信贷原生玩家（现金贷、消费分期/BNPL、信用租赁）。不含场景原生，不含信贷超市。",
+  "players": [
+    {
+      "id": "bnpl|阿卡拉克·ID",
+      "name": "阿卡拉克",
+      "line": "bnpl",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|阿卡拉克·ID",
+      "name": "阿卡拉克",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "AsetKu；PT Pintar Inovasi Digital"
+    },
+    {
+      "id": "cash|阿卡拉克·SEA",
+      "name": "阿卡拉克",
+      "line": "cash",
+      "markets": [
+        "ID",
+        "VN",
+        "MY",
+        "TH",
+        "PH",
+        "SG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|爱租机·CN",
+      "name": "爱租机",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|邦银金租·CN",
+      "name": "邦银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|宝马汽金·CN",
+      "name": "宝马汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|北部湾金租·CN",
+      "name": "北部湾金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|北汽汽金·CN",
+      "name": "北汽汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|北银金租·CN",
+      "name": "北银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|北银消金·CN",
+      "name": "北银消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|奔驰汽金·CN",
+      "name": "奔驰汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|比亚迪汽金·CN",
+      "name": "比亚迪汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|重庆鈊渝金租·CN",
+      "name": "重庆鈊渝金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|大众汽金·CN",
+      "name": "大众汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|得机·CN",
+      "name": "得机",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|滴滴·MX",
+      "name": "滴滴",
+      "line": "cash",
+      "markets": [
+        "MX"
+      ],
+      "extra": "DiDi Finanzas"
+    },
+    {
+      "id": "cash|滴滴·LATAM",
+      "name": "滴滴",
+      "line": "cash",
+      "markets": [
+        "MX",
+        "BR",
+        "CO",
+        "AR",
+        "PE",
+        "CL"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|东风汽金·CN",
+      "name": "东风汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|东正汽金·CN",
+      "name": "东正汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "bnpl|抖音·CN",
+      "name": "抖音",
+      "line": "bnpl",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|度小满·CN",
+      "name": "度小满",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|飞贷·CN",
+      "name": "飞贷",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|分期乐·CN",
+      "name": "分期乐",
+      "line": "bnpl",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|丰田汽金·CN",
+      "name": "丰田汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|佛山海晟金租·CN",
+      "name": "佛山海晟金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|福建海西金租·CN",
+      "name": "福建海西金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|福特汽金·CN",
+      "name": "福特汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|甘肃兰银金租·CN",
+      "name": "甘肃兰银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|工银金租·CN",
+      "name": "工银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|光大金租·CN",
+      "name": "光大金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|广东粤财金租·CN",
+      "name": "广东粤财金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|广汽汇理·CN",
+      "name": "广汽汇理",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|广融达金租·CN",
+      "name": "广融达金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|贵阳贵银金租·CN",
+      "name": "贵阳贵银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|国银金租·CN",
+      "name": "国银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|哈银金租·CN",
+      "name": "哈银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|哈银消金·CN",
+      "name": "哈银消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|海尔消金·CN",
+      "name": "海尔消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|杭银消金·CN",
+      "name": "杭银消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|航天科工金租·CN",
+      "name": "航天科工金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|好分期·CN",
+      "name": "好分期",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|河北省金租·CN",
+      "name": "河北省金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|河南九鼎金租·CN",
+      "name": "河南九鼎金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|横琴华通金租·CN",
+      "name": "横琴华通金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|湖北金租·CN",
+      "name": "湖北金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|湖北消金·CN",
+      "name": "湖北消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|花花租·CN",
+      "name": "花花租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|华晨东亚·CN",
+      "name": "华晨东亚",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|华融航运金租·CN",
+      "name": "华融航运金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|华融金租·CN",
+      "name": "华融金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|华泰汽金·CN",
+      "name": "华泰汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|华夏金租·CN",
+      "name": "华夏金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|华运金租·CN",
+      "name": "华运金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|徽银金租·CN",
+      "name": "徽银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|机融租赁·CN",
+      "name": "机融租赁",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|吉林九银金租·CN",
+      "name": "吉林九银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|吉致汽金·CN",
+      "name": "吉致汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "cash|极融云仓·CN",
+      "name": "极融云仓",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|冀银金租·CN",
+      "name": "冀银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|嘉银·CN",
+      "name": "嘉银",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "嘉银系；出海品牌含Soluskita等历史线"
+    },
+    {
+      "id": "lease|建信金租·CN",
+      "name": "建信金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|建信消金·CN",
+      "name": "建信消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|江南金租·CN",
+      "name": "江南金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|江苏法巴农科设备金租·CN",
+      "name": "江苏法巴农科设备金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|江苏金租·CN",
+      "name": "江苏金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|江西金租·CN",
+      "name": "江西金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|交银航空航运金租·CN",
+      "name": "交银航空航运金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|交银金租·CN",
+      "name": "交银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "bnpl|桔子分期·CN",
+      "name": "桔子分期",
+      "line": "bnpl",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|桔子数字·CN",
+      "name": "桔子数字",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|金美信·CN",
+      "name": "金美信",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|锦程消金·CN",
+      "name": "锦程消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|锦银金租·CN",
+      "name": "锦银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|晋商消金·CN",
+      "name": "晋商消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "bnpl|京东·CN",
+      "name": "京东",
+      "line": "bnpl",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|京东消金·CN",
+      "name": "京东消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|久久·NG",
+      "name": "久久",
+      "line": "lease",
+      "markets": [
+        "NG"
+      ],
+      "extra": "JiuJiu / 久久租机"
+    },
+    {
+      "id": "cash|快牛·出海",
+      "name": "快牛",
+      "line": "cash",
+      "markets": [
+        "TH",
+        "MX"
+      ],
+      "extra": "快牛 / KN / MexiCash"
+    },
+    {
+      "id": "lease|昆仑金租·CN",
+      "name": "昆仑金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|乐信·CN",
+      "name": "乐信",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "分期乐（现以信贷服务为主）"
+    },
+    {
+      "id": "cash|乐信·MX",
+      "name": "乐信",
+      "line": "cash",
+      "markets": [
+        "MX"
+      ],
+      "extra": "Fortaprest"
+    },
+    {
+      "id": "lease|洛银金租·CN",
+      "name": "洛银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "bnpl|蚂蚁·CN",
+      "name": "蚂蚁",
+      "line": "bnpl",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|蚂蚁消金·CN",
+      "name": "蚂蚁消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|美卡多·LATAM",
+      "name": "美卡多",
+      "line": "cash",
+      "markets": [
+        "MX",
+        "BR",
+        "CO",
+        "AR",
+        "PE",
+        "CL"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|美团·CN",
+      "name": "美团",
+      "line": "bnpl",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|蒙商消金·CN",
+      "name": "蒙商消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|民生金租·CN",
+      "name": "民生金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|南银法巴·CN",
+      "name": "南银法巴",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|你我贷·CN",
+      "name": "你我贷",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|宁银消金·CN",
+      "name": "宁银消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|农银金租·CN",
+      "name": "农银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|平安消金·CN",
+      "name": "平安消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|平安租赁消费臂·CN",
+      "name": "平安租赁消费臂",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|浦银金租·CN",
+      "name": "浦银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|奇富·CN",
+      "name": "奇富",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "奇富借条"
+    },
+    {
+      "id": "cash|奇富·ID",
+      "name": "奇富",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "KrediOne"
+    },
+    {
+      "id": "lease|奇瑞徽银·CN",
+      "name": "奇瑞徽银",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|前海兴邦金租·CN",
+      "name": "前海兴邦金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|青岛青银金租·CN",
+      "name": "青岛青银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|人人租·CN",
+      "name": "人人租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|日产汽金·CN",
+      "name": "日产汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|瑞福德·CN",
+      "name": "瑞福德",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "cash|萨摩耶·CN",
+      "name": "萨摩耶",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|三一汽金·CN",
+      "name": "三一汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|厦门金租·CN",
+      "name": "厦门金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|山东汇通金租·CN",
+      "name": "山东汇通金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|山东通达金租·CN",
+      "name": "山东通达金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|山西金租·CN",
+      "name": "山西金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|闪银·CN",
+      "name": "闪银",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|上汽通用汽金·CN",
+      "name": "上汽通用汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "cash|尚诚消金·CN",
+      "name": "尚诚消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|盛银消金·CN",
+      "name": "盛银消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|狮桥·CN",
+      "name": "狮桥",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|数禾·CN",
+      "name": "数禾",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|斯泰兰蒂斯汽金·CN",
+      "name": "斯泰兰蒂斯汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|四川天府金租·CN",
+      "name": "四川天府金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "bnpl|苏宁任性付·CN",
+      "name": "苏宁任性付",
+      "line": "bnpl",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|苏银金租·CN",
+      "name": "苏银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|苏银凯基·CN",
+      "name": "苏银凯基",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|苏州金租·CN",
+      "name": "苏州金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|太平石化金租·CN",
+      "name": "太平石化金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "bnpl|腾讯·CN",
+      "name": "腾讯",
+      "line": "bnpl",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|提钱乐租机·CN",
+      "name": "提钱乐租机",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|天津国泰金租·CN",
+      "name": "天津国泰金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|天银金租·CN",
+      "name": "天银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|皖江金租·CN",
+      "name": "皖江金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|微财·MX",
+      "name": "微财",
+      "line": "cash",
+      "markets": [
+        "MX"
+      ],
+      "extra": "MexDin"
+    },
+    {
+      "id": "cash|唯品富邦·CN",
+      "name": "唯品富邦",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "bnpl|唯品花·CN",
+      "name": "唯品花",
+      "line": "bnpl",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|维信·CN",
+      "name": "维信",
+      "line": "cash",
+      "markets": [
+        "CN",
+        "ID"
+      ],
+      "extra": "印尼Doeku（收购）"
+    },
+    {
+      "id": "lease|沃尔沃汽金·CN",
+      "name": "沃尔沃汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|物主租赁·CN",
+      "name": "物主租赁",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|现代汽金·CN",
+      "name": "现代汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|享借·CN",
+      "name": "享借",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|小米消金·CN",
+      "name": "小米消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|小赢·CN",
+      "name": "小赢",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|携程拿去花·CN",
+      "name": "携程拿去花",
+      "line": "bnpl",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|新韩·VN",
+      "name": "新韩",
+      "line": "cash",
+      "markets": [
+        "VN"
+      ],
+      "extra": "Shinhan Finance"
+    },
+    {
+      "id": "lease|信达金租·CN",
+      "name": "信达金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|信也·CN",
+      "name": "信也",
+      "line": "cash",
+      "markets": [
+        "CN",
+        "ID",
+        "PH",
+        "AU"
+      ],
+      "extra": "国内多品牌；印尼AdaKami；菲JuanHand；澳Fundo"
+    },
+    {
+      "id": "cash|信也·PH",
+      "name": "信也",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "JuanHand"
+    },
+    {
+      "id": "cash|信也·MX",
+      "name": "信也",
+      "line": "cash",
+      "markets": [
+        "MX"
+      ],
+      "extra": "Finanzas Ágiles"
+    },
+    {
+      "id": "cash|信也·ID",
+      "name": "信也",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|信用飞·CN",
+      "name": "信用飞",
+      "line": "cash",
+      "markets": [
+        "CN",
+        "ID"
+      ],
+      "extra": "信用飞（国内）；出海本地化平台（公开产品名待核实）"
+    },
+    {
+      "id": "lease|兴业金租·CN",
+      "name": "兴业金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|兴业消金·CN",
+      "name": "兴业消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|幸福消金·CN",
+      "name": "幸福消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|徐州恒鑫金租·CN",
+      "name": "徐州恒鑫金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|阳光消金·CN",
+      "name": "阳光消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|洋钱罐·CN",
+      "name": "洋钱罐",
+      "line": "cash",
+      "markets": [
+        "CN",
+        "ID"
+      ],
+      "extra": "洋钱罐；印尼Easycash；墨Credmex"
+    },
+    {
+      "id": "cash|洋钱罐·ID",
+      "name": "洋钱罐",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|洋钱罐·MX",
+      "name": "洋钱罐",
+      "line": "cash",
+      "markets": [
+        "MX"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|一汽汽金·CN",
+      "name": "一汽汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "cash|宜人·CN",
+      "name": "宜人",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|易鑫·CN",
+      "name": "易鑫",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "易鑫 / Yixin"
+    },
+    {
+      "id": "cash|印闪·ID",
+      "name": "印闪",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "Adapundi"
+    },
+    {
+      "id": "lease|永赢金租·CN",
+      "name": "永赢金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|优品租·CN",
+      "name": "优品租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|渝农商金租·CN",
+      "name": "渝农商金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|悦租·CN",
+      "name": "悦租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|长安汽金·CN",
+      "name": "长安汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|长城国兴金租·CN",
+      "name": "长城国兴金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|长城汽金·CN",
+      "name": "长城汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|长江联合金租·CN",
+      "name": "长江联合金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|长银五八·CN",
+      "name": "长银五八",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|长银消金·CN",
+      "name": "长银消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|招联·CN",
+      "name": "招联",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|招银航空航运金租·CN",
+      "name": "招银航空航运金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|招银金租·CN",
+      "name": "招银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|浙江稠州金租·CN",
+      "name": "浙江稠州金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|浙江浙银金租·CN",
+      "name": "浙江浙银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|中国金租·CN",
+      "name": "中国金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|中国外贸金租·CN",
+      "name": "中国外贸金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|中科金·CN",
+      "name": "中科金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|中科金·MX",
+      "name": "中科金",
+      "line": "cash",
+      "markets": [
+        "MX"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|中煤科工金租·CN",
+      "name": "中煤科工金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|中铁建金租·CN",
+      "name": "中铁建金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|中信金租·CN",
+      "name": "中信金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|中信消金·CN",
+      "name": "中信消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "lease|中银金租·CN",
+      "name": "中银金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "cash|中银消金·CN",
+      "name": "中银消金",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": "消费金融"
+    },
+    {
+      "id": "cash|中邮·CN",
+      "name": "中邮",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|中原·CN",
+      "name": "中原",
+      "line": "cash",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|重汽汽金·CN",
+      "name": "重汽汽金",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "汽车金融"
+    },
+    {
+      "id": "lease|珠江金租·CN",
+      "name": "珠江金租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "金融租赁"
+    },
+    {
+      "id": "lease|租号玩·CN",
+      "name": "租号玩",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|AdaKami·ID",
+      "name": "AdaKami",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|AdaModal·ID",
+      "name": "AdaModal",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Adapundi·ID",
+      "name": "Adapundi",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|AdaPundi·ID",
+      "name": "AdaPundi",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Addi·CO",
+      "name": "Addi",
+      "line": "bnpl",
+      "markets": [
+        "CO"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·CO",
+      "name": "Addi Shop",
+      "line": "bnpl",
+      "markets": [
+        "CO"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|AEON·MY",
+      "name": "AEON",
+      "line": "cash",
+      "markets": [
+        "MY"
+      ],
+      "extra": "AEON Credit Service (M) Berhad"
+    },
+    {
+      "id": "bnpl|·MY",
+      "name": "AEON Credit MY",
+      "line": "bnpl",
+      "markets": [
+        "MY"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Affirm·US",
+      "name": "Affirm",
+      "line": "bnpl",
+      "markets": [
+        "US"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Afterpay·US",
+      "name": "Afterpay",
+      "line": "bnpl",
+      "markets": [
+        "US"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Akseleran·ID",
+      "name": "Akseleran",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Aktivaku·ID",
+      "name": "Aktivaku",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Alami·ID",
+      "name": "Alami",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|AlamiSharia·ID",
+      "name": "AlamiSharia",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|·CI",
+      "name": "AlloCash",
+      "line": "cash",
+      "markets": [
+        "CI"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|·LATAM",
+      "name": "Allugator",
+      "line": "lease",
+      "markets": [
+        "MX",
+        "BR",
+        "CO",
+        "AR",
+        "PE",
+        "CL"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Amartha·ID",
+      "name": "Amartha",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Ammana·ID",
+      "name": "Ammana",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|Aplazo·MX",
+      "name": "Aplazo",
+      "line": "bnpl",
+      "markets": [
+        "MX"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·MX",
+      "name": "APLAZO",
+      "line": "bnpl",
+      "markets": [
+        "MX"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·US",
+      "name": "Apple Pay Later",
+      "line": "bnpl",
+      "markets": [
+        "US"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Ard·MN",
+      "name": "Ard",
+      "line": "cash",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Ascend·TH",
+      "name": "Ascend",
+      "line": "cash",
+      "markets": [
+        "TH"
+      ],
+      "extra": "Ascend Nano"
+    },
+    {
+      "id": "cash|Asetku·ID",
+      "name": "Asetku",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|Atome·SEA",
+      "name": "Atome",
+      "line": "bnpl",
+      "markets": [
+        "ID",
+        "VN",
+        "MY",
+        "TH",
+        "PH",
+        "SG"
+      ],
+      "extra": "Atome；Kredit Pintar"
+    },
+    {
+      "id": "cash|Avantee·ID",
+      "name": "Avantee",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|AwanTunai·ID",
+      "name": "AwanTunai",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Axio·IN",
+      "name": "Axio",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC"
+    },
+    {
+      "id": "cash|BAF·ID",
+      "name": "BAF",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "BAF Mobile"
+    },
+    {
+      "id": "cash|Bajaj·IN",
+      "name": "Bajaj",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC"
+    },
+    {
+      "id": "cash|BantuFazz·ID",
+      "name": "BantuFazz",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|BantuSaku·ID",
+      "name": "BantuSaku",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Batumbu·ID",
+      "name": "Batumbu",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·PH",
+      "name": "Billease",
+      "line": "bnpl",
+      "markets": [
+        "PH"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|BNC·ID",
+      "name": "BNC",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "Neo Pinjam；Bank Neo Commerce"
+    },
+    {
+      "id": "cash|Boost·ID",
+      "name": "Boost",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Branch·MULTI",
+      "name": "Branch",
+      "line": "cash",
+      "markets": [
+        "IN",
+        "NG",
+        "KE"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Branch·NG",
+      "name": "Branch",
+      "line": "cash",
+      "markets": [
+        "NG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Cairin·ID",
+      "name": "Cairin",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|·UG",
+      "name": "Cash Link",
+      "line": "cash",
+      "markets": [
+        "UG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Cashcepat·ID",
+      "name": "Cashcepat",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|CashCow·PH",
+      "name": "CashCow",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "Lending/OLP"
+    },
+    {
+      "id": "cash|CASHe·IN",
+      "name": "CASHe",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC"
+    },
+    {
+      "id": "bnpl|·CL",
+      "name": "Cashea CL",
+      "line": "bnpl",
+      "markets": [
+        "CL"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Cicil·ID",
+      "name": "Cicil",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|CICIL·ID",
+      "name": "CICIL",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|·AR",
+      "name": "Credicuotas",
+      "line": "bnpl",
+      "markets": [
+        "AR"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·LATAM",
+      "name": "Creditas",
+      "line": "cash",
+      "markets": [
+        "MX",
+        "BR",
+        "CO",
+        "AR",
+        "PE",
+        "CL"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Crowdo·ID",
+      "name": "Crowdo",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|DanaBagus·ID",
+      "name": "DanaBagus",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Danabijak·ID",
+      "name": "Danabijak",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Danacita·ID",
+      "name": "Danacita",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Danai.id·ID",
+      "name": "Danai.id",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|DanaIn·ID",
+      "name": "DanaIn",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|DanaKredi·ID",
+      "name": "DanaKredi",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Danaku·ID",
+      "name": "Danaku",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Danamas·ID",
+      "name": "Danamas",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Danamerdeka·ID",
+      "name": "Danamerdeka",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|DanaRupiah·ID",
+      "name": "DanaRupiah",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|DanaSyariah·ID",
+      "name": "DanaSyariah",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Doeku·ID",
+      "name": "Doeku",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|DompetKilat·ID",
+      "name": "DompetKilat",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|DuhaSyariah·ID",
+      "name": "DuhaSyariah",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Dumi·ID",
+      "name": "Dumi",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Easy Buy·TH",
+      "name": "Easy Buy",
+      "line": "cash",
+      "markets": [
+        "TH"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Easycash·ID",
+      "name": "Easycash",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Edufund·ID",
+      "name": "Edufund",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·EC",
+      "name": "EMMA",
+      "line": "bnpl",
+      "markets": [
+        "EC"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·BD",
+      "name": "eRin Device",
+      "line": "bnpl",
+      "markets": [
+        "BD"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|EstaKapital·ID",
+      "name": "EstaKapital",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Ethis·ID",
+      "name": "Ethis",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·BR",
+      "name": "Facio",
+      "line": "cash",
+      "markets": [
+        "BR"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·非洲",
+      "name": "FairMoney",
+      "line": "cash",
+      "markets": [
+        "NG",
+        "KE",
+        "GH",
+        "ZA",
+        "TZ",
+        "UG",
+        "RW",
+        "ET",
+        "CI",
+        "SN",
+        "CM",
+        "AO",
+        "MZ",
+        "ZM",
+        "ZW",
+        "BW",
+        "NA",
+        "MU",
+        "MG",
+        "BJ",
+        "BF",
+        "ML",
+        "CD",
+        "GA"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|FE·VN",
+      "name": "FE",
+      "line": "cash",
+      "markets": [
+        "VN"
+      ],
+      "extra": "FE Credit"
+    },
+    {
+      "id": "cash|·VN",
+      "name": "FE ONLINE",
+      "line": "cash",
+      "markets": [
+        "VN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Fibe·IN",
+      "name": "Fibe",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC"
+    },
+    {
+      "id": "cash|Findaya·ID",
+      "name": "Findaya",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Finmas·ID",
+      "name": "Finmas",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·ID",
+      "name": "Finplus",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|FinPlus·ID",
+      "name": "FinPlus",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|FINTAG·ID",
+      "name": "FINTAG",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|GandengTangan·ID",
+      "name": "GandengTangan",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|GCash·PH",
+      "name": "GCash",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|GoTo·ID",
+      "name": "GoTo",
+      "line": "bnpl",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|GoTo·ID",
+      "name": "GoTo",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|GoTyme·PH",
+      "name": "GoTyme",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "BSP数字银行/PDIC投保"
+    },
+    {
+      "id": "bnpl|Grab·SEA",
+      "name": "Grab",
+      "line": "bnpl",
+      "markets": [
+        "ID",
+        "VN",
+        "MY",
+        "TH",
+        "PH",
+        "SG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Gradana·ID",
+      "name": "Gradana",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·MENA",
+      "name": "Halan",
+      "line": "cash",
+      "markets": [
+        "EG",
+        "MA",
+        "DZ",
+        "TN",
+        "LY",
+        "SD",
+        "SA",
+        "AE",
+        "BH",
+        "QA",
+        "KW",
+        "OM",
+        "JO",
+        "LB",
+        "IQ",
+        "IL",
+        "PS",
+        "TR",
+        "YE",
+        "IR"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·EG",
+      "name": "Halan",
+      "line": "cash",
+      "markets": [
+        "EG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Hepsiburada·TR",
+      "name": "Hepsiburada",
+      "line": "bnpl",
+      "markets": [
+        "TR"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Hipay·MN",
+      "name": "Hipay",
+      "line": "cash",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Home Credit·VN",
+      "name": "Home Credit",
+      "line": "cash",
+      "markets": [
+        "VN"
+      ],
+      "extra": "Home Credit VN"
+    },
+    {
+      "id": "bnpl|·SEA",
+      "name": "Home Credit BNPL",
+      "line": "bnpl",
+      "markets": [
+        "ID",
+        "VN",
+        "MY",
+        "TH",
+        "PH",
+        "SG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·SEA",
+      "name": "Home Credit SEA",
+      "line": "cash",
+      "markets": [
+        "ID",
+        "VN",
+        "MY",
+        "TH",
+        "PH",
+        "SG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|·SEA",
+      "name": "Home Credit设备贷",
+      "line": "lease",
+      "markets": [
+        "ID",
+        "VN",
+        "MY",
+        "TH",
+        "PH",
+        "SG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|HomeCredit·IN",
+      "name": "HomeCredit",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC"
+    },
+    {
+      "id": "cash|·KE",
+      "name": "Hypera Cash",
+      "line": "cash",
+      "markets": [
+        "KE"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·BD",
+      "name": "IDLC Finance",
+      "line": "cash",
+      "markets": [
+        "BD"
+      ],
+      "extra": "IDLC Finance PLC"
+    },
+    {
+      "id": "cash|iGrow·ID",
+      "name": "iGrow",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Indodana·ID",
+      "name": "Indodana",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Indofund·ID",
+      "name": "Indofund",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Indosaku·ID",
+      "name": "Indosaku",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|·KG",
+      "name": "INSAF FINANCE",
+      "line": "bnpl",
+      "markets": [
+        "KG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Invoila·ID",
+      "name": "Invoila",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|IVOJI·ID",
+      "name": "IVOJI",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|JazzCash·PK",
+      "name": "JazzCash",
+      "line": "cash",
+      "markets": [
+        "PK"
+      ],
+      "extra": "JazzCash（Android/iOS借贷工具）"
+    },
+    {
+      "id": "bnpl|·JP",
+      "name": "JP BNPL Paidy",
+      "line": "bnpl",
+      "markets": [
+        "JP"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|JULO·ID",
+      "name": "JULO",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|·非洲",
+      "name": "Jumia Pay分期",
+      "line": "bnpl",
+      "markets": [
+        "NG",
+        "KE",
+        "GH",
+        "ZA",
+        "TZ",
+        "UG",
+        "RW",
+        "ET",
+        "CI",
+        "SN",
+        "CM",
+        "AO",
+        "MZ",
+        "ZM",
+        "ZW",
+        "BW",
+        "NA",
+        "MU",
+        "MG",
+        "BJ",
+        "BF",
+        "ML",
+        "CD",
+        "GA"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|KawanCicil·ID",
+      "name": "KawanCicil",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Khan Bank·MN",
+      "name": "Khan Bank",
+      "line": "cash",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·TZ",
+      "name": "KKPesa",
+      "line": "cash",
+      "markets": [
+        "TZ"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Klarna·EU",
+      "name": "Klarna",
+      "line": "bnpl",
+      "markets": [
+        "EU"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|KlikA2C·ID",
+      "name": "KlikA2C",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|KlikCair·ID",
+      "name": "KlikCair",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|KlikKami·ID",
+      "name": "KlikKami",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|KlikUMKM·ID",
+      "name": "KlikUMKM",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|·BR",
+      "name": "Koin",
+      "line": "bnpl",
+      "markets": [
+        "BR"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|KoinP2P·ID",
+      "name": "KoinP2P",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|KoinWorks·ID",
+      "name": "KoinWorks",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Komunal·ID",
+      "name": "Komunal",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|KrediFazz·ID",
+      "name": "KrediFazz",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Kredinesia·ID",
+      "name": "Kredinesia",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|KrediOne·ID",
+      "name": "KrediOne",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|KreditBee·IN",
+      "name": "KreditBee",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "KreditBee / KrazyBee NBFC"
+    },
+    {
+      "id": "cash|Kredito·ID",
+      "name": "Kredito",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|KreditOK·ID",
+      "name": "KreditOK",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|KreditPintar·ID",
+      "name": "KreditPintar",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|KreditPro·ID",
+      "name": "KreditPro",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|Kredivo·ID",
+      "name": "Kredivo",
+      "line": "bnpl",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·ID",
+      "name": "Kredivo",
+      "line": "bnpl",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|KTAKilat·ID",
+      "name": "KTAKilat",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Kueski·MX",
+      "name": "Kueski",
+      "line": "cash",
+      "markets": [
+        "MX"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|LahanSikam·ID",
+      "name": "LahanSikam",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|LazyPay·IN",
+      "name": "LazyPay",
+      "line": "bnpl",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC/BNPL"
+    },
+    {
+      "id": "bnpl|LendDy·MN",
+      "name": "LendDy",
+      "line": "bnpl",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·US",
+      "name": "LendingClub",
+      "line": "cash",
+      "markets": [
+        "US"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Lendingkart·IN",
+      "name": "Lendingkart",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC"
+    },
+    {
+      "id": "cash|LendMN·MN",
+      "name": "LendMN",
+      "line": "cash",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·ZA",
+      "name": "LendPlus",
+      "line": "cash",
+      "markets": [
+        "ZA"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|LoanRanger·PH",
+      "name": "LoanRanger",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "Lending/OLP"
+    },
+    {
+      "id": "cash|·LK",
+      "name": "LOLC Finance",
+      "line": "cash",
+      "markets": [
+        "LK"
+      ],
+      "extra": "LOLC Finance PLC"
+    },
+    {
+      "id": "cash|LumbungDana·ID",
+      "name": "LumbungDana",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|M Bank·MN",
+      "name": "M Bank",
+      "line": "cash",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|M Credit·MN",
+      "name": "M Credit",
+      "line": "cash",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|M-KOPA·KE",
+      "name": "M-KOPA",
+      "line": "lease",
+      "markets": [
+        "KE",
+        "NG",
+        "UG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·PH",
+      "name": "MabilisCash",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Manappuram·IN",
+      "name": "Manappuram",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC"
+    },
+    {
+      "id": "cash|MayaBank·PH",
+      "name": "MayaBank",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "BSP数字银行/PDIC投保"
+    },
+    {
+      "id": "cash|Mekar·ID",
+      "name": "Mekar",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|·LATAM",
+      "name": "Mercado Credito分期",
+      "line": "bnpl",
+      "markets": [
+        "MX",
+        "BR",
+        "CO",
+        "AR",
+        "PE",
+        "CL"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·AR",
+      "name": "Micro Dinero",
+      "line": "cash",
+      "markets": [
+        "AR"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Modalku·ID",
+      "name": "Modalku",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|ModalNasional·ID",
+      "name": "ModalNasional",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|ModalRakyat·ID",
+      "name": "ModalRakyat",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·IN",
+      "name": "MoneyView",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|MoneyView·IN",
+      "name": "MoneyView",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC"
+    },
+    {
+      "id": "cash|Muthoot·IN",
+      "name": "Muthoot",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC"
+    },
+    {
+      "id": "cash|Navi·IN",
+      "name": "Navi",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC"
+    },
+    {
+      "id": "cash|·NG",
+      "name": "Newcredit",
+      "line": "cash",
+      "markets": [
+        "NG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Nubank·BR",
+      "name": "Nubank",
+      "line": "cash",
+      "markets": [
+        "BR",
+        "MX",
+        "CO"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|OFBank·PH",
+      "name": "OFBank",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "BSP数字银行/PDIC投保"
+    },
+    {
+      "id": "bnpl|·KE",
+      "name": "OnfonMobile",
+      "line": "bnpl",
+      "markets": [
+        "KE"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·KZ",
+      "name": "OrdaCredit",
+      "line": "cash",
+      "markets": [
+        "KZ"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|OVOFinansial·ID",
+      "name": "OVOFinansial",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|·PK",
+      "name": "Paisayaar",
+      "line": "cash",
+      "markets": [
+        "PK"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·PK",
+      "name": "PalmPay PK",
+      "line": "bnpl",
+      "markets": [
+        "PK"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|PapitupiSyariah·ID",
+      "name": "PapitupiSyariah",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "lease|·MX",
+      "name": "PayJoy MX",
+      "line": "lease",
+      "markets": [
+        "MX"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·ZA",
+      "name": "PayJustNow",
+      "line": "bnpl",
+      "markets": [
+        "ZA"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·EU",
+      "name": "PayPal欧盟分期",
+      "line": "bnpl",
+      "markets": [
+        "EU"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|PaySense·IN",
+      "name": "PaySense",
+      "line": "cash",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC"
+    },
+    {
+      "id": "cash|Pesopop·PH",
+      "name": "Pesopop",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "Lending/OLP"
+    },
+    {
+      "id": "cash|Pijar·ID",
+      "name": "Pijar",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|PinjamanGo·ID",
+      "name": "PinjamanGo",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|PinjamDuit·ID",
+      "name": "PinjamDuit",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|PinjamGampang·ID",
+      "name": "PinjamGampang",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Pinjamin·ID",
+      "name": "Pinjamin",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|PinjamModal·ID",
+      "name": "PinjamModal",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|PinjamYuk·ID",
+      "name": "PinjamYuk",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Pintek·ID",
+      "name": "Pintek",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Pocket·MN",
+      "name": "Pocket",
+      "line": "cash",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Pocket Zero·MN",
+      "name": "Pocket Zero",
+      "line": "bnpl",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|PohonDana·ID",
+      "name": "PohonDana",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Qazwa·ID",
+      "name": "Qazwa",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|QuickPeso·PH",
+      "name": "QuickPeso",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "Lending/OLP"
+    },
+    {
+      "id": "cash|Rappi·LATAM",
+      "name": "Rappi",
+      "line": "cash",
+      "markets": [
+        "MX",
+        "BR",
+        "CO",
+        "AR",
+        "PE",
+        "CL"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·MY",
+      "name": "RCE Marketing",
+      "line": "cash",
+      "markets": [
+        "MY"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Restock·ID",
+      "name": "Restock",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|RUPIAHCEPAT·ID",
+      "name": "RUPIAHCEPAT",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|SamaKita·ID",
+      "name": "SamaKita",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Samir·ID",
+      "name": "Samir",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "lease|·IN",
+      "name": "Samsung Finance+ IN",
+      "line": "lease",
+      "markets": [
+        "IN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|·BR",
+      "name": "Samsung巴西金融",
+      "line": "lease",
+      "markets": [
+        "BR"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|SandersOneStopSolution·ID",
+      "name": "SandersOneStopSolution",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|·EG",
+      "name": "seven",
+      "line": "bnpl",
+      "markets": [
+        "EG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Shopee·SEA",
+      "name": "Shopee",
+      "line": "bnpl",
+      "markets": [
+        "ID",
+        "VN",
+        "MY",
+        "TH",
+        "PH",
+        "SG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Shopee·SEA",
+      "name": "Shopee",
+      "line": "cash",
+      "markets": [
+        "ID",
+        "VN",
+        "MY",
+        "TH",
+        "PH",
+        "SG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·IN",
+      "name": "Simpl",
+      "line": "bnpl",
+      "markets": [
+        "IN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Simpl·IN",
+      "name": "Simpl",
+      "line": "bnpl",
+      "markets": [
+        "IN"
+      ],
+      "extra": "BNPL合作"
+    },
+    {
+      "id": "cash|Simple·MN",
+      "name": "Simple",
+      "line": "cash",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Simple Buy·MN",
+      "name": "Simple Buy",
+      "line": "bnpl",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Singa·ID",
+      "name": "Singa",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|SINGAFINTECH·ID",
+      "name": "SINGAFINTECH",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|·CL",
+      "name": "SolPresta",
+      "line": "cash",
+      "markets": [
+        "CL"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Solusiku·ID",
+      "name": "Solusiku",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|·CO",
+      "name": "Solventa",
+      "line": "cash",
+      "markets": [
+        "CO"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|SPinjam·ID",
+      "name": "SPinjam",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|·MENA",
+      "name": "Spotii",
+      "line": "bnpl",
+      "markets": [
+        "EG",
+        "MA",
+        "DZ",
+        "TN",
+        "LY",
+        "SD",
+        "SA",
+        "AE",
+        "BH",
+        "QA",
+        "KW",
+        "OM",
+        "JO",
+        "LB",
+        "IQ",
+        "IL",
+        "PS",
+        "TR",
+        "YE",
+        "IR"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·MX",
+      "name": "Starpresta",
+      "line": "cash",
+      "markets": [
+        "MX"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Storepay·MN",
+      "name": "Storepay",
+      "line": "bnpl",
+      "markets": [
+        "MN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Stori·MX",
+      "name": "Stori",
+      "line": "cash",
+      "markets": [
+        "MX"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·EC",
+      "name": "Sumak",
+      "line": "cash",
+      "markets": [
+        "EC"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|·非洲",
+      "name": "Sun King PAYG",
+      "line": "lease",
+      "markets": [
+        "NG",
+        "KE",
+        "GH",
+        "ZA",
+        "TZ",
+        "UG",
+        "RW",
+        "ET",
+        "CI",
+        "SN",
+        "CM",
+        "AO",
+        "MZ",
+        "ZM",
+        "ZW",
+        "BW",
+        "NA",
+        "MU",
+        "MG",
+        "BJ",
+        "BF",
+        "ML",
+        "CD",
+        "GA"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|SUPEREV·CN",
+      "name": "SUPEREV",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": "SUPEREV；与芝麻/乐道等联名订阅"
+    },
+    {
+      "id": "cash|Surfin·SG",
+      "name": "Surfin",
+      "line": "cash",
+      "markets": [
+        "SG"
+      ],
+      "extra": "Surfin；印尼Ayovest等扩展产品"
+    },
+    {
+      "id": "lease|·US",
+      "name": "Synchrony苹果包",
+      "line": "lease",
+      "markets": [
+        "US"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Tabby·GCC",
+      "name": "Tabby",
+      "line": "bnpl",
+      "markets": [
+        "SA",
+        "AE",
+        "BH",
+        "QA",
+        "KW",
+        "OM"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Tala·MULTI",
+      "name": "Tala",
+      "line": "cash",
+      "markets": [
+        "PH",
+        "IN",
+        "MX",
+        "KE"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Tala·MX",
+      "name": "Tala",
+      "line": "cash",
+      "markets": [
+        "MX"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Tala·PH",
+      "name": "Tala",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|Tala·KE",
+      "name": "Tala",
+      "line": "cash",
+      "markets": [
+        "KE"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|Tamara·GCC",
+      "name": "Tamara",
+      "line": "bnpl",
+      "markets": [
+        "SA",
+        "AE",
+        "BH",
+        "QA",
+        "KW",
+        "OM"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·GH",
+      "name": "TargetCredit",
+      "line": "cash",
+      "markets": [
+        "GH"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|tokomodal·ID",
+      "name": "tokomodal",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "cash|Tonik·PH",
+      "name": "Tonik",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "BSP数字银行/PDIC投保"
+    },
+    {
+      "id": "bnpl|Trendyol·TR",
+      "name": "Trendyol",
+      "line": "bnpl",
+      "markets": [
+        "TR"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·NG",
+      "name": "TunaCredit",
+      "line": "bnpl",
+      "markets": [
+        "NG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|U号租·CN",
+      "name": "U号租",
+      "line": "lease",
+      "markets": [
+        "CN"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|UangMe·ID",
+      "name": "UangMe",
+      "line": "cash",
+      "markets": [
+        "ID"
+      ],
+      "extra": "LPBBTI/P2P"
+    },
+    {
+      "id": "bnpl|·TH",
+      "name": "UFUND",
+      "line": "bnpl",
+      "markets": [
+        "TH"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|UmaCash·PH",
+      "name": "UmaCash",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "Lending/OLP"
+    },
+    {
+      "id": "cash|·UZ",
+      "name": "Una Moliya",
+      "line": "cash",
+      "markets": [
+        "UZ"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|UnionDigital·PH",
+      "name": "UnionDigital",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "BSP数字银行/PDIC投保"
+    },
+    {
+      "id": "cash|UNObank·PH",
+      "name": "UNObank",
+      "line": "cash",
+      "markets": [
+        "PH"
+      ],
+      "extra": "BSP数字银行/PDIC投保"
+    },
+    {
+      "id": "cash|Upstart·US",
+      "name": "Upstart",
+      "line": "cash",
+      "markets": [
+        "US"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "bnpl|·UZ",
+      "name": "Uzum Nasiya",
+      "line": "bnpl",
+      "markets": [
+        "UZ"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·PE",
+      "name": "vana",
+      "line": "cash",
+      "markets": [
+        "PE"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·ZM",
+      "name": "Wamaka",
+      "line": "cash",
+      "markets": [
+        "ZM"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "lease|Watu·KE",
+      "name": "Watu",
+      "line": "lease",
+      "markets": [
+        "KE",
+        "NG",
+        "UG",
+        "RW"
+      ],
+      "extra": "Watu Simu 等"
+    },
+    {
+      "id": "bnpl|ZestMoney·IN",
+      "name": "ZestMoney",
+      "line": "bnpl",
+      "markets": [
+        "IN"
+      ],
+      "extra": "NBFC/BNPL"
+    },
+    {
+      "id": "cash|·KG",
+      "name": "М Булак",
+      "line": "cash",
+      "markets": [
+        "KG"
+      ],
+      "extra": ""
+    },
+    {
+      "id": "cash|·TH",
+      "name": "อิ่มคล่อง",
+      "line": "cash",
+      "markets": [
+        "TH"
+      ],
+      "extra": ""
+    }
+  ]
+}

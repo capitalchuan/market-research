@@ -89,10 +89,18 @@ export const TOTAL_OUTSTANDING_HEAT_USD = PRODUCER_HOLDINGS.countries.reduce(
   0,
 );
 
+/** 美元金额用中文单位：万 / 亿 / 万亿。 */
+export function formatUsdZh(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  const sign = n < 0 ? "-" : "";
+  const abs = Math.abs(n);
+  const fmt = (v: number) => v.toFixed(2).replace(/\.?0+$/, "");
+  if (abs >= 1e12) return `${sign}${fmt(abs / 1e12)}万亿美元`;
+  if (abs >= 1e8) return `${sign}${fmt(abs / 1e8)}亿美元`;
+  if (abs >= 1e4) return `${sign}${fmt(abs / 1e4)}万美元`;
+  return `${sign}${Math.round(abs).toLocaleString("zh-CN")}美元`;
+}
+
 export function formatUsdCompact(n: number | null | undefined): string {
-  if (n == null || Number.isNaN(n)) return "—";
-  if (n >= 1_000_000_000) return `USD ${(n / 1_000_000_000).toFixed(2)} bn`;
-  if (n >= 1_000_000) return `USD ${(n / 1_000_000).toFixed(2)} M`;
-  if (n >= 1_000) return `USD ${(n / 1_000).toFixed(1)} K`;
-  return `USD ${n.toFixed(0)}`;
+  return formatUsdZh(n);
 }

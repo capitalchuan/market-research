@@ -84,6 +84,25 @@ export function heatColorInvestedForest(): string {
   return FOREST_INVESTED;
 }
 
+/** chuanx.xyz：奶油底上的藏青阶，浅沙 → 墨蓝 */
+const CHUAN_STOPS = ["#E4D4CF", "#C9D0EA", "#8E97BE", "#4A5073", "#2E3653"] as const;
+export const CHUAN_INK = "#232946";
+export const CHUAN_CREAM = "#FEF1ED";
+export const CHUAN_SAND = "#E4D4CF";
+export const CHUAN_OCEAN = "#F7EFEA";
+
+export function heatColorChuan(t: number): string {
+  const x = Math.min(1, Math.max(0, t));
+  const n = CHUAN_STOPS.length - 1;
+  const i = Math.min(n - 1, Math.floor(x * n));
+  const local = x * n - i;
+  return lerpHex(CHUAN_STOPS[i], CHUAN_STOPS[i + 1], local);
+}
+
+export function heatStopsChuan(): string[] {
+  return [...CHUAN_STOPS];
+}
+
 export function heatStopsGreen(): string[] {
   return [...SAGE_STOPS];
 }

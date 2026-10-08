@@ -1478,9 +1478,12 @@ function StressSpark({
 export function StressPricingCharts({
   countryCode,
   countryLabel,
+  hideGasoline = false,
 }: {
   countryCode: string;
   countryLabel: string;
+  /** 国家基础信息里不放零售汽油示意折线 */
+  hideGasoline?: boolean;
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
@@ -1488,7 +1491,7 @@ export function StressPricingCharts({
   const row = getStressCountry(countryCode);
   const periodMeta = STRESS_CHG_PERIODS.find((p) => p.id === period) || STRESS_CHG_PERIODS[1]!;
 
-  const cards = STRESS_METRIC_META.map((m) => {
+  const cards = STRESS_METRIC_META.filter((m) => !(hideGasoline && m.id === "gasolineRetail")).map((m) => {
     const series = row?.[m.id];
     if (!stressSeriesReady(series)) return null;
     return { ...m, series };
@@ -1549,7 +1552,11 @@ export function StressPricingCharts({
         ))}
       </Grid>
       <div style={{ fontSize: 10, color: c.textTertiary, lineHeight: 1.4 }}>
-        通胀/政策利率：BIS 月度观测。零售汽油标「示意」时=TE 泵价水平×布伦特月均路径，非官方零售序时。涨跌按区间首末变动（升=定价压力↑）；通胀负值标通缩冷色并画零轴。对照时点{" "}
+        通胀/政策利率：BIS 月度观测。
+        {hideGasoline
+          ? ""
+          : "零售汽油标「示意」时=TE 泵价水平×布伦特月均路径，非官方零售序时。"}
+        涨跌按区间首末变动（升=定价压力↑）；通胀负值标通缩冷色并画零轴。对照时点{" "}
         {MACRO_STRESS_HISTORY.meta.asOf}。
       </div>
     </Stack>

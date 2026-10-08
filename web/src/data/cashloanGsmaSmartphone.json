@@ -1,0 +1,25 @@
+{
+  "survey": "GSMA Consumer Survey 2024",
+  "report": "The State of Mobile Internet Connectivity 2025: Trends in Mobile Internet Connectivity",
+  "figure": "Figure 15",
+  "base": "18 岁及以上成年人口",
+  "fileUrl": "https://www.gsma.com/somic/wp-content/uploads/2025/09/The-State-of-Mobile-Internet-Connectivity-2025-Trends-in-Mobile-Internet-Connectivity.pdf",
+  "note": "本人单独或主要使用的智能手机。图中只分城镇和农村，没有全国单一占比。调查覆盖 15 个中低收入经济体。",
+  "byCode": {
+    "EG": { "urban": 71, "rural": 53 },
+    "ET": { "urban": 45, "rural": 13 },
+    "KE": { "urban": 55, "rural": 41 },
+    "NG": { "urban": 62, "rural": 28 },
+    "RW": { "urban": 53, "rural": 21 },
+    "SN": { "urban": 78, "rural": 60 },
+    "TZ": { "urban": 38, "rural": 30 },
+    "UG": { "urban": 33, "rural": 20 },
+    "BD": { "urban": 39, "rural": 30 },
+    "IN": { "urban": 50, "rural": 46 },
+    "ID": { "urban": 71, "rural": 64 },
+    "PK": { "urban": 51, "rural": 40 },
+    "PH": { "urban": 68, "rural": 60 },
+    "GT": { "urban": 68, "rural": 59 },
+    "MX": { "urban": 78, "rural": 61 }
+  }
+}

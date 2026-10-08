@@ -24376,7 +24376,7 @@ function DigitalSceneAtlasBrowse() {
 const EMPTY_CREDIT_DRAFTS: CreditDraft[] = [];
 const EMPTY_COMPOSER_ATTS: ComposerAttach[] = [];
 
-type AppTab = "crm" | "screen";
+type AppTab = "crm" | "screen" | "cashloan";
 
 function IconMapGlobe() {
   return (
@@ -24463,6 +24463,63 @@ function MapScreenButton({
       <IconMapGlobe />
       {label}
     </button>
+  );
+}
+
+/** 打开个人现金贷独立入口（不经过本站登录） */
+function CashloanEntryButton({ onClick }: { onClick: () => void }) {
+  const theme = useHostTheme();
+  const label = "个人现金贷";
+  return (
+    <button
+      type="button"
+      title="打开个人现金贷"
+      aria-label={label}
+      onClick={onClick}
+      style={{
+        flexShrink: 0,
+        height: 36,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        padding: "0 10px",
+        borderRadius: 8,
+        border: `1px solid ${theme.stroke.tertiary}`,
+        background: theme.bg.elevated,
+        color: theme.text.primary,
+        cursor: "pointer",
+        font: "inherit",
+        fontSize: 12,
+        fontWeight: 500,
+        whiteSpace: "nowrap",
+        boxSizing: "border-box",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function AtlasEntryNav({
+  appTab,
+  setAppTab,
+}: {
+  appTab: AppTab;
+  setAppTab: (tab: AppTab) => void;
+}) {
+  return (
+    <Row gap={6} align="center">
+      <MapScreenButton
+        active={appTab === "screen"}
+        onClick={() => setAppTab(appTab === "screen" ? "crm" : "screen")}
+      />
+      <CashloanEntryButton
+        onClick={() => {
+          window.location.hash = "/cashloan";
+        }}
+      />
+    </Row>
   );
 }
 
@@ -27957,9 +28014,7 @@ export default function Canvas() {
     return (
       <AtlasSideRail>
         <Stack gap={16} style={{ flexShrink: 0, overflow: "visible" }}>
-          <SessionChrome
-            trailing={<MapScreenButton active onClick={() => setAppTab("crm")} />}
-          />
+          <SessionChrome trailing={<AtlasEntryNav appTab={appTab} setAppTab={setAppTab} />} />
           <BigScreen />
         </Stack>
       </AtlasSideRail>
@@ -27971,7 +28026,7 @@ export default function Canvas() {
       <AtlasStickyChrome>
       <Stack gap={16}>
       <SessionChrome
-        trailing={<MapScreenButton active={false} onClick={() => setAppTab("screen")} />}
+        trailing={<AtlasEntryNav appTab={appTab} setAppTab={setAppTab} />}
       />
 
       <Row gap={8} align="start">

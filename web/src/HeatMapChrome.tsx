@@ -11,6 +11,7 @@ import {
   heatStopsWarm,
   heatStopsGreen,
   heatStopsCool,
+  heatStopsChuan,
   mapChrome,
   heatColorAdded,
   heatColorRemoved,
@@ -295,23 +296,25 @@ export function MapSection({
   title,
   children,
   dense = false,
+  large = false,
 }: {
   title: string;
   children: ReactNode;
   dense?: boolean;
+  large?: boolean;
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
   return (
-    <div style={{ marginBottom: dense ? 10 : 16 }}>
+    <div style={{ marginBottom: large ? 36 : dense ? 10 : 16 }}>
       <div
         style={{
-          fontSize: dense ? 12 : 13,
+          fontSize: large ? 22 : dense ? 12 : 13,
           fontWeight: 600,
-          color: c.textSecondary,
-          marginBottom: 6,
+          color: c.text,
+          marginBottom: large ? 12 : 6,
           borderBottom: `1px solid ${c.panelBorder}`,
-          paddingBottom: 4,
+          paddingBottom: large ? 8 : 4,
         }}
       >
         {title}
@@ -321,29 +324,115 @@ export function MapSection({
   );
 }
 
+function formatZhUnit(n: number): string {
+  const sign = n < 0 ? "-" : "";
+  const abs = Math.abs(n);
+  const fmt = (v: number) => v.toFixed(2).replace(/\.?0+$/, "");
+  if (abs >= 1e8) return `${sign}${fmt(abs / 1e8)}亿`;
+  if (abs >= 1e4) return `${sign}${fmt(abs / 1e4)}万`;
+  return `${sign}${Math.round(abs).toLocaleString("zh-CN")}`;
+}
+
+/** 百万不出现；按百万计的量改成实际数后用万/亿。 */
+export function rewriteZhUnits(text: string): string {
+  let s = text.replace(
+    /(\d[\d,]*(?:\.\d+)?)([^0-9]{0,16}?)百万/g,
+    (_full, num: string, mid: string) => {
+      const n = Number(num.replace(/,/g, ""));
+      if (!Number.isFinite(n)) return _full;
+      const unit = mid.replace(/^[\s·\-]+|[\s·\-]+$/g, "");
+      return formatZhUnit(n * 1_000_000) + unit;
+    },
+  );
+  s = s.replace(/USD\s*([\d,.]+)\s*bn/gi, (_m, num: string) => `${formatZhUnit(Number(num.replace(/,/g, "")) * 1e9)}美元`);
+  s = s.replace(/([\d,.]+)\s*bn\b/gi, (_m, num: string) => formatZhUnit(Number(num.replace(/,/g, "")) * 1e9));
+  s = s.replace(/USD\s*([\d,.]+)\s*M\b/gi, (_m, num: string) => `${formatZhUnit(Number(num.replace(/,/g, "")) * 1e6)}美元`);
+  s = s.replace(/USD\s*([\d,]{5,}(?:\.\d+)?)/gi, (_m, num: string) => {
+    const n = Number(num.replace(/,/g, ""));
+    return n >= 10000 ? `${formatZhUnit(n)}美元` : _m;
+  });
+  return s;
+}
+
+/** 正文保持常规字重，只加粗关键数字。年份和日期不加粗。 */
+export function FigureText({
+  text,
+  textSize,
+  figureSize,
+}: {
+  text: string;
+  textSize?: number;
+  figureSize?: number;
+}) {
+  const shown = rewriteZhUnits(text);
+  const parts = shown.split(/(\d{4}-\d{2}(?:-\d{2})?|\d[\d,]*(?:\.\d+)?%?)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        const date = /^\d{4}-\d{2}/.test(part);
+        const figure = /^\d/.test(part) && !date && !/^(19|20)\d{2}$/.test(part);
+        const fontSize = figure ? figureSize : textSize;
+        return (
+          <span key={i} style={{ fontWeight: figure ? 700 : 400, ...(fontSize != null ? { fontSize } : null) }}>
+            {part}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+function RichFigure({ text }: { text: string }) {
+  return <FigureText text={text} textSize={16} figureSize={18} />;
+}
+
 export function MapKV({
   k,
   v,
   dense = false,
+  large = false,
+  links,
 }: {
   k: string;
   v: string;
   dense?: boolean;
+  large?: boolean;
+  links?: string[];
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const hrefs = [...new Set((links ?? []).filter(Boolean))];
   return (
     <div
       style={{
         display: "flex",
-        gap: 10,
-        fontSize: dense ? 12 : 13,
+        gap: large ? 16 : 10,
+        fontSize: large ? 16 : dense ? 12 : 13,
         lineHeight: 1.55,
-        marginBottom: dense ? 2 : 4,
+        marginBottom: large ? 8 : dense ? 2 : 4,
       }}
     >
-      <span style={{ color: c.textTertiary, minWidth: dense ? 88 : 96, flexShrink: 0 }}>{k}</span>
-      <span style={{ color: c.text, wordBreak: "break-word" }}>{v}</span>
+      <span style={{ color: c.textTertiary, minWidth: large ? 148 : dense ? 88 : 96, flexShrink: 0, fontSize: large ? 16 : undefined }}>
+        {k}
+      </span>
+      <span style={{ color: c.text, wordBreak: "break-word" }}>
+        {large ? <RichFigure text={v} /> : v}
+        {hrefs.length ? (
+          <span style={{ display: "block", marginTop: 2 }}>
+            {hrefs.map((href) => (
+              <a
+                key={href}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                style={{ display: "block", fontSize: 14, fontWeight: 400, color: c.link, wordBreak: "break-all" }}
+              >
+                {href}
+              </a>
+            ))}
+          </span>
+        ) : null}
+      </span>
     </div>
   );
 }
@@ -355,6 +444,8 @@ export function MapDetailShell({
   closeLabel = "返回全球",
   children,
   overlay = false,
+  fillScreen = false,
+  headerAside,
 }: {
   title: string;
   subtitle?: string;
@@ -363,6 +454,10 @@ export function MapDetailShell({
   children: ReactNode;
   /** 全屏地图：浮在地图右侧，不挤占底图宽度 */
   overlay?: boolean;
+  /** 点开后铺满视口 */
+  fillScreen?: boolean;
+  /** 标题栏右侧、关闭按钮左侧 */
+  headerAside?: ReactNode;
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
@@ -371,7 +466,21 @@ export function MapDetailShell({
     <div
       data-no-drag
       style={
-        overlay
+        fillScreen
+          ? {
+              position: "fixed",
+              inset: 12,
+              zIndex: 40,
+              overflow: "auto",
+              border: `1px solid ${c.panelBorder}`,
+              borderRadius: 8,
+              background: c.panelBg,
+              padding: "28px 40px 56px",
+              fontSize: 18,
+              lineHeight: 1.55,
+              boxSizing: "border-box",
+            }
+          : overlay
           ? {
               position: "absolute",
               top: narrow ? 48 : 56,
@@ -410,7 +519,7 @@ export function MapDetailShell({
         <div style={{ minWidth: 0 }}>
           <div
             style={{
-              fontSize: overlay ? "clamp(16px, 1.2vw + 0.45rem, 20px)" : 15,
+              fontSize: fillScreen ? 34 : overlay ? "clamp(16px, 1.2vw + 0.45rem, 20px)" : 15,
               fontWeight: 600,
               color: c.text,
             }}
@@ -420,7 +529,7 @@ export function MapDetailShell({
           {subtitle ? (
             <div
               style={{
-                fontSize: overlay ? "clamp(11px, 0.7vw + 0.35rem, 13px)" : 11,
+                fontSize: fillScreen ? 16 : overlay ? "clamp(11px, 0.7vw + 0.35rem, 13px)" : 11,
                 color: c.textTertiary,
                 marginTop: 4,
                 lineHeight: 1.45,
@@ -430,9 +539,12 @@ export function MapDetailShell({
             </div>
           ) : null}
         </div>
-        <Button variant="secondary" size="sm" onClick={onClose}>
-          {closeLabel}
-        </Button>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexShrink: 0 }}>
+          {headerAside}
+          <Button variant="secondary" size="sm" onClick={onClose}>
+            {closeLabel}
+          </Button>
+        </div>
       </div>
       {children}
     </div>
@@ -572,7 +684,7 @@ export function SteppedLegend({
   high,
 }: {
   label: string;
-  kind: "removed" | "added" | "gray" | "accent" | "warm" | "green" | "cool";
+  kind: "removed" | "added" | "gray" | "accent" | "warm" | "green" | "cool" | "chuan";
   /** 底部/融入图例时更扁 */
   compact?: boolean;
   /** 色阶左端（低） */
@@ -587,6 +699,8 @@ export function SteppedLegend({
       ? heatStopsWarm()
       : kind === "green"
         ? heatStopsGreen()
+        : kind === "chuan"
+          ? heatStopsChuan()
         : kind === "cool"
           ? heatStopsCool()
           : kind === "added" || kind === "accent"

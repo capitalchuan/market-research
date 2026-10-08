@@ -8,6 +8,7 @@ import { geoGraticule10, geoNaturalEarth1, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import worldTopology from "world-atlas/countries-110m.json";
+import { MACRO_SCORE_HELP, scoreCashloanMacro } from "./data/cashloanMacroScore";
 import { COUNTRY_LABEL_ZH } from "./data/nbfcCountryStats";
 import { aggregateLendingUsdBn } from "./LendingHeatGlobe";
 import {
@@ -19,12 +20,14 @@ import {
   INVESTED_BY_CODE,
   PRODUCER_HOLDINGS,
   formatUsdCompact,
+  formatUsdZh,
 } from "./data/producerHoldings";
 import {
   COUNTRY_IMF_WB,
   passesImfWbFilters,
 } from "./data/countryImfWb";
 import { formatCountryLanguageLine } from "./data/countryLanguage";
+import { CashloanCountryCompare, CashloanCountrySheet, CountryCompareButton, MacroScoreBreakdown, MacroScoreRadar } from "./CashloanCountrySheet";
 import {
   MapSection,
   MapKV,
@@ -43,7 +46,16 @@ import {
   useMapViewport,
   mapFrameWidth,
 } from "./HeatMapChrome";
-import { heatColorGreen, heatColorInvestedForest, logHeatNorm } from "./heatMapTheme";
+import {
+  CHUAN_CREAM,
+  CHUAN_INK,
+  CHUAN_OCEAN,
+  CHUAN_SAND,
+  heatColorChuan,
+  heatColorGreen,
+  heatColorInvestedForest,
+  logHeatNorm,
+} from "./heatMapTheme";
 import { useCanvasState, useHostTheme } from "./shims/cursor-canvas";
 import { PartnerHoldingsSection, useGuestMask } from "./PartnerHoldingsSection";
 import { SENSITIVE_MASK } from "./authAccess";
@@ -202,10 +214,7 @@ function normId(id: string | number | undefined): string {
 
 function formatUsdTn(bn: number): string {
   if (!(bn > 0)) return "—";
-  const tn = bn / 1000;
-  if (tn >= 10) return `USD ${tn.toFixed(2)} tn`;
-  if (tn >= 1) return `USD ${tn.toFixed(2)} tn`;
-  return `USD ${bn.toFixed(1)} bn`;
+  return formatUsdZh(bn * 1e9);
 }
 
 type HoverInfo = {
@@ -243,14 +252,174 @@ const INVESTED_BADGE_LL: Record<string, [number, number]> = {
   IN: [78.9, 22.0],
 };
 
+/** 已投国名相对落点的偏移，避开东南亚挤在一起 */
+const INVESTED_NAME_NUDGE: Record<string, [number, number]> = {
+  IN: [-8, -14],
+  TH: [0, -16],
+  HK: [28, -12],
+  PH: [26, 6],
+  ID: [0, 16],
+  MX: [0, 14],
+};
+
+function roundedMacroScore(code: string): number | null {
+  const score = scoreCashloanMacro(code);
+  return score == null ? null : Math.round(score);
+}
+
+function InvestedNameMark({ a2, x, y }: { a2: string; x: number; y: number }) {
+  const name = COUNTRY_LABEL_ZH[a2] ?? a2;
+  const score = roundedMacroScore(a2);
+  const scoreText = score == null ? "" : String(score);
+  const [dx, dy] = INVESTED_NAME_NUDGE[a2] ?? [0, -14];
+  const fontSize = 11;
+  const padX = 6;
+  const nameW = name.length * fontSize + padX * 2;
+  const scoreW = scoreText ? scoreText.length * 7 + padX * 2 : 0;
+  const h = 18;
+  const left = x + dx - nameW / 2;
+  const top = y + dy - h / 2;
+  const textY = top + 13;
+  const scoreTop = top + h + 3;
+  const scoreLeft = left + (nameW - scoreW) / 2;
+  return (
+    <g data-a2={a2} data-invested-badge={a2} style={{ cursor: "pointer" }}>
+      <rect
+        x={left}
+        y={top}
+        width={nameW}
+        height={h}
+        rx={2}
+        fill={CHUAN_CREAM}
+        stroke={CHUAN_INK}
+        strokeWidth={0.8}
+      />
+      <text
+        x={left + nameW / 2}
+        y={textY}
+        textAnchor="middle"
+        fill={CHUAN_INK}
+        fontSize={fontSize}
+        fontWeight={600}
+        fontFamily='"DM Sans", "PingFang SC", "Noto Sans SC", sans-serif'
+        style={{ pointerEvents: "none" }}
+      >
+        {name}
+      </text>
+      {scoreText ? (
+        <>
+          <rect
+            x={scoreLeft}
+            y={scoreTop}
+            width={scoreW}
+            height={h}
+            rx={2}
+            fill={CHUAN_INK}
+            stroke={CHUAN_INK}
+            strokeWidth={0.8}
+          />
+          <text
+            x={scoreLeft + scoreW / 2}
+            y={scoreTop + 13}
+            textAnchor="middle"
+            fill={CHUAN_CREAM}
+            fontSize={fontSize}
+            fontWeight={700}
+            fontFamily='"DM Sans", "PingFang SC", "Noto Sans SC", sans-serif'
+            style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}
+          >
+            {scoreText}
+          </text>
+        </>
+      ) : null}
+    </g>
+  );
+}
+
+function MacroScoreMark({ code }: { code: string }) {
+  const { c } = useMapChrome();
+  const [hover, setHover] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const open = hover || pinned;
+  const score = scoreCashloanMacro(code);
+  return (
+    <div
+      style={{ position: "relative", display: "flex", alignItems: "center", gap: 10 }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <MacroScoreRadar code={code} />
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ fontSize: 18, fontWeight: 650, color: c.text, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+        国家综合打分 {score == null ? "—" : Math.round(score)}
+      </span>
+      <button
+        type="button"
+        aria-label="国家综合打分计算说明"
+        aria-expanded={open}
+        onClick={() => setPinned((v) => !v)}
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 11,
+          border: `1px solid ${c.panelBorder}`,
+          background: "transparent",
+          color: c.textTertiary,
+          fontSize: 13,
+          fontWeight: 650,
+          lineHeight: 1,
+          cursor: "pointer",
+          padding: 0,
+        }}
+      >
+        ?
+      </button>
+      </div>
+      <MacroScoreBreakdown code={code} />
+      </div>
+      {open ? (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            right: 0,
+            width: 340,
+            zIndex: 5,
+            padding: "12px 14px",
+            borderRadius: 8,
+            border: `1px solid ${c.panelBorder}`,
+            background: c.panelBg,
+            boxShadow: "0 8px 24px rgba(35, 41, 70, 0.12)",
+            fontSize: 13,
+            fontWeight: 400,
+            lineHeight: 1.55,
+            color: c.text,
+          }}
+        >
+          {MACRO_SCORE_HELP.map((line) => (
+            <div key={line} style={{ marginBottom: 6 }}>
+              {line}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function DetailPanel({
   code,
   onClose,
   overlay = false,
+  unmasked = false,
+  fillScreen = false,
 }: {
   code: string;
   onClose: () => void;
   overlay?: boolean;
+  unmasked?: boolean;
+  fillScreen?: boolean;
 }) {
   const { theme } = useMapChrome();
   const invested = INVESTED_BY_CODE[code];
@@ -260,6 +429,10 @@ function DetailPanel({
   const name = COUNTRY_LABEL_ZH[code] ?? invested?.country_zh ?? code;
   const chartUrl = zoom?.source_url || playFinanceChartUrl(code);
   const langLine = formatCountryLanguageLine(code);
+  const [compareCode, setCompareCode] = useState<string | null>(null);
+  useEffect(() => {
+    setCompareCode(null);
+  }, [code]);
 
   return (
     <MapDetailShell
@@ -267,14 +440,31 @@ function DetailPanel({
       subtitle={langLine || undefined}
       onClose={onClose}
       overlay={overlay}
+      fillScreen={fillScreen}
+      headerAside={
+        fillScreen ? (
+          <>
+            <MacroScoreMark code={code} />
+            <CountryCompareButton current={code} value={compareCode} onChange={setCompareCode} />
+          </>
+        ) : undefined
+      }
     >
+      {fillScreen ? (
+        compareCode ? (
+          <CashloanCountryCompare left={code} right={compareCode} />
+        ) : (
+          <CashloanCountrySheet code={code} />
+        )
+      ) : (
+      <>
       {imfWb ? (
         <MapSection title="IMF / 世行" dense={overlay}>
           <MapKV k="IMF" v={imfWb.imfDevTagZh} dense={overlay} />
           <MapKV k="世行" v={imfWb.wbIncomeZh} dense={overlay} />
         </MapSection>
       ) : null}
-      <PartnerHoldingsSection invested={invested} dense={overlay} />
+      <PartnerHoldingsSection invested={invested} dense={overlay} unmasked={unmasked} />
       <MapSection title="市场放贷" dense={overlay}>
         {nbfc ? (
           <>
@@ -306,6 +496,8 @@ function DetailPanel({
         </MapSection>
       ) : null}
       <MapCountryMacroBrief code={code} dense={overlay} />
+      </>
+      )}
     </MapDetailShell>
   );
 }
@@ -322,6 +514,14 @@ export function FullMarketChoropleth({
   ecoLabel,
   mapCorner,
   regionZoomCodes = null,
+  onCountrySelect,
+  unmasked = false,
+  defaultYaw = 0,
+  investedMarker = "count",
+  tone = "default",
+  detailFill = false,
+  detailCode = null,
+  onDetailClose,
 }: {
   height?: number;
   fill?: boolean;
@@ -337,6 +537,21 @@ export function FullMarketChoropleth({
   mapCorner?: ReactNode;
   /** 大屏区域缩放：ISO2 列表；空/null 为全球 */
   regionZoomCodes?: string[] | null;
+  /** 点选有数据的国家；个人现金贷入口用来把国家带进下一步 */
+  onCountrySelect?: (code: string) => void;
+  /** 不读登录态，展业金额与机构名原样显示 */
+  unmasked?: boolean;
+  /** 太平洋居中：东南亚在左、美国在右。0 为大西洋居中 */
+  defaultYaw?: number;
+  /** 已投标记：家数圆点，或国家名 */
+  investedMarker?: "count" | "name";
+  /** chuanx 奶油 / 藏青 */
+  tone?: "default" | "chuan";
+  /** 点国家后铺满屏幕，按现金贷档案顺序展开 */
+  detailFill?: boolean;
+  /** 从标的总览跳进来时直接打开这一国的宏观页 */
+  detailCode?: string | null;
+  onDetailClose?: () => void;
 }) {
   const { theme, c } = useMapChrome();
   const { aspect, focusRightFrac, focusMapMinFrac } = useMapViewport(fill);
@@ -345,7 +560,7 @@ export function FullMarketChoropleth({
   const place: MapLegendPlacement = bottomLegend ? "bottom" : "side";
   /** 大屏嵌入：指标栏在地图上方自然排版，避免 absolute 叠层 + overflow 裁切 */
   const headerFlow = !fill && bottomLegend;
-  const { guest, maskUsd } = useGuestMask();
+  const { guest, maskUsd } = useGuestMask(unmasked);
 
   const [imfFilter, setImfFilter] = useCanvasState<string>("screenImfFilter2", "all");
   const [wbFilter, setWbFilter] = useCanvasState<string>("screenWbFilter2", "all");
@@ -353,7 +568,8 @@ export function FullMarketChoropleth({
   const mapTopPad = focus ? 12 : fill || !bottomLegend ? MAP_TOP_CHROME + 4 : 12;
   const [hover, setHover] = useState<HoverInfo | null>(null);
   /** 横向旋转角（经度，度）；拖动地图左右转动 */
-  const [yaw, setYaw] = useState(0);
+  const [yaw, setYaw] = useState(defaultYaw);
+  const chuan = tone === "chuan";
   const mapWrapRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
     pointerId: number;
@@ -370,9 +586,17 @@ export function FullMarketChoropleth({
   const regionKey = regionZoomCodes?.slice().sort().join(",") ?? "";
   useEffect(() => {
     setFocus(null);
-    setYaw(0);
+    setYaw(defaultYaw);
     setHover(null);
-  }, [regionKey]);
+  }, [regionKey, defaultYaw]);
+  useEffect(() => {
+    if (detailCode) setFocus(detailCode);
+  }, [detailCode]);
+
+  function closeDetail() {
+    setFocus(null);
+    onDetailClose?.();
+  }
 
   const lendingAll = useMemo(() => aggregateLendingUsdBn(), []);
   const lending = useMemo(() => {
@@ -590,6 +814,7 @@ export function FullMarketChoropleth({
     if (a2 && interactiveCountry(a2)) {
       setFocus(a2);
       setHover(null);
+      onCountrySelect?.(a2);
     }
   }
 
@@ -862,6 +1087,32 @@ export function FullMarketChoropleth({
           </div>
         ) : null}
 
+        {!focus && both ? (
+          <div
+            data-no-drag
+            style={{
+              position: "absolute",
+              zIndex: 6,
+              top: 10,
+              right: 10,
+              width: 220,
+              padding: "8px 10px",
+              background: chuan ? CHUAN_CREAM : c.panelBg,
+              border: `1px solid ${chuan ? CHUAN_SAND : c.panelBorder}`,
+              borderRadius: 4,
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: c.text }}>市场 × 展业</div>
+            <SteppedLegend
+              label={ecoOn ? "样本数" : "在贷余额"}
+              kind={chuan ? "chuan" : "green"}
+              compact
+              low={legendLowHigh.low}
+              high={legendLowHigh.high}
+            />
+          </div>
+        ) : null}
+
         {mapCorner && (!headerFlow || focus) ? (
           <div
             data-no-drag
@@ -892,7 +1143,7 @@ export function FullMarketChoropleth({
             }}
           >
             {bottomLegend ? null : (
-              <Button variant="secondary" size="sm" onClick={() => setFocus(null)}>
+              <Button variant="secondary" size="sm" onClick={closeDetail}>
                 返回全球
               </Button>
             )}
@@ -901,9 +1152,14 @@ export function FullMarketChoropleth({
         ) : null}
 
         <MapSvgFrame width={width} height={height} fill={fill}>
-          {outline ? <path d={outline} fill={c.ocean} /> : null}
+          {outline ? <path d={outline} fill={chuan ? CHUAN_OCEAN : c.ocean} /> : null}
           {graticulePath ? (
-            <path d={graticulePath} fill="none" stroke={c.graticule} strokeWidth={0.55} />
+            <path
+              d={graticulePath}
+              fill="none"
+              stroke={chuan ? "#23294618" : c.graticule}
+              strokeWidth={0.55}
+            />
           ) : null}
           {countries.features.map((f, i) => {
             const a2 = a2Of(f);
@@ -919,17 +1175,35 @@ export function FullMarketChoropleth({
             const showEcoMark = Boolean(marketWithEco && ecoN > 0);
             const showStroke = showInvestedMark || showEcoMark;
             const landColor = showInvestedMark
-              ? heatColorInvestedForest()
+              ? chuan
+                ? CHUAN_INK
+                : heatColorInvestedForest()
               : has
-                ? heatColorGreen(intensity(v))
-                : c.emptyLand;
+                ? chuan
+                  ? heatColorChuan(intensity(v))
+                  : heatColorGreen(intensity(v))
+                : chuan
+                  ? CHUAN_SAND
+                  : c.emptyLand;
             return (
               <path
                 key={`${f.id ?? i}`}
                 data-a2={a2 ?? undefined}
                 d={d}
                 fill={landColor}
-                stroke={showInvestedMark ? "#1e3a5f" : showEcoMark ? "#1e4a7a" : isFocus ? c.accent : c.landStroke}
+                stroke={
+                  showInvestedMark
+                    ? chuan
+                      ? CHUAN_CREAM
+                      : "#1e3a5f"
+                    : showEcoMark
+                      ? "#1e4a7a"
+                      : isFocus
+                        ? c.accent
+                        : chuan
+                          ? "#23294622"
+                          : c.landStroke
+                }
                 strokeWidth={showInvestedMark ? 1.6 : showEcoMark ? 1.35 : isFocus ? 1.35 : has ? 0.45 : 0.3}
                 opacity={dimmed ? 0.2 : 1}
                 style={{
@@ -999,39 +1273,43 @@ export function FullMarketChoropleth({
                       cx={p[0]}
                       cy={p[1]}
                       r={has ? 5 : 3}
-                      fill={heatColorInvestedForest()}
-                      stroke="#1e3a5f"
+                      fill={chuan ? CHUAN_INK : heatColorInvestedForest()}
+                      stroke={chuan ? CHUAN_CREAM : "#1e3a5f"}
                       strokeWidth={1.5}
                     />
                   </g>
                 );
               })()
             : null}
-          {/* 展业数字徽章 / 机构叠层数字（展业层永不被 IMF/世行筛掉） */}
-          {(investedOn ? investedBadges : ecoBadges).map((b) => (
-            <g key={`badge-${b.a2}`} data-a2={b.a2} data-invested-badge={b.a2} style={{ cursor: "pointer" }}>
-              <circle
-                cx={b.x}
-                cy={b.y}
-                r={marketWithEco ? 11 : 9}
-                fill="#1e4a7a"
-                stroke="#fff"
-                strokeWidth={1.4}
-              />
-              <text
-                x={b.x}
-                y={b.y + 3.8}
-                textAnchor="middle"
-                fill="#fff"
-                fontSize={marketWithEco && b.n >= 10 ? 9 : 10}
-                fontWeight={700}
-                fontFamily="system-ui, sans-serif"
-                style={{ pointerEvents: "none" }}
-              >
-                {b.n}
-              </text>
-            </g>
-          ))}
+          {/* 展业标记：国家名或家数；机构叠层仍用数字 */}
+          {(investedOn ? investedBadges : ecoBadges).map((b) =>
+            investedOn && investedMarker === "name" ? (
+              <InvestedNameMark key={`badge-${b.a2}`} a2={b.a2} x={b.x} y={b.y} />
+            ) : (
+              <g key={`badge-${b.a2}`} data-a2={b.a2} data-invested-badge={b.a2} style={{ cursor: "pointer" }}>
+                <circle
+                  cx={b.x}
+                  cy={b.y}
+                  r={marketWithEco ? 11 : 9}
+                  fill="#1e4a7a"
+                  stroke="#fff"
+                  strokeWidth={1.4}
+                />
+                <text
+                  x={b.x}
+                  y={b.y + 3.8}
+                  textAnchor="middle"
+                  fill="#fff"
+                  fontSize={marketWithEco && b.n >= 10 ? 9 : 10}
+                  fontWeight={700}
+                  fontFamily="system-ui, sans-serif"
+                  style={{ pointerEvents: "none" }}
+                >
+                  {b.n}
+                </text>
+              </g>
+            ),
+          )}
           {outline ? <path d={outline} fill="none" stroke={c.outline} strokeWidth={1} /> : null}
         </MapSvgFrame>
 
@@ -1042,10 +1320,14 @@ export function FullMarketChoropleth({
             accent="added"
           >
             <div style={{ fontWeight: 600 }}>{hover.name}</div>
+            {roundedMacroScore(hover.a2) == null ? null : (
+              <div style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                {roundedMacroScore(hover.a2)}
+              </div>
+            )}
             {hover.usdBn > 0 ? (
               <div style={{ color: c.textSecondary }}>
-                在贷余额（全市场）≈ USD{" "}
-                {hover.usdBn >= 10 ? hover.usdBn.toFixed(1) : hover.usdBn.toFixed(2)} bn
+                在贷余额（全市场）≈ {formatUsdZh(hover.usdBn * 1e9)}
               </div>
             ) : null}
             {hover.nbfcCount ? (
@@ -1079,13 +1361,21 @@ export function FullMarketChoropleth({
         ) : null}
 
         {focus && bottomLegend ? (
-          <DetailPanel code={focus} onClose={() => setFocus(null)} overlay />
+          <DetailPanel
+            code={focus}
+            onClose={closeDetail}
+            overlay
+            unmasked={unmasked}
+            fillScreen={detailFill}
+          />
         ) : null}
       </div>
 
-      {focus && !bottomLegend ? <DetailPanel code={focus} onClose={() => setFocus(null)} /> : null}
+      {focus && !bottomLegend ? (
+        <DetailPanel code={focus} onClose={closeDetail} unmasked={unmasked} fillScreen={detailFill} />
+      ) : null}
 
-      {!focus ? (
+      {!focus && !both ? (
         <MapSideLegend
           title={
             fill
@@ -1105,7 +1395,7 @@ export function FullMarketChoropleth({
         >
           <SteppedLegend
             label={ecoOn ? "样本数" : "在贷余额"}
-            kind="green"
+            kind={chuan ? "chuan" : "green"}
             compact={bottomLegend}
             low={legendLowHigh.low}
             high={legendLowHigh.high}

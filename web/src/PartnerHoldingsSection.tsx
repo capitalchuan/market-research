@@ -16,22 +16,27 @@ export function PartnerHoldingsSection({
   dense = false,
   showEmpty = false,
   title,
+  unmasked = false,
+  large = false,
 }: {
   invested: InvestedCountry | undefined;
   dense?: boolean;
   /** 无持仓时是否仍渲染空态 */
   showEmpty?: boolean;
   title?: string;
+  /** 独立入口不读登录态，机构名与金额原样显示 */
+  unmasked?: boolean;
+  large?: boolean;
 }) {
   const { c } = useMapChrome();
   const [session] = useCanvasState("authSession1", "");
-  const guest = !canViewPartnerDetail(session);
+  const guest = unmasked ? false : !canViewPartnerDetail(session);
   const sectionTitle = title ?? (guest ? "合作机构" : "已投生产商");
 
   if (!invested) {
     if (!showEmpty) return null;
     return (
-      <MapSection title={sectionTitle} dense={dense}>
+      <MapSection title={sectionTitle} dense={dense} large={large}>
         <MapMuted>该国暂无合作机构记录</MapMuted>
       </MapSection>
     );
@@ -41,34 +46,35 @@ export function PartnerHoldingsSection({
     background: c.fillSoft,
     borderRadius: 6,
     border: `1px solid ${c.panelBorder}`,
-    padding: "8px 10px",
-    fontSize: 12,
+    padding: large ? "16px 18px" : "8px 10px",
+    fontSize: large ? 17 : 12,
   };
 
   return (
-    <MapSection title={sectionTitle} dense={dense}>
+    <MapSection title={sectionTitle} dense={dense} large={large}>
       {guest ? (
         <MapMuted>访客仅可见展业覆盖；机构名与持仓已脱敏（{SENSITIVE_MASK}）</MapMuted>
       ) : null}
-      <MapKV k="基金投资合计" v={guest ? SENSITIVE_MASK : formatUsdCompact(invested.investment_usd)} dense={dense} />
+      <MapKV k="基金投资合计" v={guest ? SENSITIVE_MASK : formatUsdCompact(invested.investment_usd)} dense={dense} large={large} />
       <MapKV
         k="热力在贷合计"
         v={guest ? SENSITIVE_MASK : formatUsdCompact(invested.outstanding_usd_for_heat)}
         dense={dense}
+        large={large}
       />
-      <MapKV k="平台数" v={String(invested.producers.length)} dense={dense} />
+      <MapKV k="平台数" v={String(invested.producers.length)} dense={dense} large={large} />
       {!guest ? (
       <div style={{ marginTop: dense ? 8 : 10, display: "flex", flexDirection: "column", gap: dense ? 8 : 10 }}>
         {invested.producers.map((p, i) => (
           <div key={p.id} style={cardStyle}>
-            <div style={{ fontWeight: 600, color: c.accent, marginBottom: 4 }}>
+            <div style={{ fontWeight: 600, color: c.accent, marginBottom: 4, fontSize: large ? 20 : undefined }}>
               {partnerPublicName(guest, p.name, i)}
             </div>
             <div style={{ color: c.textTertiary, marginBottom: 6 }}>{p.product_type}</div>
-            <MapKV k="基金投资" v={formatUsdCompact(p.investment_usd)} />
-            <MapKV k="在贷余额" v={p.outstanding_display} />
-            <MapKV k="服务客户数" v={p.customers_display} />
-            {p.ranking_note ? <MapKV k="排名/定位" v={p.ranking_note} /> : null}
+            <MapKV k="基金投资" v={formatUsdCompact(p.investment_usd)} large={large} />
+            <MapKV k="在贷余额" v={p.outstanding_display} large={large} />
+            <MapKV k="服务客户数" v={p.customers_display} large={large} />
+            {p.ranking_note ? <MapKV k="排名/定位" v={p.ranking_note} large={large} /> : null}
           </div>
         ))}
       </div>
@@ -113,9 +119,9 @@ export function PartnerHoldingsBrief({
   );
 }
 
-export function useGuestMask() {
+export function useGuestMask(unmasked = false) {
   const [session] = useCanvasState("authSession1", "");
-  const guest = !canViewPartnerDetail(session);
+  const guest = unmasked ? false : !canViewPartnerDetail(session);
   return {
     guest,
     mask: (v: string) => maskIfGuest(guest, v),

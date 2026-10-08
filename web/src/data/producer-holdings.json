@@ -1,7 +1,7 @@
 {
   "as_of": "2026-08-06",
   "note": "已投生产商（含Surfin USD2M暂记）；热力按各国已投生产商在贷余额（缺省用基金投资额近似）绿色着色",
-  "total_investment_usd": 23250000,
+  "total_investment_usd": 21250000,
   "facilities": [
     {
       "code": "KNZN-CL-MXN-002",
@@ -28,19 +28,6 @@
       "current_coverage": 0.97,
       "start_date": "2026-02-12",
       "weight": 0.17204301075268819
-    },
-    {
-      "code": "CCUP-ML-HKD-001",
-      "producer_short": "CU电商金融",
-      "entity": "亚太电商金融科技平台（香港商户/营收共享融资）",
-      "product_type": "商户贷款-中小微",
-      "country_zh": "中国香港",
-      "investment_usd": 2000000,
-      "priority_yield": 0.14,
-      "benchmark_coverage": 1.25,
-      "current_coverage": 1.54,
-      "start_date": "2026-03-23",
-      "weight": 0.08602150537634409
     },
     {
       "code": "JYJK-CL-IDR-002",
@@ -164,33 +151,6 @@
       "sources": "Potential Investment List.xlsx；monthly_summary*.xlsm；持仓截图",
       "completeness": "中低",
       "remarks": "SharePoint投委会全文待补；PH设施映射按代码CUBX推断"
-    },
-    {
-      "id": "CCUP",
-      "name": "CU 电商金融",
-      "entity": "亚太电商金融科技平台（投资案例未披露法定全称）",
-      "countries": [
-        "HK"
-      ],
-      "countries_zh": "香港（兼新加坡/澳洲场景）",
-      "product_type": "商户贷款-中小微 / 营收共享融资",
-      "facility_count": 1,
-      "investment_usd": 2000000.0,
-      "portfolio_weight": 0.08602150537634409,
-      "ranking_note": "亚太区电商融资平台（定性描述，无量化排名）",
-      "outstanding_usd": null,
-      "outstanding_note": "缺口：未找到平台整体在贷余额公开/IC摘录",
-      "customers": 1000,
-      "customers_note": "已帮助超过1,000家中小企业（投资案例PPT；累计服务商家数，非C端客户）",
-      "cumulative_disbursement_note": null,
-      "monthly_disbursement_note": null,
-      "yield_note": "持仓14%；案例称资产净收益约20%–30%",
-      "benchmark_coverage_note": "1.25x",
-      "facility_limit_usd": null,
-      "license_note": "服务主力新加坡、香港及澳洲",
-      "sources": "投资案例 - KN and CU.pptx；持仓截图",
-      "completeness": "低",
-      "remarks": "法定主体名、在贷余额、投委会原件待SharePoint补齐"
     },
     {
       "id": "JYJK",
@@ -416,33 +376,6 @@
           "cumulative_disbursement_note": "FY2025放款约USD159.4M；FY2024约USD142M",
           "license_note": "SEC NBFI Lending+Financing；CA No.1830；OILP Active；借款人Streetcorner Ecommerce Limited(HK)",
           "heat_value_usd": 44880000
-        }
-      ]
-    },
-    {
-      "country_code": "HK",
-      "country_zh": "中国香港",
-      "investment_usd": 2000000,
-      "outstanding_usd_for_heat": 2000000,
-      "outstanding_known": false,
-      "producers": [
-        {
-          "id": "CCUP",
-          "name": "CU 电商金融",
-          "product_type": "商户贷款-中小微 / 营收共享融资",
-          "investment_usd": 2000000,
-          "outstanding_usd": null,
-          "outstanding_display": "—",
-          "outstanding_note": "该国分项在贷待补；地图热力暂用本基金投资额近似",
-          "customers": 1000,
-          "customers_display": "1,000",
-          "customers_note": "已帮助超过1,000家中小企业（投资案例PPT；累计服务商家数，非C端客户）",
-          "ranking_note": "亚太区电商融资平台（定性描述，无量化排名）",
-          "yield_note": "持仓14%；案例称资产净收益约20%–30%",
-          "monthly_disbursement_note": null,
-          "cumulative_disbursement_note": null,
-          "license_note": "服务主力新加坡、香港及澳洲",
-          "heat_value_usd": 2000000
         }
       ]
     },
