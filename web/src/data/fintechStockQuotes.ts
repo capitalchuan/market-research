@@ -27,6 +27,10 @@ export type FintechStockQuote = FintechStockWatchItem & {
   marketCapLabel?: string | null;
   /** 市盈率（TTM trailing P/E；亏损/无数据为 null） */
   peRatio?: number | null;
+  /** 这一条自己的行情日；缺省用文件 asOf */
+  asOf?: string;
+  /** 覆盖卡片上的行情来源说明 */
+  quoteNote?: string;
   currency?: string;
   marketState?: string;
   exchangeName?: string;

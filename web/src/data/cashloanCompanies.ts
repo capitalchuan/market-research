@@ -58,6 +58,9 @@ const ALIAS_GROUPS = [
 const GENERIC = new Set([
   "dana", "pinjam", "pinjaman", "uang", "paylater", "loans", "loan", "online", "kredit",
   "rupiah", "cepat", "daring", "commerce", "credit", "cash", "money", "modal",
+  "instant", "personal", "upi", "payments", "payment", "insurance", "secure", "mutual",
+  "daily", "shop", "score", "balance", "true", "banking", "stocks", "fund", "funds",
+  "card", "cards", "bills", "save", "manage", "lifestyle", "fd",
 ]);
 
 const STOP = new Set([
@@ -68,6 +71,7 @@ const STOP = new Set([
   "investments", "limited", "company", "international", "global", "online", "mobile", "tech",
   "lending", "corp", "holdco", "cayman", "meta", "technology", "street", "corner",
   "singapore", "india", "indonesia", "philippines", "mexico", "thailand",
+  "bsp数字银行", "pdic投保", "wallet", "savings",
 ]);
 
 const QUOTE_ORIGINS = new Set(["credit-native", "bnpl", "digibank"]);
@@ -97,7 +101,7 @@ function norm(s: string): string {
 }
 
 function usableAlias(raw: string, fromName: boolean): string | null {
-  const t = norm(raw).replace(/^[（(]+|[）)]+$/g, "");
+  const t = norm(raw).replace(/^[（(]+|[）)]+$/g, "").replace(/[:：,，.&]+$/g, "");
   if (!t || STOP.has(t) || /^\d+$/.test(t)) return null;
   if (/^[\u4e00-\u9fff]{2,12}$/.test(t)) return t;
   if (fromName && /^[a-z0-9]{2,3}$/.test(t)) return t;
@@ -125,7 +129,8 @@ function tokensOf(raw: string, fromName: boolean): string[] {
   }
   for (const part of parts) {
     if (parts.length > 1 && GENERIC.has(norm(part))) continue;
-    const alias = usableAlias(part, fromName);
+    // 两三个字母只在整段名字就是它时才算别名（KN）。拆出来的 by、UPI、FD 会把榜上邻居并成一家。
+    const alias = usableAlias(part, fromName && parts.length === 1);
     if (alias) out.push(alias);
   }
   return expandGroups(out);
@@ -166,7 +171,7 @@ function listingFact(it: FintechStockQuote): CompanyFact {
   const pe = it.peRatio != null ? ` · 市盈率 ${it.peRatio.toFixed(1)}` : "";
   return {
     text: `${it.symbol}${it.exchange ? ` · ${it.exchange}` : ""} · ${px}${cap}${pe}`,
-    source: `行情 ${FINTECH_STOCK_QUOTES.asOf}`,
+    source: it.quoteNote ?? `行情 ${it.asOf || FINTECH_STOCK_QUOTES.asOf}`,
   };
 }
 
@@ -271,7 +276,7 @@ function storeSeeds(code: string): { seeds: Seed[]; rest: { aliases: string[]; r
   const rest: { aliases: string[]; rank: IosStoreRank }[] = [];
   for (const app of STORE_RANK_FINANCE.entries) {
     if (app.country !== code || app.store !== "ios" || app.rank > 20) continue;
-    const aliases = [...tokensOf(app.appName, true), ...(app.aliases ?? []).flatMap((a) => tokensOf(a, true))];
+    const aliases = storeNameAliases(app);
     const rank = iosRank(app);
     if (app.lendingLikely) {
       const seed = blankSeed(app.appName, 1, aliases);
@@ -284,6 +289,15 @@ function storeSeeds(code: string): { seeds: Seed[]; rest: { aliases: string[]; r
     }
   }
   return { seeds, rest };
+}
+
+/** 商店榜只认短名。副标题里的 UPI、Instant、Personal 是榜上用词，不是公司别名。 */
+function storeNameAliases(app: StoreRankEntry): string[] {
+  const short =
+    (app.aliases ?? []).find((name) => name !== app.appName && !/[:：|,，]/.test(name)) ??
+    app.appName.split(/[:：|]/)[0]?.trim() ??
+    app.appName;
+  return tokensOf(short, true);
 }
 
 function iosRank(app: StoreRankEntry): IosStoreRank {
@@ -443,7 +457,7 @@ function toCard(seed: Seed, country: string): CompanyCard {
   for (const fact of filings.filing) pushFact(seed.filing, fact);
   const display = norm(seed.name);
   const aka = [...new Set(seed.aliases.filter((a) => {
-    if (display.includes(a)) return false;
+    if (display.includes(a) || GENERIC.has(a) || STOP.has(a)) return false;
     if (/^[\u4e00-\u9fff]{2,4}$/.test(a)) return true;
     if (!/^[a-z][a-z0-9]{4,16}$/.test(a)) return false;
     return !seed.aliases.some((other) => other !== a && other.length >= 4 && a.includes(other));
