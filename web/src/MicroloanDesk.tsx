@@ -5,6 +5,8 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ClaimLoginHost, InvestedGate, LoginButton, useCanViewInvested } from "./ClaimLogin";
 import { readCountryCodeFromHash, writeCountryHash } from "./countryPage";
+import { countryLabel, translate, useLocale, type Lang } from "./locale";
+import { en } from "./enSurface";
 import { COMPANY_CHANNEL_LABEL, COMPANY_TAG_ORDER, companiesIn, type CompanyCard, type CompanyFact } from "./data/cashloanCompanies";
 import { INST_ECO_BUCKETS, instEcoForCountry, type InstEcoItem } from "./data/cashloanInstEco";
 import { scoreCashloanMacro } from "./data/cashloanMacroScore";
@@ -17,7 +19,6 @@ import { FINTECH_STOCK_QUOTES } from "./data/fintechStockQuotes";
 import { COUNTRY_LABEL_ZH, NBFC_STATS } from "./data/nbfcCountryStats";
 import {
   formatUsdCompact,
-  formatUsdZh,
   INVESTED_BY_CODE,
   PRODUCER_HOLDINGS,
   type HoldingFacility,
@@ -42,8 +43,8 @@ type CountryRow = {
   investedCount: number;
 };
 
-function countryName(code: string): string {
-  return COUNTRY_LABEL_ZH[code] ?? code;
+function countryName(code: string, lang: Lang): string {
+  return countryLabel(code, lang);
 }
 
 function norm(s: string): string {
@@ -105,6 +106,7 @@ export function MicroloanDesk() {
 
 function MicroloanDeskBody() {
   const theme = useHostTheme();
+  const { lang, setLang, t } = useLocale();
   const canSeeInvested = useCanViewInvested();
   const [, setSession] = useCanvasState("authSession1", "");
   const [, setEmail] = useCanvasState("claimEmail1", "");
@@ -129,9 +131,14 @@ function MicroloanDeskBody() {
 
   useEffect(() => {
     writeCountryHash(macroCode);
-    const name = macroCode ? COUNTRY_LABEL_ZH[macroCode] : "";
-    document.title = name ? `${name} · 消费信贷` : "消费信贷";
   }, [macroCode]);
+
+  useEffect(() => {
+    const name = macroCode ? countryLabel(macroCode, lang) : "";
+    const brand = translate(lang, "消费信贷");
+    document.title = name ? `${name} · ${brand}` : brand;
+    document.querySelector('meta[name="description"]')?.setAttribute("content", brand);
+  }, [macroCode, lang]);
 
   const loan = useMemo(() => loanBookByCode(), []);
   const storeByCountry = useMemo(() => {
@@ -159,7 +166,7 @@ function MicroloanDeskBody() {
       const roster = rosterIn(code).length;
       list.push({
         code,
-        name: countryName(code),
+        name: countryName(code, lang),
         loanBn: loan[code] ?? 0,
         score,
         candidateCount: roster + stocks + apps,
@@ -174,10 +181,10 @@ function MicroloanDeskBody() {
       const as = a.score ?? -1;
       const bs = b.score ?? -1;
       if (bs !== as) return bs - as;
-      return a.name.localeCompare(b.name, "zh");
+      return a.name.localeCompare(b.name, lang === "en" ? "en" : "zh");
     });
     return list;
-  }, [loan, storeByCountry, canSeeInvested]);
+  }, [loan, storeByCountry, canSeeInvested, lang]);
 
   const noUsd = rows.filter((r) => r.loanBn <= 0);
   const selected = rows.find((r) => r.code === country) ?? null;
@@ -203,18 +210,22 @@ function MicroloanDeskBody() {
   return (
     <Stack gap={14}>
       <Row gap={12} align="center" wrap>
-        <span className="cashloan-title">消费信贷</span>
+        <span className="cashloan-title">{t("消费信贷")}</span>
         <ScreenSegTrack>
-          <ScreenSegChip label="国家总览" active={step === "size"} onClick={() => setStep("size")} />
+          <ScreenSegChip label={t("国家总览")} active={step === "size"} onClick={() => setStep("size")} />
           <ScreenSegChip
-            label="标的总览"
+            label={t("标的总览")}
             active={step === "screen"}
             onClick={() => {
               setStep("screen");
               if (!country && rows[0]) setCountry(rows[0].code);
             }}
           />
-          <ScreenSegChip label="已投平台" active={step === "book"} onClick={() => setStep("book")} />
+          <ScreenSegChip label={t("已投平台")} active={step === "book"} onClick={() => setStep("book")} />
+        </ScreenSegTrack>
+        <ScreenSegTrack>
+          <ScreenSegChip label="中文" active={lang === "zh"} onClick={() => setLang("zh")} />
+          <ScreenSegChip label="EN" active={lang === "en"} onClick={() => setLang("en")} />
         </ScreenSegTrack>
         {canSeeInvested ? (
           <Button
@@ -225,7 +236,7 @@ function MicroloanDeskBody() {
               setEmail("");
             }}
           >
-            退出
+            {t("退出")}
           </Button>
         ) : (
           <LoginButton />
@@ -240,11 +251,11 @@ function MicroloanDeskBody() {
               setMacroCode(null);
             }}
           >
-            清除国家 · {countryName(country)}
+            {t("清除国家")} · {countryName(country, lang)}
           </Button>
         ) : (
           <Text size="small" tone="tertiary">
-            全球 · 未选国家
+            {t("全球 · 未选国家")}
           </Text>
         )}
       </Row>
@@ -309,24 +320,27 @@ function SizeStep({
   onIdentify: (code: string) => void;
 }) {
   const theme = useHostTheme();
+  const { lang, t } = useLocale();
   const summary = selected ? summarizeNbfcForCountry(selected.code) : null;
   return (
     <Stack gap={10}>
       {selected ? (
         <Row gap={8} align="center" wrap>
           <Text weight="semibold">
-            {selected.name} · {selected.loanBn > 0 ? formatUsdZh(selected.loanBn * 1e9) : "无美元在贷"}
+            {selected.name} · {selected.loanBn > 0 ? formatUsdCompact(selected.loanBn * 1e9) : t("无美元在贷")}
           </Text>
           <Button size="sm" variant="primary" onClick={() => onIdentify(selected.code)}>
-            拿这国去识别
+            {t("拿这国去识别")}
           </Button>
         </Row>
       ) : null}
       {summary && summary.rows.length > 1 ? (
         <Text size="small" tone="tertiary">
-          {summary.rows
-            .map((r) => `${r.category} ${r.loan_book_usd || "在贷未入美元"}`)
-            .join(" · ")}
+          {en(
+            summary.rows
+              .map((r) => `${r.category} ${r.loan_book_usd || (lang === "en" ? "book not in USD" : "在贷未入美元")}`)
+              .join(" · "),
+          )}
         </Text>
       ) : null}
       <div style={{ width: "100%", overflow: "hidden" }}>
@@ -347,7 +361,7 @@ function SizeStep({
       </div>
       {noUsd.length ? (
         <div style={{ fontSize: 12, color: theme.text.tertiary, lineHeight: 1.6 }}>
-          有名录、无美元在贷 {noUsd.length} 国：
+          {lang === "en" ? `Listed, no USD book: ${noUsd.length}` : `有名录、无美元在贷 ${noUsd.length} 国：`}
           {noUsd.map((r) => (
             <button
               key={r.code}
@@ -383,7 +397,7 @@ function CompanyFactLines({ label, facts }: { label: string; facts: CompanyFact[
         <span key={`${label}-${index}`}>
           {index ? " · " : null}
           <FigureText text={fact.text} />
-          <span style={{ color: theme.text.tertiary }}>（{fact.source}）</span>
+          <span style={{ color: theme.text.tertiary }}> {en(`（${fact.source}）`)}</span>
         </span>
       ))}
     </div>
@@ -409,6 +423,7 @@ function CompanyCardView({
   onMonitor: (producerId: string) => void;
 }) {
   const theme = useHostTheme();
+  const { t } = useLocale();
   const canSeeInvested = useCanViewInvested();
   const invested = canSeeInvested && card.investedId
     ? PRODUCER_HOLDINGS.producers.find((p) => p.id === card.investedId)
@@ -422,7 +437,7 @@ function CompanyCardView({
   return (
     <div style={{ padding: "4px 0 16px" }}>
       <Row gap={8} align="center" wrap>
-        <Text weight="semibold">{card.name}</Text>
+        <Text weight="semibold">{en(card.name)}</Text>
         {tags.map((ch) => (
           <span
             key={ch}
@@ -436,13 +451,13 @@ function CompanyCardView({
               whiteSpace: "nowrap",
             }}
           >
-            {COMPANY_CHANNEL_LABEL[ch]}
+            {t(COMPANY_CHANNEL_LABEL[ch])}
           </span>
         ))}
         {holdingHidden ? <LoginButton /> : null}
         {invested ? (
           <Button size="sm" variant="primary" onClick={() => onMonitor(invested.id)}>
-            {`去监控 · ${invested.name}`}
+            {`${t("去监控")} · ${invested.name}`}
           </Button>
         ) : null}
       </Row>
@@ -452,18 +467,18 @@ function CompanyCardView({
         </div>
       ) : null}
       <CompanyFactLines
-        label="iOS商店排名"
+        label={t("iOS商店排名")}
         facts={card.iosRanks.map((rank) => ({
           text: `#${rank.rank} ${rank.appName} · ${rank.asOf}`,
           source: rank.source,
         }))}
       />
-      <CompanyFactLines label="牌照" facts={license} />
-      <CompanyFactLines label="规模" facts={scale} />
-      <CompanyFactLines label="质量" facts={quality} />
-      <CompanyFactLines label="财报" facts={card.filing} />
-      {card.listing ? <CompanyFactLines label="上市" facts={[card.listing]} /> : null}
-      <CompanyFactLines label="关系" facts={book} />
+      <CompanyFactLines label={t("牌照")} facts={license} />
+      <CompanyFactLines label={t("规模")} facts={scale} />
+      <CompanyFactLines label={t("质量")} facts={quality} />
+      <CompanyFactLines label={t("财报")} facts={card.filing} />
+      {card.listing ? <CompanyFactLines label={t("上市")} facts={[card.listing]} /> : null}
+      <CompanyFactLines label={t("关系")} facts={book} />
     </div>
   );
 }
@@ -484,12 +499,17 @@ function ScreenStep({
   panel: CSSProperties;
 }) {
   const theme = useHostTheme();
+  const { t } = useLocale();
   const [query, setQuery] = useState("");
   const [pane, setPane] = useState<"target" | "eco">("target");
   const [ecoBucket, setEcoBucket] = useState<(typeof INST_ECO_BUCKETS)[number]["id"]>("compliance");
   const q = query.trim().toLowerCase();
   const visible = q
-    ? rows.filter((r) => r.name.toLowerCase().includes(q) || r.code.toLowerCase().includes(q))
+    ? rows.filter((r) => {
+        const zh = (COUNTRY_LABEL_ZH[r.code] ?? "").toLowerCase();
+        const en = countryLabel(r.code, "en").toLowerCase();
+        return zh.includes(q) || en.includes(q) || r.code.toLowerCase().includes(q);
+      })
     : rows;
   const canSeeInvested = useCanViewInvested();
   const companies = selected
@@ -526,8 +546,8 @@ function ScreenStep({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="搜索国家"
-              aria-label="搜索国家"
+              placeholder={t("搜索国家")}
+              aria-label={t("搜索国家")}
               style={{
                 width: "100%",
                 boxSizing: "border-box",
@@ -542,7 +562,7 @@ function ScreenStep({
             />
           </div>
           {visible.length ? null : (
-            <div style={{ padding: "10px 12px", fontSize: 13, color: theme.text.tertiary }}>无匹配国家</div>
+            <div style={{ padding: "10px 12px", fontSize: 13, color: theme.text.tertiary }}>{t("无匹配国家")}</div>
           )}
           {visible.map((r) => {
             const on = r.code === selected?.code;
@@ -581,25 +601,25 @@ function ScreenStep({
             <>
               <Row gap={10} align="center" wrap>
                 <Text weight="semibold">
-                  {selected.name} · 国家综合打分 {selected.score == null ? "—" : Math.round(selected.score)}
+                  {selected.name} · {t("国家综合打分")} {selected.score == null ? "—" : Math.round(selected.score)}
                 </Text>
                 <Button size="sm" variant="primary" onClick={() => onOpenMacro(selected.code)}>
-                  国家宏观
+                  {t("国家宏观")}
                 </Button>
                 <Text size="small" tone="tertiary">
-                  公司 {companies.length}
-                  {canSeeInvested ? ` · 已投 ${selected.investedCount}` : ""}
+                  {t("公司")} {companies.length}
+                  {canSeeInvested ? ` · ${t("已投")} ${selected.investedCount}` : ""}
                 </Text>
               </Row>
               <ScreenSegTrack>
-                <ScreenSegChip label="标的" active={pane === "target"} onClick={() => setPane("target")} />
-                <ScreenSegChip label="生态" active={pane === "eco"} onClick={() => setPane("eco")} />
+                <ScreenSegChip label={t("标的")} active={pane === "target"} onClick={() => setPane("target")} />
+                <ScreenSegChip label={t("生态")} active={pane === "eco"} onClick={() => setPane("eco")} />
               </ScreenSegTrack>
               {pane === "target" ? (
                 <Stack gap={8}>
                   {androidMissing ? (
                     <Text size="small" tone="tertiary">
-                      Android 商店排名本地未收录，下面只列 iOS Finance 免费榜。
+                      {t("Android 商店排名本地未收录，下面只列 iOS Finance 免费榜。")}
                     </Text>
                   ) : null}
                   {companies.length ? (
@@ -609,7 +629,7 @@ function ScreenStep({
                       ))}
                     </Stack>
                   ) : (
-                    <Text size="small" tone="tertiary">这一国没有对上的公司。</Text>
+                    <Text size="small" tone="tertiary">{t("这一国没有对上的公司。")}</Text>
                   )}
                 </Stack>
               ) : (
@@ -618,7 +638,7 @@ function ScreenStep({
                     {INST_ECO_BUCKETS.map((bucket) => (
                       <ScreenSegChip
                         key={bucket.id}
-                        label={bucket.label}
+                        label={t(bucket.label)}
                         active={ecoBucket === bucket.id}
                         onClick={() => setEcoBucket(bucket.id)}
                       />
@@ -648,6 +668,7 @@ function EcoBuckets({
   onMonitor: (producerId: string) => void;
 }) {
   const bucket = INST_ECO_BUCKETS.find((b) => b.id === bucketId) ?? INST_ECO_BUCKETS[0];
+  const { lang, t } = useLocale();
   const items = instEcoForCountry(code)[bucket.id];
   const byType = new Map<string, InstEcoItem[]>();
   for (const item of items) {
@@ -661,7 +682,7 @@ function EcoBuckets({
       {bucket.types.filter((type) => byType.has(type)).map((type) => (
         <Stack key={type} gap={6}>
           <Text size="small" tone="secondary">
-            {type}
+            {t(type)}
           </Text>
           {byType.get(type)!.map((item) => {
             const hit = matchesInvested(code, item.name);
@@ -672,7 +693,7 @@ function EcoBuckets({
                   {hit ? (
                     <InvestedGate>
                       <Button size="sm" variant="primary" onClick={() => onMonitor(hit.id)}>
-                        {`去监控 · ${hit.name}`}
+                        {`${t("去监控")} · ${hit.name}`}
                       </Button>
                     </InvestedGate>
                   ) : null}
@@ -689,7 +710,8 @@ function EcoBuckets({
       ))}
       {missing.length ? (
         <Text size="small" tone="tertiary">
-          {missing.join("、")}未收录
+          {missing.map((type) => t(type)).join(lang === "en" ? ", " : "、")}
+          {lang === "en" ? " not on file" : "未收录"}
         </Text>
       ) : null}
     </Stack>
@@ -710,6 +732,7 @@ function BookStep({
   panel: CSSProperties;
 }) {
   const theme = useHostTheme();
+  const { lang, t } = useLocale();
   const visible = country
     ? PRODUCER_HOLDINGS.facilities.filter((f) => facilityInCountry(f, country))
     : PRODUCER_HOLDINGS.facilities;
@@ -722,15 +745,24 @@ function BookStep({
   return (
     <Stack gap={10}>
       <Text size="small" tone="secondary">
-        已投合计 {formatUsdCompact(PRODUCER_HOLDINGS.total_investment_usd)} ·{" "}
-        {PRODUCER_HOLDINGS.countries.length} 国 · {PRODUCER_HOLDINGS.producers.length} 家生产商 · 时点{" "}
-        {PRODUCER_HOLDINGS.as_of}
-        {country ? ` · 已按 ${countryName(country)} 过滤` : " · 全组合"}
+        {lang === "en" ? (
+          <>
+            Invested {formatUsdCompact(PRODUCER_HOLDINGS.total_investment_usd)} · {PRODUCER_HOLDINGS.countries.length}{" "}
+            countries · {PRODUCER_HOLDINGS.producers.length} platforms · as of {PRODUCER_HOLDINGS.as_of}
+            {country ? ` · filtered to ${countryName(country, lang)}` : " · full book"}
+          </>
+        ) : (
+          <>
+            已投合计 {formatUsdCompact(PRODUCER_HOLDINGS.total_investment_usd)} · {PRODUCER_HOLDINGS.countries.length} 国 ·{" "}
+            {PRODUCER_HOLDINGS.producers.length} 家生产商 · 时点 {PRODUCER_HOLDINGS.as_of}
+            {country ? ` · 已按 ${countryName(country, lang)} 过滤` : " · 全组合"}
+          </>
+        )}
       </Text>
       {producer ? (
         <Row gap={8} align="center" wrap>
           <Button size="sm" variant="ghost" onClick={onClearProducer}>
-            清除生产商
+            {t("清除生产商")}
           </Button>
         </Row>
       ) : null}
@@ -750,7 +782,7 @@ function BookStep({
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {h}
+                  {t(h)}
                 </th>
               ))}
             </tr>
@@ -766,7 +798,7 @@ function BookStep({
                   style={{ cursor: "pointer", background: on ? theme.fill.tertiary : "transparent" }}
                 >
                   <td style={td(theme)}>{prod?.name ?? f.producer_short}</td>
-                  <td style={td(theme)}>{f.country_zh}</td>
+                  <td style={td(theme)}>{countryNameFromZh(f.country_zh, lang)}</td>
                   <td style={td(theme)}>{f.product_type}</td>
                   <td style={td(theme)}>{money(f.investment_usd)}</td>
                   <td style={td(theme)}>{fmtPct(f.priority_yield)}</td>
@@ -785,23 +817,33 @@ function BookStep({
           <Text size="small" tone="secondary">
             {producer.countries_zh} · {producer.product_type}
           </Text>
-          <Text size="small">在贷 {money(producer.outstanding_usd)} · {producer.outstanding_note ?? ""}</Text>
-          <Text size="small">客户 {producer.customers_note ?? producer.customers ?? "—"}</Text>
-          {producer.yield_note ? <Text size="small">收益 {producer.yield_note}</Text> : null}
+          <Text size="small">
+            {t("在贷")} {money(producer.outstanding_usd)} · {producer.outstanding_note ?? ""}
+          </Text>
+          <Text size="small">{t("客户")} {producer.customers_note ?? producer.customers ?? "—"}</Text>
+          {producer.yield_note ? <Text size="small">{t("收益")} {producer.yield_note}</Text> : null}
           {producer.benchmark_coverage_note ? (
-            <Text size="small">覆盖 {producer.benchmark_coverage_note}</Text>
+            <Text size="small">{t("覆盖")} {producer.benchmark_coverage_note}</Text>
           ) : null}
-          {producer.license_note ? <Text size="small">牌照 {producer.license_note}</Text> : null}
-          {producer.ranking_note ? <Text size="small">定位 {producer.ranking_note}</Text> : null}
+          {producer.license_note ? <Text size="small">{t("牌照")} {producer.license_note}</Text> : null}
+          {producer.ranking_note ? <Text size="small">{t("定位")} {producer.ranking_note}</Text> : null}
         </div>
       ) : null}
       {focus.length === 0 && country ? (
         <Text size="small" tone="tertiary">
-          {countryName(country)} 没有已投设施。
+          {lang === "en"
+            ? `${countryName(country, lang)} has no invested facility.`
+            : `${countryName(country, lang)} 没有已投设施。`}
         </Text>
       ) : null}
     </Stack>
   );
+}
+
+function countryNameFromZh(zh: string, lang: Lang): string {
+  if (lang !== "en") return zh;
+  const code = Object.entries(COUNTRY_LABEL_ZH).find(([, name]) => name === zh)?.[0];
+  return code ? countryLabel(code, "en") : zh;
 }
 
 function facilityProducer(f: HoldingFacility): HoldingProducer | undefined {

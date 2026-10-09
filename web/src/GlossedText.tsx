@@ -1,5 +1,6 @@
 import type { CSSProperties, ElementType } from "react";
 import { splitGlossParts } from "./data/financeAbbrGlossary";
+import { en } from "./enSurface";
 
 /** 英文缩写 / 固定称谓：悬停显示中文释义；生僻缩写可展开为全称（如 TE→Trading Economics） */
 export function GlossedText({
@@ -12,7 +13,7 @@ export function GlossedText({
   style?: CSSProperties;
 }) {
   if (!text) return null;
-  const parts = splitGlossParts(text);
+  const parts = splitGlossParts(en(text));
   return (
     <Tag style={style}>
       {parts.map((p, i) => {

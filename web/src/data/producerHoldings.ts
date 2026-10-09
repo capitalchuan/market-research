@@ -101,6 +101,21 @@ export function formatUsdZh(n: number | null | undefined): string {
   return `${sign}${Math.round(abs).toLocaleString("zh-CN")}美元`;
 }
 
+function formatUsdEn(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  const sign = n < 0 ? "-" : "";
+  const abs = Math.abs(n);
+  const fmt = (v: number) => v.toFixed(2).replace(/\.?0+$/, "");
+  if (abs >= 1e12) return `${sign}$${fmt(abs / 1e12)}T`;
+  if (abs >= 1e9) return `${sign}$${fmt(abs / 1e9)}B`;
+  if (abs >= 1e6) return `${sign}$${fmt(abs / 1e6)}M`;
+  if (abs >= 1e3) return `${sign}$${fmt(abs / 1e3)}K`;
+  return `${sign}$${Math.round(abs).toLocaleString("en-US")}`;
+}
+
 export function formatUsdCompact(n: number | null | undefined): string {
+  if (typeof window !== "undefined" && window.location.hash.toLowerCase().startsWith("#/en")) {
+    return formatUsdEn(n);
+  }
   return formatUsdZh(n);
 }

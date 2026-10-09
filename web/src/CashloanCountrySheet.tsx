@@ -23,6 +23,7 @@ import { FigureText, MapKV, MapSection, rewriteZhUnits, useMapChrome } from "./H
 import { CreditDebtCharts, FxCaCharts, IncomeSectorCharts, StressPricingCharts } from "./MacroFactorCharts";
 import { VitalPyramid } from "./VitalPyramid";
 import { PartnerHoldingsSection } from "./PartnerHoldingsSection";
+import { countryLabel, countryLanguageLine, useLocale } from "./locale";
 
 function stripCites(value: string): string {
   return value.replace(/〔\d+〕|\[S\d+\]/g, "").replace(/[ \t]{2,}/g, " ").trim();
@@ -62,7 +63,8 @@ function MetricTiles({
   items: { key: string; label: string; value: string; links?: string[] }[];
 }) {
   const { c } = useMapChrome();
-  if (!items.length) return <MapKV k="读数" v="暂无" large />;
+  const { t } = useLocale();
+  if (!items.length) return <MapKV k={t("读数")} v={t("暂无")} large />;
   return (
     <div
       style={{
@@ -75,7 +77,7 @@ function MetricTiles({
         const hrefs = [...new Set((item.links ?? []).filter(Boolean))];
         return (
           <div key={item.key} style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 14, color: c.textTertiary, marginBottom: 4 }}>{item.label}</div>
+            <div style={{ fontSize: 14, color: c.textTertiary, marginBottom: 4 }}>{t(item.label)}</div>
             <div style={{ fontSize: 18, fontWeight: 400, color: c.text, lineHeight: 1.35, wordBreak: "break-word" }}>
               <FigureText text={item.value} />
             </div>
@@ -110,6 +112,7 @@ function scoreText(n: number): string {
 
 function ScoreBars({ bars }: { bars: InfraScoreBar[] }) {
   const { c, theme } = useMapChrome();
+  const { t } = useLocale();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {bars.map((bar) => {
@@ -125,7 +128,7 @@ function ScoreBars({ bars }: { bars: InfraScoreBar[] }) {
               paddingLeft: bar.depth ? 16 : 0,
             }}
           >
-            <span style={{ fontSize: 13, color: c.textTertiary, lineHeight: 1.3 }}>{bar.label}</span>
+            <span style={{ fontSize: 13, color: c.textTertiary, lineHeight: 1.3 }}>{t(bar.label)}</span>
             <div style={{ height: 8, background: theme.fill.quaternary }}>
               <div style={{ width: `${width}%`, height: "100%", background: c.accent }} />
             </div>
@@ -141,6 +144,7 @@ function ScoreBars({ bars }: { bars: InfraScoreBar[] }) {
 
 function InfraRows({ rows }: { rows: InfraRegRow[] }) {
   const { c } = useMapChrome();
+  const { t } = useLocale();
   const facts = rows.filter((row) => !row.bars?.length);
   const charts = rows.filter((row) => row.bars?.length);
   return (
@@ -176,7 +180,7 @@ function InfraRows({ rows }: { rows: InfraRegRow[] }) {
                   background: c.panelBg,
                 }}
               >
-                <div style={{ fontSize: 16, fontWeight: 650, color: c.text, marginBottom: 10 }}>{row.label}</div>
+                <div style={{ fontSize: 16, fontWeight: 650, color: c.text, marginBottom: 10 }}>{t(row.label)}</div>
                 <ScoreBars bars={row.bars!} />
                 <div style={{ marginTop: 10, fontSize: 13, fontWeight: 400, color: c.textSecondary, lineHeight: 1.5 }}>
                   <FigureText text={row.value} />
@@ -264,17 +268,22 @@ function sheetModel(code: string) {
 
 function CountrySheetBlock({ code, section }: { code: string; section: SheetSection }) {
   const canSeeInvested = useCanViewInvested();
+  const { lang, t } = useLocale();
   const m = sheetModel(code);
   if (section === "basic") {
     return (
-      <MapSection title="基础信息" large>
+      <MapSection title={t("基础信息")} large>
         <MetricTiles
           items={[
             { key: "code", label: "代码", value: m.code },
-            ...(m.lang ? [{ key: "lang", label: "语言", value: `${m.lang.zone} · ${m.lang.languages}` }] : []),
-            ...(m.lang?.productHint ? [{ key: "hint", label: "产品常用语", value: m.lang.productHint }] : []),
+            ...(m.lang ? [{ key: "lang", label: "语言", value: countryLanguageLine(code, lang) ?? "" }] : []),
+            ...(m.lang?.productHint ? [{ key: "hint", label: "产品常用语", value: t(m.lang.productHint) }] : []),
             ...(m.zoom
-              ? [{ key: "pop", label: "人口（约）", value: rewriteZhUnits(`${m.zoom.population_millions}百万`) }]
+              ? [{
+                  key: "pop",
+                  label: "人口（约）",
+                  value: lang === "en" ? `${m.zoom.population_millions} million` : rewriteZhUnits(`${m.zoom.population_millions}百万`),
+                }]
               : []),
           ]}
         />
@@ -283,63 +292,63 @@ function CountrySheetBlock({ code, section }: { code: string; section: SheetSect
   }
   if (section === "imf") {
     return (
-      <MapSection title="IMF / 世行" large>
+      <MapSection title={t("IMF / 世行")} large>
         {m.imf ? (
           <MetricTiles
             items={[
-              { key: "imf", label: "IMF", value: m.imf.imfDevTagZh, links: ["https://www.imf.org/"] },
-              { key: "wb", label: "世行", value: m.imf.wbIncomeZh, links: ["https://data.worldbank.org/"] },
+              { key: "imf", label: "IMF", value: t(m.imf.imfDevTagZh), links: ["https://www.imf.org/"] },
+              { key: "wb", label: "世行", value: t(m.imf.wbIncomeZh), links: ["https://data.worldbank.org/"] },
             ]}
           />
         ) : (
-          <MapKV k="分类" v="暂无" large />
+          <MapKV k={t("分类")} v={t("暂无")} large />
         )}
       </MapSection>
     );
   }
   if (section === "market") {
     return (
-      <MapSection title="信贷市场总览" large>
+      <MapSection title={t("信贷市场总览")} large>
         {m.nbfc ? (
           <>
             <MapKV
-              k="放贷总量"
+              k={t("放贷总量")}
               v={
                 m.nbfc.lendingUsdBn > 0
-                  ? `约 USD ${m.nbfc.lendingUsdBn >= 10 ? m.nbfc.lendingUsdBn.toFixed(1) : m.nbfc.lendingUsdBn.toFixed(2)} bn`
+                  ? `${lang === "en" ? "about" : "约"} USD ${m.nbfc.lendingUsdBn >= 10 ? m.nbfc.lendingUsdBn.toFixed(1) : m.nbfc.lendingUsdBn.toFixed(2)} bn`
                   : "—"
               }
               large
             />
             {m.nbfc.rows.map((r) => (
               <div key={r.category} style={{ marginTop: 14 }}>
-                <MapKV k="口径" v={r.category} large />
-                <MapKV k="在贷" v={r.loan_book_usd || r.loan_book_total || "—"} large />
-                <MapKV k="机构数" v={r.nbfc_count || "—"} large />
-                {r.default_rate ? <MapKV k="违约/不良" v={r.default_rate} large /> : null}
+                <MapKV k={t("口径")} v={r.category} large />
+                <MapKV k={t("在贷")} v={r.loan_book_usd || r.loan_book_total || "—"} large />
+                <MapKV k={t("机构数")} v={r.nbfc_count || "—"} large />
+                {r.default_rate ? <MapKV k={t("违约/不良")} v={r.default_rate} large /> : null}
                 {r.as_of && !dateAlreadyIn([r.nbfc_count, r.loan_book_usd, r.loan_book_total, r.default_rate], r.as_of) ? (
-                  <MapKV k="时点" v={r.as_of} large />
+                  <MapKV k={t("时点")} v={r.as_of} large />
                 ) : null}
-                {r.regulator ? <MapKV k="监管" v={r.regulator} large /> : null}
-                {r.source_url ? <MapKV k="来源" v="" links={[r.source_url]} large /> : null}
+                {r.regulator ? <MapKV k={t("监管")} v={r.regulator} large /> : null}
+                {r.source_url ? <MapKV k={t("来源")} v="" links={[r.source_url]} large /> : null}
               </div>
             ))}
           </>
         ) : (
-          <MapKV k="放贷" v="暂无" large />
+          <MapKV k={t("放贷")} v={t("暂无")} large />
         )}
       </MapSection>
     );
   }
   if (section === "economy") {
     return (
-      <MapSection title="经济基本面" large>
+      <MapSection title={t("经济基本面")} large>
         <MetricTiles items={metricTiles(m.economy)} />
         {m.snap ? (
           <div style={{ marginTop: 16 }}>
-            <IncomeSectorCharts snap={m.snap} countryLabel={m.countryLabel} countryCode={m.code} />
+            <IncomeSectorCharts snap={m.snap} countryLabel={countryLabel(code, lang)} countryCode={m.code} />
             <div style={{ marginTop: 16 }}>
-              <StressPricingCharts countryCode={m.code} countryLabel={m.countryLabel} hideGasoline />
+              <StressPricingCharts countryCode={m.code} countryLabel={countryLabel(code, lang)} hideGasoline />
             </div>
           </div>
         ) : null}
@@ -348,21 +357,21 @@ function CountrySheetBlock({ code, section }: { code: string; section: SheetSect
   }
   if (section === "people") {
     return (
-      <MapSection title="人口与就业" large>
+      <MapSection title={t("人口与就业")} large>
         <MetricTiles items={metricTiles(m.people)} />
         <div style={{ marginTop: 16 }}>
-          <VitalPyramid country={m.code} countryLabel={m.countryLabel} />
+          <VitalPyramid country={m.code} countryLabel={countryLabel(code, lang)} />
         </div>
       </MapSection>
     );
   }
   if (section === "credit") {
     return (
-      <MapSection title="居民信贷" large>
+      <MapSection title={t("居民信贷")} large>
         <MetricTiles items={metricTiles(m.credit)} />
         {m.snap ? (
           <div style={{ marginTop: 16 }}>
-            <CreditDebtCharts snap={m.snap} countryLabel={m.countryLabel} />
+            <CreditDebtCharts snap={m.snap} countryLabel={countryLabel(code, lang)} />
           </div>
         ) : null}
       </MapSection>
@@ -370,11 +379,11 @@ function CountrySheetBlock({ code, section }: { code: string; section: SheetSect
   }
   if (section === "fx") {
     return (
-      <MapSection title="外汇与跨境资本" large>
+      <MapSection title={t("外汇与跨境资本")} large>
         <MetricTiles items={metricTiles(m.fx)} />
         {m.snap ? (
           <div style={{ marginTop: 16 }}>
-            <FxCaCharts snap={m.snap} countryLabel={m.countryLabel} countryCode={m.code} />
+            <FxCaCharts snap={m.snap} countryLabel={countryLabel(code, lang)} countryCode={m.code} />
           </div>
         ) : null}
       </MapSection>
@@ -382,13 +391,13 @@ function CountrySheetBlock({ code, section }: { code: string; section: SheetSect
   }
   if (section === "infra") {
     return (
-      <MapSection title="基础设施与监管" large>
+      <MapSection title={t("基础设施与监管")} large>
         {m.infra ? (
           <InfraRows rows={m.infra} />
         ) : (
           <MapKV
-            k="读数"
-            v="本地信源未收录该国的征信覆盖率、智能机与移动互联网、司法执行、利率上限/牌照/外资、催收与数据法。"
+            k={t("读数")}
+            v={t("本地信源未收录该国的征信覆盖率、智能机与移动互联网、司法执行、利率上限/牌照/外资、催收与数据法。")}
             large
           />
         )}
@@ -397,25 +406,26 @@ function CountrySheetBlock({ code, section }: { code: string; section: SheetSect
   }
   if (section === "abs") {
     return (
-      <MapSection title="ABS成熟度" large>
+      <MapSection title={t("ABS成熟度")} large>
         <AbsMaturitySection code={m.code} />
       </MapSection>
     );
   }
   if (!canSeeInvested) {
     return (
-      <MapSection title="已投生产商" large>
+      <MapSection title={t("已投生产商")} large>
         <InvestedGate>
           <span />
         </InvestedGate>
       </MapSection>
     );
   }
-  return <PartnerHoldingsSection invested={m.invested} unmasked large showEmpty title="已投生产商" />;
+  return <PartnerHoldingsSection invested={m.invested} unmasked large showEmpty title={t("已投生产商")} />;
 }
 
 export function MacroScoreRadar({ code, size = 128 }: { code: string; size?: number }) {
   const { c } = useMapChrome();
+  const { t } = useLocale();
   const detail = cashloanMacroScoreDetail(code);
   if (!detail || detail.groups.every((group) => group.score == null)) return null;
   const n = detail.groups.length;
@@ -435,7 +445,7 @@ export function MacroScoreRadar({ code, size = 128 }: { code: string; size?: num
         .join(" ")
     : null;
   const caption = detail.groups
-    .map((group) => `${group.label}${group.score == null ? "无读数" : Math.round(group.score)}`)
+    .map((group) => `${t(group.label)}${group.score == null ? t("无读数") : Math.round(group.score)}`)
     .join("，");
   return (
     <svg
@@ -477,7 +487,7 @@ export function MacroScoreRadar({ code, size = 128 }: { code: string; size?: num
             fontSize={10}
             fontWeight={400}
           >
-            {group.label}
+            {t(group.label)}
           </text>
         );
       })}
@@ -493,6 +503,7 @@ export function MacroScoreBreakdown({
   align?: "start" | "end";
 }) {
   const { c } = useMapChrome();
+  const { t } = useLocale();
   const detail = cashloanMacroScoreDetail(code);
   if (!detail) return null;
   return (
@@ -510,14 +521,14 @@ export function MacroScoreBreakdown({
           key={group.id}
           style={{ fontSize: 12, fontWeight: 400, color: c.textSecondary, lineHeight: 1.45, textAlign: align }}
         >
-          <span style={{ color: c.text }}>{group.label} </span>
+          <span style={{ color: c.text }}>{t(group.label)} </span>
           <span style={{ fontWeight: 700, color: c.text, fontVariantNumeric: "tabular-nums" }}>
             {group.score == null ? "—" : Math.round(group.score)}
           </span>
           {group.items.map((item, index) => (
             <span key={item.label}>
               {index === 0 ? " " : " · "}
-              {item.label}{" "}
+              {t(item.label)}{" "}
               <span style={{ fontWeight: 700, color: c.text, fontVariantNumeric: "tabular-nums" }}>
                 {item.score == null ? "—" : item.score}
               </span>
@@ -531,7 +542,8 @@ export function MacroScoreBreakdown({
 
 function ColumnHead({ code }: { code: string }) {
   const { c } = useMapChrome();
-  const name = COUNTRY_LABEL_ZH[code] ?? INVESTED_BY_CODE[code]?.country_zh ?? code;
+  const { lang, t } = useLocale();
+  const name = countryLabel(code, lang);
   const score = scoreCashloanMacro(code);
   return (
     <div style={{ minWidth: 0, padding: "2px 8px 14px" }}>
@@ -540,7 +552,7 @@ function ColumnHead({ code }: { code: string }) {
         <MacroScoreRadar code={code} size={112} />
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 14, color: c.textTertiary }}>
-            国家综合打分 {score == null ? "—" : Math.round(score)}
+            {t("国家综合打分")} {score == null ? "—" : Math.round(score)}
           </div>
           <MacroScoreBreakdown code={code} align="start" />
         </div>
@@ -599,6 +611,7 @@ export function CountryCompareButton({
   onChange: (code: string | null) => void;
 }) {
   const { c } = useMapChrome();
+  const { lang, t } = useLocale();
   const canSeeInvested = useCanViewInvested();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -607,18 +620,19 @@ export function CountryCompareButton({
   const options = useMemo(() => {
     const q = query.trim().toLowerCase();
     return COMPARE_OPTIONS.filter((row) => row.code !== current)
+      .map((row) => ({ ...row, name: countryLabel(row.code, lang), zh: row.name }))
       .filter((row) => {
         if (!q) return true;
-        return row.name.toLowerCase().includes(q) || row.code.toLowerCase().includes(q);
+        return row.name.toLowerCase().includes(q) || row.zh.toLowerCase().includes(q) || row.code.toLowerCase().includes(q);
       })
       .sort((a, b) => {
         if (canSeeInvested) {
           const invested = Number(b.invested) - Number(a.invested);
           if (invested !== 0) return invested;
         }
-        return a.name.localeCompare(b.name, "zh");
+        return a.name.localeCompare(b.name, lang === "en" ? "en" : "zh");
       });
-  }, [current, query, canSeeInvested]);
+  }, [current, query, canSeeInvested, lang]);
 
   useEffect(() => {
     if (!open) return;
@@ -639,11 +653,11 @@ export function CountryCompareButton({
           setQuery("");
         }}
       >
-        {picked ? `对比 · ${picked.name}` : "对比"}
+        {picked ? `${t("对比")} · ${countryLabel(picked.code, lang)}` : t("对比")}
       </Button>
       {picked ? (
         <Button variant="secondary" size="sm" onClick={() => onChange(null)}>
-          退出对比
+          {t("退出对比")}
         </Button>
       ) : null}
       {open ? (
@@ -664,8 +678,8 @@ export function CountryCompareButton({
           <input
             autoFocus
             value={query}
-            placeholder="搜索国家"
-            aria-label="搜索对比国家"
+            placeholder={t("搜索对比国家")}
+            aria-label={t("搜索对比国家")}
             onChange={(event) => setQuery(event.target.value)}
             style={{
               width: "100%",
@@ -706,11 +720,11 @@ export function CountryCompareButton({
                   }}
                 >
                   <span>{row.name}</span>
-                  <span style={{ color: c.textTertiary }}>{canSeeInvested && row.invested ? "已投" : row.code}</span>
+                  <span style={{ color: c.textTertiary }}>{canSeeInvested && row.invested ? t("已投") : row.code}</span>
                 </button>
               ))
             ) : (
-              <div style={{ padding: "12px", fontSize: 13, color: c.textTertiary }}>没有匹配的国家</div>
+              <div style={{ padding: "12px", fontSize: 13, color: c.textTertiary }}>{t("没有匹配的国家")}</div>
             )}
           </div>
         </div>

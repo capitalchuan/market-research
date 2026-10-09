@@ -9,8 +9,8 @@ import { feature } from "topojson-client";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import worldTopology from "world-atlas/countries-110m.json";
 import { countryPageHref } from "./countryPage";
+import { countryLabel, countryLanguageLine, useLocale } from "./locale";
 import { MACRO_SCORE_HELP, scoreCashloanMacro } from "./data/cashloanMacroScore";
-import { COUNTRY_LABEL_ZH } from "./data/nbfcCountryStats";
 import { aggregateLendingUsdBn } from "./LendingHeatGlobe";
 import {
   COUNTRY_ZOOM_BY_CODE,
@@ -21,13 +21,11 @@ import {
   INVESTED_BY_CODE,
   PRODUCER_HOLDINGS,
   formatUsdCompact,
-  formatUsdZh,
 } from "./data/producerHoldings";
 import {
   COUNTRY_IMF_WB,
   passesImfWbFilters,
 } from "./data/countryImfWb";
-import { formatCountryLanguageLine } from "./data/countryLanguage";
 import { CashloanCountryCompare, CashloanCountrySheet, CountryCompareButton, MacroScoreBreakdown, MacroScoreRadar } from "./CashloanCountrySheet";
 import {
   MapSection,
@@ -66,6 +64,7 @@ type CountryProps = { name?: string };
 /** 大屏顶栏第二行：IMF / 世行筛选（与地图共用 canvas state，避免塞进地图导致画幅跳动） */
 export function ScreenImfWbFilterBar() {
   const theme = useHostTheme();
+  const { t } = useLocale();
   const [imfFilter, setImfFilter] = useCanvasState<string>("screenImfFilter2", "all");
   const [wbFilter, setWbFilter] = useCanvasState<string>("screenWbFilter2", "all");
   const selectStyle: CSSProperties = {
@@ -95,17 +94,17 @@ export function ScreenImfWbFilterBar() {
         <select value={imfFilter} onChange={(e) => setImfFilter(e.target.value)} style={selectStyle}>
           {COUNTRY_IMF_WB.imfOptions.map((o) => (
             <option key={o.id} value={o.id}>
-              {o.labelZh}
+              {t(o.labelZh)}
             </option>
           ))}
         </select>
       </label>
       <label style={labelStyle}>
-        世行
+        {t("世行")}
         <select value={wbFilter} onChange={(e) => setWbFilter(e.target.value)} style={selectStyle}>
           {COUNTRY_IMF_WB.wbOptions.map((o) => (
             <option key={o.id} value={o.id}>
-              {o.labelZh}
+              {t(o.labelZh)}
             </option>
           ))}
         </select>
@@ -215,7 +214,7 @@ function normId(id: string | number | undefined): string {
 
 function formatUsdTn(bn: number): string {
   if (!(bn > 0)) return "—";
-  return formatUsdZh(bn * 1e9);
+  return formatUsdCompact(bn * 1e9);
 }
 
 type HoverInfo = {
@@ -269,13 +268,15 @@ function roundedMacroScore(code: string): number | null {
 }
 
 function InvestedNameMark({ a2, x, y }: { a2: string; x: number; y: number }) {
-  const name = COUNTRY_LABEL_ZH[a2] ?? a2;
+  const { lang } = useLocale();
+  const name = countryLabel(a2, lang);
   const score = roundedMacroScore(a2);
   const scoreText = score == null ? "" : String(score);
   const [dx, dy] = INVESTED_NAME_NUDGE[a2] ?? [0, -14];
   const fontSize = 11;
   const padX = 6;
-  const nameW = name.length * fontSize + padX * 2;
+  const charW = /[A-Za-z]/.test(name) ? fontSize * 0.62 : fontSize;
+  const nameW = Math.max(name.length * charW + padX * 2, 28);
   const scoreW = scoreText ? scoreText.length * 7 + padX * 2 : 0;
   const h = 18;
   const left = x + dx - nameW / 2;
@@ -339,6 +340,7 @@ function InvestedNameMark({ a2, x, y }: { a2: string; x: number; y: number }) {
 
 function MacroScoreMark({ code }: { code: string }) {
   const { c } = useMapChrome();
+  const { t } = useLocale();
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
   const open = hover || pinned;
@@ -353,11 +355,11 @@ function MacroScoreMark({ code }: { code: string }) {
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <span style={{ fontSize: 18, fontWeight: 650, color: c.text, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-        国家综合打分 {score == null ? "—" : Math.round(score)}
+        {t("国家综合打分")} {score == null ? "—" : Math.round(score)}
       </span>
       <button
         type="button"
-        aria-label="国家综合打分计算说明"
+        aria-label={t("国家综合打分计算说明")}
         aria-expanded={open}
         onClick={() => setPinned((v) => !v)}
         style={{
@@ -400,7 +402,7 @@ function MacroScoreMark({ code }: { code: string }) {
         >
           {MACRO_SCORE_HELP.map((line) => (
             <div key={line} style={{ marginBottom: 6 }}>
-              {line}
+              {t(line)}
             </div>
           ))}
         </div>
@@ -423,13 +425,14 @@ function DetailPanel({
   fillScreen?: boolean;
 }) {
   const { theme } = useMapChrome();
+  const { lang } = useLocale();
   const invested = INVESTED_BY_CODE[code];
   const zoom = COUNTRY_ZOOM_BY_CODE[code];
   const nbfc = summarizeNbfcForCountry(code);
   const imfWb = COUNTRY_IMF_WB.byCode[code];
-  const name = COUNTRY_LABEL_ZH[code] ?? invested?.country_zh ?? code;
+  const name = countryLabel(code, lang);
   const chartUrl = zoom?.source_url || playFinanceChartUrl(code);
-  const langLine = formatCountryLanguageLine(code);
+  const langLine = countryLanguageLine(code, lang);
   const [compareCode, setCompareCode] = useState<string | null>(null);
   useEffect(() => {
     setCompareCode(null);
@@ -556,6 +559,7 @@ export function FullMarketChoropleth({
   onDetailClose?: () => void;
 }) {
   const { theme, c } = useMapChrome();
+  const { lang, t } = useLocale();
   const { aspect, focusRightFrac, focusMapMinFrac } = useMapViewport(fill);
   const width = mapFrameWidth(height, aspect);
   const bottomLegend = fill || legendPlacement === "bottom";
@@ -713,8 +717,8 @@ export function FullMarketChoropleth({
     if (!(fillVals.length > 0)) return { low: undefined as string | undefined, high: undefined as string | undefined };
     if (ecoOn) {
       return {
-        low: `${Math.round(minV)} 家`,
-        high: `${Math.round(maxV)} 家`,
+        low: lang === "en" ? String(Math.round(minV)) : `${Math.round(minV)} 家`,
+        high: lang === "en" ? String(Math.round(maxV)) : `${Math.round(maxV)} 家`,
       };
     }
     if (marketOn || marketWithEco) {
@@ -731,7 +735,7 @@ export function FullMarketChoropleth({
       low: formatUsdCompact(minV * 1e9),
       high: formatUsdCompact(maxV * 1e9),
     };
-  }, [fillVals.length, ecoOn, marketOn, marketWithEco, minV, maxV, guest]);
+  }, [fillVals.length, ecoOn, marketOn, marketWithEco, minV, maxV, guest, lang]);
 
   const countries = useMemo(() => {
     const topo = worldTopology as {
@@ -885,27 +889,27 @@ export function FullMarketChoropleth({
           }}
         >
           <MapMetricBlock
-            label={`全市场 · 在贷${filterActive ? " · 筛选后" : ""}`}
+            label={`${t("全市场 · 在贷")}${filterActive ? ` · ${t("筛选后")}` : ""}`}
             value={formatUsdTn(filteredSumBn)}
           />
           {both ? (
-            <MapMetricBlock label="展业 · 在贷" value={maskUsd(investedSumUsd)} accent />
+            <MapMetricBlock label={t("展业 · 在贷")} value={maskUsd(investedSumUsd)} accent />
           ) : null}
           {marketWithEco ? (
-            <MapMetricBlock label={`${ecoLabel ?? "机构"} · 样本`} value={`${ecoSum} 家`} accent />
+            <MapMetricBlock label={`${t(ecoLabel ?? "机构")} · ${t("样本")}`} value={lang === "en" ? String(ecoSum) : `${ecoSum} 家`} accent />
           ) : null}
         </div>
       ) : (
         <MapMetricBlock
           label={
             ecoOn
-              ? `${ecoLabel ?? "其他机构"}`
+              ? `${t(ecoLabel ?? "其他机构")}`
               : marketOn
-                ? `全市场 · 在贷${filterActive ? " · 筛选后" : ""}`
-                : "展业 · 已投在贷"
+                ? `${t("全市场 · 在贷")}${filterActive ? ` · ${t("筛选后")}` : ""}`
+                : t("展业 · 已投在贷")
           }
           value={
-            ecoOn ? `${ecoSum} 家` : marketOn ? formatUsdTn(filteredSumBn) : maskUsd(investedSumUsd)
+            ecoOn ? (lang === "en" ? String(ecoSum) : `${ecoSum} 家`) : marketOn ? formatUsdTn(filteredSumBn) : maskUsd(investedSumUsd)
           }
         />
       )}
@@ -932,7 +936,11 @@ export function FullMarketChoropleth({
                     : ""
                 }`
               : both
-                ? `覆盖 ${coveredCountries} 国 · 有数据 ${dataCountries} 国 · 展业 ${investedCountryCount} 国${
+                ? lang === "en"
+                  ? `${coveredCountries} countries covered · ${dataCountries} with data · ${investedCountryCount} invested${
+                      !guest && marketVsInvestedPct != null ? ` · about ${marketVsInvestedPct.toFixed(2)}%` : ""
+                    }${filterActive ? ` · ${[imfFilter !== "all" ? t(imfLabel) : "", wbFilter !== "all" ? t(wbLabel) : ""].filter(Boolean).join(" · ")}` : ""}`
+                  : `覆盖 ${coveredCountries} 国 · 有数据 ${dataCountries} 国 · 展业 ${investedCountryCount} 国${
                     !guest && marketVsInvestedPct != null ? ` · 占比约 ${marketVsInvestedPct.toFixed(2)}%` : ""
                   }${filterActive ? ` · ${[imfFilter !== "all" ? imfLabel : "", wbFilter !== "all" ? wbLabel : ""].filter(Boolean).join(" · ")}` : ""}`
                 : `覆盖 ${coveredCountries} 国 · 有数据 ${dataCountries} 国${
@@ -1108,9 +1116,9 @@ export function FullMarketChoropleth({
               borderRadius: 4,
             }}
           >
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: c.text }}>市场 × 展业</div>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: c.text }}>{t("市场 × 展业")}</div>
             <SteppedLegend
-              label={ecoOn ? "样本数" : "在贷余额"}
+              label={ecoOn ? t("样本数") : t("在贷余额")}
               kind={chuan ? "chuan" : "green"}
               compact
               low={legendLowHigh.low}
@@ -1150,10 +1158,10 @@ export function FullMarketChoropleth({
           >
             {bottomLegend ? null : (
               <Button variant="secondary" size="sm" onClick={closeDetail}>
-                返回全球
+                {t("返回全球")}
               </Button>
             )}
-            {!bottomLegend ? <MapChip>已放大：{COUNTRY_LABEL_ZH[focus] ?? focus}</MapChip> : null}
+            {!bottomLegend ? <MapChip>{t("已放大")}：{countryLabel(focus, lang)}</MapChip> : null}
           </div>
         ) : null}
 
@@ -1229,7 +1237,7 @@ export function FullMarketChoropleth({
                   const rect = (ev.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect();
                   setHover({
                     a2,
-                    name: COUNTRY_LABEL_ZH[a2] ?? f.properties?.name ?? a2,
+                    name: countryLabel(a2, lang),
                     usdBn: bn,
                     investedUsd: inv?.outstanding_usd_for_heat ?? 0,
                     investedInvestmentUsd: inv?.investment_usd ?? 0,
@@ -1251,7 +1259,7 @@ export function FullMarketChoropleth({
                   const rect = (ev.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect();
                   setHover({
                     a2,
-                    name: COUNTRY_LABEL_ZH[a2] ?? f.properties?.name ?? a2,
+                    name: countryLabel(a2, lang),
                     usdBn: bn,
                     investedUsd: inv?.outstanding_usd_for_heat ?? 0,
                     investedInvestmentUsd: inv?.investment_usd ?? 0,
@@ -1333,14 +1341,14 @@ export function FullMarketChoropleth({
             )}
             {hover.usdBn > 0 ? (
               <div style={{ color: c.textSecondary }}>
-                在贷余额（全市场）≈ {formatUsdZh(hover.usdBn * 1e9)}
+                {t("在贷余额（全市场）")} ≈ {formatUsdCompact(hover.usdBn * 1e9)}
               </div>
             ) : null}
             {hover.nbfcCount ? (
-              <div style={{ color: c.textTertiary }}>机构数 {hover.nbfcCount}</div>
+              <div style={{ color: c.textTertiary }}>{t("机构数")} {hover.nbfcCount}</div>
             ) : null}
             {hover.defaultRate ? (
-              <div style={{ color: c.textTertiary }}>违约/不良 {hover.defaultRate}</div>
+              <div style={{ color: c.textTertiary }}>{t("违约/不良")} {hover.defaultRate}</div>
             ) : null}
             {(marketWithEco || ecoOn) && hover.ecoCount > 0 ? (
               <div style={{ color: c.accent }}>
@@ -1348,20 +1356,20 @@ export function FullMarketChoropleth({
               </div>
             ) : null}
             {investedOn && hover.investedUsd > 0 ? (
-              <div style={{ color: c.accent }}>展业在贷 {maskUsd(hover.investedUsd)}</div>
+              <div style={{ color: c.accent }}>{t("展业在贷")} {maskUsd(hover.investedUsd)}</div>
             ) : null}
             {investedOn && hover.investedInvestmentUsd > 0 ? (
               <div style={{ color: c.textTertiary }}>
-                基金投资 {maskUsd(hover.investedInvestmentUsd)}
+                {t("基金投资")} {maskUsd(hover.investedInvestmentUsd)}
               </div>
             ) : null}
             {investedOn && !guest && hover.investedUsd > 0 && hover.usdBn > 0 ? (
               <div style={{ color: c.textTertiary }}>
-                展业 / 全市场 ≈ {((hover.investedUsd / 1e9 / hover.usdBn) * 100).toFixed(2)}%
+                {lang === "en" ? "Invested / market" : "展业 / 全市场"} ≈ {((hover.investedUsd / 1e9 / hover.usdBn) * 100).toFixed(2)}%
               </div>
             ) : null}
             {investedOn && hover.investedCount > 0 ? (
-              <div style={{ color: c.textTertiary }}>展业平台 {hover.investedCount} 家</div>
+              <div style={{ color: c.textTertiary }}>{t("展业平台")} {hover.investedCount}</div>
             ) : null}
           </MapTooltip>
         ) : null}
@@ -1387,20 +1395,20 @@ export function FullMarketChoropleth({
             fill
               ? undefined
               : ecoOn
-                ? (ecoLabel ?? "机构")
+                ? t(ecoLabel ?? "机构")
                 : marketWithEco
-                  ? `全市场 × ${ecoLabel ?? "机构"}`
+                  ? `${t("全市场")} × ${t(ecoLabel ?? "机构")}`
                   : both
-                    ? "市场 × 展业"
+                    ? t("市场 × 展业")
                     : marketOn
-                      ? "全市场"
-                      : "展业"
+                      ? t("全市场")
+                      : t("展业")
           }
           placement={place}
           overlay={fill}
         >
           <SteppedLegend
-            label={ecoOn ? "样本数" : "在贷余额"}
+            label={ecoOn ? t("样本数") : t("在贷余额")}
             kind={chuan ? "chuan" : "green"}
             compact={bottomLegend}
             low={legendLowHigh.low}

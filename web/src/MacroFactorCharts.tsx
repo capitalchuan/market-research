@@ -2,6 +2,7 @@ import { useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { useCanvasState, useHostTheme, Text, Stack, Grid } from "./shims/cursor-canvas";
 import { mapChrome } from "./heatMapTheme";
 import { GlossedText } from "./GlossedText";
+import { en } from "./enSurface";
 import {
   FX_HISTORY,
   FX_CHG_PERIODS,
@@ -232,7 +233,7 @@ function HBar({
   const w = Math.max(0, Math.min(100, pct));
   return (
     <div style={{ display: "grid", gridTemplateColumns: "56px 1fr 40px", gap: 6, alignItems: "center" }}>
-      <span style={{ fontSize: 11, color: c.textTertiary }}>{label}</span>
+      <span style={{ fontSize: 11, color: c.textTertiary }}>{en(label)}</span>
       <div style={{ height: 8, background: theme.fill.quaternary, borderRadius: 0 }}>
         <div style={{ width: `${w}%`, height: "100%", background: color }} />
       </div>
@@ -305,13 +306,9 @@ export function IncomeSectorCharts({
         <Panel
           title={`${countryLabel} · 产业结构`}
           subtitle="分项占比（Trading Economics 绝对值折算）· 水平快照"
-          footer={
-            <>
-              {highValue}
-              {primaryRisk ? `；农业占比偏高（≥${PRIMARY_HIGH}%阈值）` : ""}。服务阈值对照 {TERTIARY_HIGH}%。
-              单看占比难判人均增减，见下方序时配看。
-            </>
-          }
+          footer={`${highValue}${
+            primaryRisk ? `；农业占比偏高（≥${PRIMARY_HIGH}%阈值）` : ""
+          }。服务阈值对照 ${TERTIARY_HIGH}%。单看占比难判人均增减，见下方序时配看。`}
         >
           {sec ? (
             <Stack gap={6}>
@@ -321,7 +318,7 @@ export function IncomeSectorCharts({
             </Stack>
           ) : (
             <Text size="small" tone="tertiary">
-              无三产分项
+              {en("无三产分项")}
             </Text>
           )}
         </Panel>
@@ -399,8 +396,8 @@ function MiniSpark({
   if (!incomeSeriesReady(series)) {
     return (
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 11, color: c.textTertiary }}>{label}</div>
-        <div style={{ fontSize: 12, color: c.textTertiary, marginTop: 6 }}>序时暂缺</div>
+        <div style={{ fontSize: 11, color: c.textTertiary }}>{en(label)}</div>
+        <div style={{ fontSize: 12, color: c.textTertiary, marginTop: 6 }}>{en("序时暂缺")}</div>
       </div>
     );
   }
@@ -427,13 +424,13 @@ function MiniSpark({
   return (
     <div style={{ minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 6, alignItems: "baseline" }}>
-        <span style={{ fontSize: 11, color: c.textSecondary }}>{label}</span>
+        <span style={{ fontSize: 11, color: c.textSecondary }}>{en(label)}</span>
         <span style={{ fontSize: 11, fontWeight: 600, color: stroke, fontVariantNumeric: "tabular-nums" }}>
           {deltaTxt}
         </span>
       </div>
       <div style={{ fontSize: 14, fontWeight: 600, color: c.text, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
-        {format(last.v)}
+        {en(format(last.v))}
       </div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block", marginTop: 4, maxWidth: 160 }}>
         <path d={line} fill="none" stroke={stroke} strokeWidth={1.6} />
@@ -585,7 +582,7 @@ function FxChgBadge({ strengthChg }: { strengthChg: number }) {
         {sign}
         {Math.abs(strengthChg).toFixed(1)}%
       </span>
-      <span style={{ fontWeight: 400, opacity: 0.85 }}>{word}</span>
+      <span style={{ fontWeight: 400, opacity: 0.85 }}>{en(word)}</span>
     </span>
   );
 }
@@ -684,7 +681,7 @@ function FxTrendPanel({
           fontWeight: active ? 600 : 500,
         }}
       >
-        {label}
+        {en(label)}
       </button>
     );
   };
@@ -714,7 +711,7 @@ function FxTrendPanel({
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
           <FxChgBadge strengthChg={strengthChg} />
-          <span style={{ fontSize: 11, color: c.textTertiary }}>{spanLabel}</span>
+          <span style={{ fontSize: 11, color: c.textTertiary }}>{en(spanLabel)}</span>
         </div>
       </div>
       <div
@@ -771,7 +768,7 @@ function FxTrendPanel({
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: c.textTertiary }}>
         <span>{pts[0]?.d}</span>
         <span>
-          低 {formatFxValue(lo)} · 高 {formatFxValue(hi)}
+          {en("低")} {formatFxValue(lo)} · {en("高")} {formatFxValue(hi)}
         </span>
         <span>{pts[pts.length - 1]?.d}</span>
       </div>
@@ -881,7 +878,7 @@ function ReservesTrendPanel({
                 fontWeight: activeWin ? 600 : 500,
               }}
             >
-              {w.label}
+              {en(w.label)}
             </button>
           );
         })}
@@ -891,7 +888,7 @@ function ReservesTrendPanel({
           <span style={{ fontSize: 22, fontWeight: 600, color: hoverIdx != null ? stroke : c.text, fontVariantNumeric: "tabular-nums" }}>
             {formatReservesYi(active.v)}
           </span>
-          <span style={{ fontSize: 10, color: c.textTertiary, marginLeft: 6 }}>亿美元 · {active.d.slice(0, 7)}</span>
+          <span style={{ fontSize: 10, color: c.textTertiary, marginLeft: 6 }}>{en(`亿美元 · ${active.d.slice(0, 7)}`)}</span>
         </div>
         <span
           style={{
@@ -1041,7 +1038,7 @@ function CaTrendPanel({
                 fontWeight: activeWin ? 600 : 500,
               }}
             >
-              {w.label}
+              {en(w.label)}
             </button>
           );
         })}
@@ -1145,7 +1142,7 @@ export function FxCaCharts({
 
   const partRow = (label: string, pts: number, has: boolean) => (
     <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: c.textTertiary }}>
-      <span style={{ width: 52, flexShrink: 0 }}>{label}</span>
+      <span style={{ width: 52, flexShrink: 0 }}>{en(label)}</span>
       <div style={{ flex: 1, height: 4, background: theme.fill.quaternary, position: "relative" }}>
         <div
           style={{
@@ -1194,7 +1191,7 @@ export function FxCaCharts({
       ) : (
         <Panel title={`${countryLabel} · 汇率走势`} subtitle="暂无可用序列" footer={snap.fxTrend || snap.fxHint || "—"}>
           <Text size="small" tone="tertiary">
-            缺公开周序列，且宏观卡未同时给出对美元水平与年内波动，无法示意。
+            {en("缺公开周序列，且宏观卡未同时给出对美元水平与年内波动，无法示意。")}
           </Text>
         </Panel>
       )}
@@ -1232,19 +1229,23 @@ export function FxCaCharts({
             {partRow("汇率波动", volPts, vol != null)}
           </Stack>
           <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 8, lineHeight: 1.4 }}>
-            {notes.slice(0, 3).join("；")}
-            {snap.fxVolInYear ? `；波动 ${splitValue(snap.fxVolInYear)}${volAsOf ? ` · ${volAsOf}` : ""}` : ""}
+            {en(
+              `${notes.slice(0, 3).join("；")}${
+                snap.fxVolInYear ? `；波动 ${splitValue(snap.fxVolInYear)}${volAsOf ? ` · ${volAsOf}` : ""}` : ""
+              }`,
+            )}
           </div>
         </Panel>
       </Grid>
       {hasExtHist ? (
         <div style={{ fontSize: 10, color: c.textTertiary, lineHeight: 1.4 }}>
-          外部缓冲序时：CA/GDP · {CA_HISTORY.meta.range}；外储 · {RESERVES_HISTORY.meta.range || "—"}（世行年频，末端可并入国别卡）。与汇率图并读：逆差加深+外储回落常抬本币压力。对照{" "}
-          {CA_HISTORY.meta.asOf}
-          {RESERVES_HISTORY.meta.asOf && RESERVES_HISTORY.meta.asOf !== CA_HISTORY.meta.asOf
-            ? ` / 外储 ${RESERVES_HISTORY.meta.asOf}`
-            : ""}
-          。
+          {en(
+            `外部缓冲序时：CA/GDP · ${CA_HISTORY.meta.range}；外储 · ${RESERVES_HISTORY.meta.range || "—"}（世行年频，末端可并入国别卡）。与汇率图并读：逆差加深+外储回落常抬本币压力。对照 ${CA_HISTORY.meta.asOf}${
+              RESERVES_HISTORY.meta.asOf && RESERVES_HISTORY.meta.asOf !== CA_HISTORY.meta.asOf
+                ? ` / 外储 ${RESERVES_HISTORY.meta.asOf}`
+                : ""
+            }。`,
+          )}
         </div>
       ) : null}
     </Stack>
@@ -1291,7 +1292,7 @@ export function CreditDebtCharts({ snap, countryLabel }: { snap: MacroChartSnap;
           <Stack gap={8}>
             <HBar label="消费" pct={Math.min(100, consShare)} color={c.removed} />
             <HBar label="其他*" pct={Math.min(100, Math.max(0, 100 - consShare))} color={c.accent} />
-            <div style={{ fontSize: 10, color: c.textTertiary }}>*其他≈私营贷款−消费口径</div>
+            <div style={{ fontSize: 10, color: c.textTertiary }}>{en("*其他≈私营贷款−消费口径")}</div>
           </Stack>
         ) : hasAnyCredit ? (
           <Stack gap={6}>
@@ -1299,7 +1300,7 @@ export function CreditDebtCharts({ snap, countryLabel }: { snap: MacroChartSnap;
               {(consumerMn ?? privateMn)!.toLocaleString()}
             </div>
             <div style={{ fontSize: 11, color: c.textTertiary }}>
-              {consumerMn != null ? "消费信贷存量（单边）" : "私营/私人部门贷款（单边）"}
+              {consumerMn != null ? en("消费信贷存量（单边）") : en("私营/私人部门贷款（单边）")}
             </div>
           </Stack>
         ) : (
@@ -1323,8 +1324,7 @@ export function CreditDebtCharts({ snap, countryLabel }: { snap: MacroChartSnap;
           <HBar label="居民" pct={hh ?? 0} color={hhNearCeil ? c.removed : c.added} note={hh == null ? "—" : undefined} />
           <HBar label="政府" pct={Math.min(100, gov ?? 0)} color={govHigh ? c.removed : c.accent} />
           <div style={{ fontSize: 10, color: c.textTertiary }}>
-            信心 {snap.consumerConfidence ?? "—"}
-            {govHigh ? "；政府债务已过观察线" : ""}
+            {en(`信心 ${snap.consumerConfidence ?? "—"}${govHigh ? "；政府债务已过观察线" : ""}`)}
           </div>
         </Stack>
       </Panel>
@@ -1417,10 +1417,10 @@ function StressSpark({
         <div style={{ fontSize: 11, fontWeight: 600, color: c.textSecondary }}>
           <GlossedText text={label} />
           {series.synthetic ? (
-            <span style={{ marginLeft: 6, fontWeight: 400, color: c.textTertiary }}>示意</span>
+            <span style={{ marginLeft: 6, fontWeight: 400, color: c.textTertiary }}>{en("示意")}</span>
           ) : null}
           {inflNeg ? (
-            <span style={{ marginLeft: 6, fontWeight: 500, color: "#2B6CB0" }}>通缩</span>
+            <span style={{ marginLeft: 6, fontWeight: 500, color: "#2B6CB0" }}>{en("通缩")}</span>
           ) : null}
         </div>
         <span
@@ -1501,7 +1501,7 @@ export function StressPricingCharts({
     return (
       <Panel title={`${countryLabel} · 压测趋势`} subtitle="序时暂缺">
         <Text size="small" tone="tertiary">
-          该国暂无通胀/政策利率/汽油序时落库（BIS 未覆盖或汽油缺快照）。
+          {en("该国暂无通胀/政策利率/汽油序时落库（BIS 未覆盖或汽油缺快照）。")}
         </Text>
       </Panel>
     );
@@ -1511,7 +1511,7 @@ export function StressPricingCharts({
     <Stack gap={8}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
         <span style={{ fontSize: 11, color: c.textTertiary }}>
-          压测序时 · {MACRO_STRESS_HISTORY.meta.range} · 窗口
+          {en(`压测序时 · ${MACRO_STRESS_HISTORY.meta.range} · 窗口`)}
         </span>
         {STRESS_CHG_PERIODS.map((p) => {
           const active = period === p.id;
@@ -1533,7 +1533,7 @@ export function StressPricingCharts({
                 fontWeight: active ? 600 : 500,
               }}
             >
-              {p.label}
+              {en(p.label)}
             </button>
           );
         })}
@@ -1552,12 +1552,11 @@ export function StressPricingCharts({
         ))}
       </Grid>
       <div style={{ fontSize: 10, color: c.textTertiary, lineHeight: 1.4 }}>
-        通胀/政策利率：BIS 月度观测。
-        {hideGasoline
-          ? ""
-          : "零售汽油标「示意」时=TE 泵价水平×布伦特月均路径，非官方零售序时。"}
-        涨跌按区间首末变动（升=定价压力↑）；通胀负值标通缩冷色并画零轴。对照时点{" "}
-        {MACRO_STRESS_HISTORY.meta.asOf}。
+        {en(
+          `通胀/政策利率：BIS 月度观测。${
+            hideGasoline ? "" : "零售汽油标「示意」时=TE 泵价水平×布伦特月均路径，非官方零售序时。"
+          }涨跌按区间首末变动（升=定价压力↑）；通胀负值标通缩冷色并画零轴。对照时点 ${MACRO_STRESS_HISTORY.meta.asOf}。`,
+        )}
       </div>
     </Stack>
   );

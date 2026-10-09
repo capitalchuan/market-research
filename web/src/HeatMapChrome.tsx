@@ -5,6 +5,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useCanvasState, useHostTheme, Text, Button, Link, Stack, Row, mergeStyle } from "./shims/cursor-canvas";
+import { useLocale } from "./locale";
+import { en } from "./enSurface";
 import {
   heatStopsAdded,
   heatStopsRemoved,
@@ -364,7 +366,9 @@ export function FigureText({
   textSize?: number;
   figureSize?: number;
 }) {
-  const shown = rewriteZhUnits(text);
+  const english =
+    typeof window !== "undefined" && window.location.hash.toLowerCase().startsWith("#/en");
+  const shown = english ? en(text) : rewriteZhUnits(text);
   const parts = shown.split(/(\d{4}-\d{2}(?:-\d{2})?|\d[\d,]*(?:\.\d+)?%?)/g);
   return (
     <>
@@ -464,6 +468,7 @@ export function MapDetailShell({
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
+  const { lang, setLang, t } = useLocale();
   const { narrow, compact } = useMapViewport(overlay);
   return (
     <div
@@ -560,8 +565,12 @@ export function MapDetailShell({
         </div>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexShrink: 0 }}>
           {headerAside}
+          <ScreenSegTrack>
+            <ScreenSegChip label="中文" active={lang === "zh"} onClick={() => setLang("zh")} />
+            <ScreenSegChip label="EN" active={lang === "en"} onClick={() => setLang("en")} />
+          </ScreenSegTrack>
           <Button variant="secondary" size="sm" onClick={onClose}>
-            {closeLabel}
+            {t(closeLabel)}
           </Button>
         </div>
       </div>
@@ -1057,8 +1066,7 @@ export function MapCountryMacroBrief({ code, dense = false }: { code: string; de
       <div style={{ marginBottom: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, color: c.textTertiary, marginBottom: 4 }}>
           <span>
-            汇率走势 · {fx.pair}
-            {fx.synthetic ? "（示意）" : ""}
+            {en(`汇率走势 · ${fx.pair}${fx.synthetic ? "（示意）" : ""}`)}
             {fxCite ? <CitedText text={` ${fxCite}`} size="small" dense /> : null}
           </span>
           <span
@@ -1076,10 +1084,10 @@ export function MapCountryMacroBrief({ code, dense = false }: { code: string; de
               <span aria-hidden>{arrow}</span>
               {flat ? "" : up ? "+" : ""}
               {Math.abs(strengthChg).toFixed(1)}%
-              <span style={{ fontWeight: 400 }}>{word}</span>
-            </span>
-            <span style={{ fontWeight: 500, color: c.textTertiary, fontSize: 10 }}>
-              {spanHint}累计 · {fxPeriodMeta.label}
+            <span style={{ fontWeight: 400 }}>{en(word)}</span>
+          </span>
+          <span style={{ fontWeight: 500, color: c.textTertiary, fontSize: 10 }}>
+            {en(`${spanHint}累计 · ${fxPeriodMeta.label}`)}
             </span>
           </span>
         </div>
@@ -1104,7 +1112,7 @@ export function MapCountryMacroBrief({ code, dense = false }: { code: string; de
                   fontWeight: active ? 600 : 500,
                 }}
               >
-                {p.label}
+                {en(p.label)}
               </button>
             );
           })}

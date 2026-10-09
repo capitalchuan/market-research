@@ -1,5 +1,6 @@
 import { useHostTheme, Text, Stack, Grid } from "./shims/cursor-canvas";
 import { mapChrome } from "./heatMapTheme";
+import { en } from "./enSurface";
 import {
   COUNTRY_EMPLOYED_STOCK,
   LABOR_FLOW_AGES,
@@ -63,11 +64,11 @@ function Panel({
         }}
       >
         <div style={{ fontSize: 12, fontWeight: 600, color: c.textSecondary, lineHeight: 1.3 }}>
-          {title}
+          {en(title)}
         </div>
         {subtitle ? (
           <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 2, lineHeight: 1.35 }}>
-            {subtitle}
+            {en(subtitle)}
           </div>
         ) : null}
       </div>
@@ -145,9 +146,9 @@ export function VitalPyramid({
           }`}
           footer={
             <>
-              {latest.y}：入职 {latest.entrants != null ? formatPersonsWan(latest.entrants) : "—"} −
-              退休 {latest.retirees != null ? formatPersonsWan(latest.retirees) : "—"}
-              {latest.net != null ? ` = 净增 ${formatPersonsWan(latest.net)}` : ""}
+              {latest.y}：{en("入职")} {latest.entrants != null ? en(formatPersonsWan(latest.entrants)) : "—"} −
+              {en("退休")} {latest.retirees != null ? en(formatPersonsWan(latest.retirees)) : "—"}
+              {latest.net != null ? ` = ${en("净增")} ${en(formatPersonsWan(latest.net))}` : ""}
             </>
           }
         >
@@ -254,8 +255,11 @@ export function VitalPyramid({
       </Grid>
 
       <div style={{ fontSize: 11, color: c.textTertiary, lineHeight: 1.4 }}>
-        三图横排各约 1/3 · 队列达龄推算 · k=就业/适龄出生队列示意存量 · 源 OWID/UN WPP
-        {anchor ? " + 就业锚点" : ""}
+        {en(
+          `三图横排各约 1/3 · 队列达龄推算 · k=就业/适龄出生队列示意存量 · 源 OWID/UN WPP${
+            anchor ? " + 就业锚点" : ""
+          }`,
+        )}
       </div>
     </Stack>
   );
@@ -282,7 +286,7 @@ function LaborForecastChart({
       subtitle="入职 − 退休 · 上正下负"
       footer={
         <>
-          {y0}–{y1} 合计 {formatPersonsWan(nets.reduce((a, b) => a + b, 0))}
+          {y0}–{y1} {en("合计")} {en(formatPersonsWan(nets.reduce((a, b) => a + b, 0)))}
         </>
       }
     >
@@ -417,12 +421,10 @@ function EmploymentStockForecastChart({
       subtitle={`k=${k.toFixed(3)} · ${formatYi(employed0)} / ${formatYi(cohortStock)} · 纵轴自 0`}
       footer={
         <>
-          {rows[0]?.y} {formatYi(employed0)} → {last.y} {formatYi(last.employed)}（Δ
-          {formatPersonsWan(last.employed - employed0)}）
-          {peak
-            ? ` · 拐点 ${peak.y} ${formatYi(peak.employed)}`
-            : ""}
-          {post ? ` · ${post.note}` : ""}
+          {rows[0]?.y} {en(formatYi(employed0))} → {last.y} {en(formatYi(last.employed))}（Δ
+          {en(formatPersonsWan(last.employed - employed0))}）
+          {peak ? en(` · 拐点 ${peak.y} ${formatYi(peak.employed)}`) : ""}
+          {post ? ` · ${en(post.note)}` : ""}
         </>
       }
     >
@@ -440,7 +442,7 @@ function EmploymentStockForecastChart({
           strokeWidth={1}
         />
         <text x={2} y={pad + 8} fontSize={8} fill={c.textTertiary}>
-          {formatYi(maxE)}
+          {en(formatYi(maxE))}
         </text>
         <text x={2} y={pad + h} fontSize={8} fill={c.textTertiary}>
           0
@@ -492,7 +494,7 @@ function EmploymentStockForecastChart({
               fontSize={9}
               fill={c.removed}
             >
-              {peak.y} 拐点 {formatYi(peak.employed)}
+              {en(`${peak.y} 拐点 ${formatYi(peak.employed)}`)}
             </text>
           </g>
         ) : null}

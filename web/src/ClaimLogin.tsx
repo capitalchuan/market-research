@@ -13,6 +13,7 @@ import {
   useCanvasState,
   useHostTheme,
 } from "./shims/cursor-canvas";
+import { useT } from "./locale";
 
 const CLAIM_ALLOWED_DOMAIN = "alliancechuan.com";
 const CLAIM_DEFAULT_PASSWORD = "chuan666";
@@ -133,9 +134,10 @@ export function ClaimLoginHost({ children }: { children: ReactNode }) {
 
 export function LoginButton() {
   const open = useContext(LoginOpenContext);
+  const t = useT();
   return (
     <Button size="sm" variant="primary" onClick={open}>
-      登录
+      {t("登录")}
     </Button>
   );
 }
@@ -149,6 +151,7 @@ export function InvestedGate({ children }: { children: ReactNode }) {
 
 function ClaimLoginDialog({ onClose }: { onClose: () => void }) {
   const theme = useHostTheme();
+  const t = useT();
   const [users, setUsers] = useCanvasState<Record<string, AuthUserRecord>>("authUsers1", {});
   const [, setSession] = useCanvasState("authSession1", "");
   const [, setEmail] = useCanvasState("claimEmail1", "");
@@ -248,13 +251,13 @@ function ClaimLoginDialog({ onClose }: { onClose: () => void }) {
     >
       <div
         role="dialog"
-        aria-label="登录"
+        aria-label={t("登录")}
         onClick={(e) => e.stopPropagation()}
         style={{ width: "min(420px, 100%)" }}
       >
         <Stack gap={16}>
           <Stack gap={6}>
-            <Text weight="semibold">登录后继续</Text>
+            <Text weight="semibold">{t("登录后继续")}</Text>
           </Stack>
           <div
             style={{
@@ -267,11 +270,11 @@ function ClaimLoginDialog({ onClose }: { onClose: () => void }) {
             <Stack gap={12}>
               <Stack gap={4}>
                 <Text size="small" weight="medium">
-                  邮箱
+                  {t("邮箱")}
                 </Text>
                 <input
                   type="text"
-                  placeholder="邮箱"
+                  placeholder={t("邮箱")}
                   autoComplete="username"
                   spellCheck={false}
                   value={userInput}
@@ -288,12 +291,12 @@ function ClaimLoginDialog({ onClose }: { onClose: () => void }) {
               </Stack>
               <Stack gap={4}>
                 <Text size="small" weight="medium">
-                  密码
+                  {t("密码")}
                 </Text>
                 <div style={{ position: "relative" }}>
                   <input
                     type={showPass ? "text" : "password"}
-                    placeholder="密码"
+                    placeholder={t("密码")}
                     autoComplete={showPass ? "off" : "current-password"}
                     spellCheck={false}
                     value={passInput}
@@ -326,14 +329,14 @@ function ClaimLoginDialog({ onClose }: { onClose: () => void }) {
                       fontSize: 12,
                     }}
                   >
-                    {showPass ? "隐藏" : "显示"}
+                    {showPass ? t("隐藏") : t("显示")}
                   </button>
                 </div>
               </Stack>
-              {err ? <Callout tone="danger">{err}</Callout> : null}
+              {err ? <Callout tone="danger">{t(err)}</Callout> : null}
               <Row gap={8} wrap>
                 <Button variant="primary" onClick={onLogin}>
-                  登录
+                  {t("登录")}
                 </Button>
                 <Button
                   variant="secondary"
@@ -343,7 +346,7 @@ function ClaimLoginDialog({ onClose }: { onClose: () => void }) {
                     onClose();
                   }}
                 >
-                  访客进入
+                  {t("访客进入")}
                 </Button>
               </Row>
             </Stack>
