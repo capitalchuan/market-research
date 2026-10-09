@@ -2,8 +2,9 @@
  * 个人现金贷主入口：国家总览 → 标的总览 → 已投平台。
  * 首页公开总量、已投国家和打分。底层平台名称仍要登录。登录与原先邮箱密码同一套。
  */
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ClaimLoginHost, InvestedGate, LoginButton, useCanViewInvested } from "./ClaimLogin";
+import { readCountryCodeFromHash, writeCountryHash } from "./countryPage";
 import { COMPANY_CHANNEL_LABEL, COMPANY_TAG_ORDER, companiesIn, type CompanyCard, type CompanyFact } from "./data/cashloanCompanies";
 import { INST_ECO_BUCKETS, instEcoForCountry, type InstEcoItem } from "./data/cashloanInstEco";
 import { scoreCashloanMacro } from "./data/cashloanMacroScore";
@@ -108,9 +109,29 @@ function MicroloanDeskBody() {
   const [, setSession] = useCanvasState("authSession1", "");
   const [, setEmail] = useCanvasState("claimEmail1", "");
   const [step, setStep] = useState<Step>("size");
-  const [country, setCountry] = useState<string | null>(null);
+  const [country, setCountry] = useState<string | null>(() => readCountryCodeFromHash());
   const [producerId, setProducerId] = useState<string | null>(null);
-  const [macroCode, setMacroCode] = useState<string | null>(null);
+  const [macroCode, setMacroCode] = useState<string | null>(() => readCountryCodeFromHash());
+
+  useEffect(() => {
+    const apply = () => {
+      const code = readCountryCodeFromHash();
+      setMacroCode((prev) => (prev === code ? prev : code));
+      if (code) setCountry(code);
+    };
+    window.addEventListener("hashchange", apply);
+    window.addEventListener("popstate", apply);
+    return () => {
+      window.removeEventListener("hashchange", apply);
+      window.removeEventListener("popstate", apply);
+    };
+  }, []);
+
+  useEffect(() => {
+    writeCountryHash(macroCode);
+    const name = macroCode ? COUNTRY_LABEL_ZH[macroCode] : "";
+    document.title = name ? `${name} · 消费信贷` : "消费信贷";
+  }, [macroCode]);
 
   const loan = useMemo(() => loanBookByCode(), []);
   const storeByCountry = useMemo(() => {
@@ -234,7 +255,10 @@ function MicroloanDeskBody() {
           selected={selected}
           macroCode={macroCode}
           onMacroClose={() => setMacroCode(null)}
-          onSelect={setCountry}
+          onSelect={(code) => {
+            setCountry(code);
+            setMacroCode(code);
+          }}
           onIdentify={openIdentify}
         />
       ) : null}

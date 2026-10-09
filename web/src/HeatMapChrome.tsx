@@ -446,6 +446,7 @@ export function MapDetailShell({
   overlay = false,
   fillScreen = false,
   headerAside,
+  pageHref,
 }: {
   title: string;
   subtitle?: string;
@@ -458,6 +459,8 @@ export function MapDetailShell({
   fillScreen?: boolean;
   /** 标题栏右侧、关闭按钮左侧 */
   headerAside?: ReactNode;
+  /** 这一国详情的独立地址 */
+  pageHref?: string;
 }) {
   const theme = useHostTheme();
   const c = mapChrome(theme);
@@ -537,6 +540,22 @@ export function MapDetailShell({
             >
               {subtitle}
             </div>
+          ) : null}
+          {pageHref ? (
+            <a
+              href={pageHref}
+              style={{
+                display: "block",
+                marginTop: 6,
+                fontSize: 13,
+                fontWeight: 400,
+                lineHeight: 1.4,
+                color: c.link,
+                wordBreak: "break-all",
+              }}
+            >
+              {pageHref}
+            </a>
           ) : null}
         </div>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexShrink: 0 }}>

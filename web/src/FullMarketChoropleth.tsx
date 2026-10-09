@@ -8,6 +8,7 @@ import { geoGraticule10, geoNaturalEarth1, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import worldTopology from "world-atlas/countries-110m.json";
+import { countryPageHref } from "./countryPage";
 import { MACRO_SCORE_HELP, scoreCashloanMacro } from "./data/cashloanMacroScore";
 import { COUNTRY_LABEL_ZH } from "./data/nbfcCountryStats";
 import { aggregateLendingUsdBn } from "./LendingHeatGlobe";
@@ -441,6 +442,7 @@ function DetailPanel({
       onClose={onClose}
       overlay={overlay}
       fillScreen={fillScreen}
+      pageHref={fillScreen ? countryPageHref(code) : undefined}
       headerAside={
         fillScreen ? (
           <>
@@ -590,8 +592,12 @@ export function FullMarketChoropleth({
     setHover(null);
   }, [regionKey, defaultYaw]);
   useEffect(() => {
-    if (detailCode) setFocus(detailCode);
-  }, [detailCode]);
+    if (!detailFill) {
+      if (detailCode) setFocus(detailCode);
+      return;
+    }
+    setFocus(detailCode ?? null);
+  }, [detailCode, detailFill]);
 
   function closeDetail() {
     setFocus(null);
